@@ -14,7 +14,7 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 ## Nombres de rama
 
 ```
-feat/US-XX-nombre-descriptivo
+feature/US-XX-nombre-descriptivo
 fix/US-XX-nombre-descriptivo
 docs/nombre-descriptivo
 chore/nombre-descriptivo
@@ -35,7 +35,7 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 2. Buscar la tarjeta en Trello
 3. Mover a Sprint (si está en Backlog) y luego a Todo
 4. git checkout development && git pull
-5. git checkout -b feat/US-XX-nombre-descriptivo
+5. git checkout -b feature/US-XX-nombre-descriptivo
 6. Mover a En Progreso
 7. Analizar código existente y la spec
 8. Plan de implementación (checklist en la tarjeta)
@@ -66,8 +66,8 @@ Si no se encuentra la tarjeta: informar al usuario y terminar.
 git branch --show-current   # confirmar que NO es main ni development
 git add <archivos>
 git commit -m "feat(backend): US-XX descripcion"
-git push -u origin feat/US-XX-nombre-descriptivo
-gh pr create --base development --head feat/US-XX-nombre-descriptivo \
+git push -u origin feature/US-XX-nombre-descriptivo
+gh pr create --base development --head feature/US-XX-nombre-descriptivo \
   --title "feat(backend): US-XX descripcion" --body "..."
 ```
 
