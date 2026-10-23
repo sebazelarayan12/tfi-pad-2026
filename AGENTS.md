@@ -6,7 +6,7 @@ Hard rules (full detail in `docs/workflow.md`):
 
 - Never commit directly to `main` or `development`. Check `git branch --show-current` before every commit.
 - Never create branches from `main`. Branch from an up-to-date `development`.
-- Branch names: `feat/US-XX-descriptive-name`, `fix/US-XX-...`, `docs/...`, `chore/...`.
+- Branch names: `feature/US-XX-descriptive-name`, `fix/US-XX-...`, `docs/...`, `chore/...`.
 - Every change goes through a Pull Request targeting `development`.
 - Use Conventional Commits.
 - Do not push, open PRs, or merge unless the user explicitly asks.
