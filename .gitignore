@@ -5,3 +5,6 @@ bin/
 obj/
 .vs/
 *.user
+
+# Secrets
+.env
