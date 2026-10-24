@@ -1,0 +1,55 @@
+using Aseguradora.Application.Exceptions;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Aseguradora.Api.Middleware;
+
+/// <summary>
+/// Turns exceptions into ProblemDetails responses so controllers need no try/catch.
+/// NotFound -> 404, BusinessRule -> 400, ExternalService -> 502, anything else -> 500.
+/// </summary>
+public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+{
+    private const string UnexpectedErrorMessage = "Ocurrió un error inesperado.";
+    private const string ProblemJson = "application/problem+json";
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await next(context);
+        }
+        catch (Exception exception) when (!context.Response.HasStarted)
+        {
+            var (status, detail) = Map(exception);
+
+            if (status == StatusCodes.Status500InternalServerError)
+                logger.LogError(exception, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
+            else
+                logger.LogWarning("{ExceptionType} on {Method} {Path}: {Message}",
+                    exception.GetType().Name, context.Request.Method, context.Request.Path, exception.Message);
+
+            var problem = new ProblemDetails
+            {
+                Status = status,
+                Title = ReasonPhrases(status),
+                Detail = detail,
+                Instance = context.Request.Path
+            };
+
+            context.Response.Clear();
+            context.Response.StatusCode = status;
+            await context.Response.WriteAsJsonAsync(problem, options: null, contentType: ProblemJson);
+        }
+    }
+
+    private static (int Status, string Detail) Map(Exception exception) => exception switch
+    {
+        NotFoundException => (StatusCodes.Status404NotFound, exception.Message),
+        BusinessRuleException => (StatusCodes.Status400BadRequest, exception.Message),
+        ExternalServiceException => (StatusCodes.Status502BadGateway, exception.Message),
+        // Never leak internal details of unexpected failures.
+        _ => (StatusCodes.Status500InternalServerError, UnexpectedErrorMessage)
+    };
+
+    private static string ReasonPhrases(int status) => Microsoft.AspNetCore.WebUtilities.ReasonPhrases.GetReasonPhrase(status);
+}
