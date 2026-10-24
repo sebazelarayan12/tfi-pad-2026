@@ -1,3 +1,6 @@
+using Aseguradora.Api.Middleware;
+using Aseguradora.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,7 +10,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// The connection string comes from the ConnectionStrings__Default environment variable (.env), never from source.
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("Missing connection string: set ConnectionStrings__Default.");
+builder.Services.AddData(connectionString);
+
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
