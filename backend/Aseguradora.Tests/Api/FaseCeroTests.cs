@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Aseguradora.Tests.Api;
 
@@ -24,14 +27,16 @@ public class FaseCeroTests
     [Fact]
     public async Task Health_ServidorAnonimo_NoRequiereCredenciales()
     {
+        // Simulates the fallback policy Frente 1 will add: every endpoint requires an authenticated user.
         await using var factory = new ApiFactory(Production);
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = null;
+        await using var withFallback = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddAuthorization(options =>
+                options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())));
 
-        var response = await client.GetAsync("/health");
+        var response = await withFallback.CreateClient().GetAsync("/health");
 
-        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+        // 503 means the health check ran; a blocked request would never reach it.
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
     [Fact]
