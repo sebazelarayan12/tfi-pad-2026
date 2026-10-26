@@ -26,7 +26,10 @@ Tablero: https://trello.com/b/Lo6WcbfU/pad
 
 Listas (confirmar nombres exactos contra el tablero real antes de mover tarjetas):
 
-`Backlog` → `Sprint` → `Todo` → `En Progreso` → `Hecho` (más `Blocked` para bloqueos)
+`Backlog` → `Sprint` → `Todo` → `En Progreso` → `QA` → `Hecho` (más `Blocked` para bloqueos)
+
+- `QA`: el PR está abierto y espera el CI, la review de Copilot y la aprobación de otra persona del equipo.
+- `Hecho`: el PR se mergeó a `development`.
 
 Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 
@@ -34,20 +37,20 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 
 ```
 1. Recibir instrucción: "Hacé la tarjeta US-XX"
-2. Buscar la tarjeta en Trello
-3. Mover a Sprint (si está en Backlog) y luego a Todo
+2. Buscar la tarjeta en Trello y leer su sección completa en `docs/tareas-divididas.md` (fuente de verdad)
+3. Verificar "Puede empezar sin esperar a" y las decisiones pendientes de la tarea; mover a Sprint (si está en Backlog) y luego a Todo
 4. git checkout development && git pull
 5. git checkout -b feature/US-XX-nombre-descriptivo
 6. Mover a En Progreso
-7. Analizar código existente y la spec
-8. Plan de implementación (checklist en la tarjeta)
+7. Analizar código existente, la spec y la sección de la tarea
+8. Plan de implementación (usar la checklist "Criterios de aceptación" de la tarjeta)
 9. Implementar
-10. Verificar build y tests
+10. Verificar build y tests, y cada criterio de aceptación de la tarea en `docs/tareas-divididas.md`
 11. Review propio contra los criterios de calidad
 12. Si falla: corregir y volver al 9 (máx. 3 iteraciones)
 13. Si está bloqueada: mover a Blocked, avisar y parar
-14. Commit, push de la rama, PR hacia development
-15. Mover a Hecho con comentario + URL del PR
+14. Commit, push de la rama, PR hacia development; mover a QA con comentario + URL del PR
+15. Al mergearse el PR, mover a Hecho con comentario
 16. Devolver al usuario: URL del PR, resumen, archivos modificados
 ```
 
@@ -58,7 +61,8 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 | 3 | Backlog → Sprint → Todo | `📋 Movido a Sprint` / `📝 Listo para implementar` |
 | 6 | Todo → En Progreso | `🚀 Iniciado por [quien] — [fecha]` |
 | 13 | → Blocked | `⚠️ BLOCKED: [razón]` |
-| 15 | → Hecho | `✅ Completado — PR: [url]` |
+| 14 | En Progreso → QA | `🔎 En revisión — PR: [url]` |
+| 15 | QA → Hecho | `✅ Completado — PR: [url]` |
 
 Si no se encuentra la tarjeta: informar al usuario y terminar.
 
@@ -75,11 +79,20 @@ gh pr create --base development --head feature/US-XX-nombre-descriptivo \
 
 El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó.
 
+## Tareas divididas y tarjetas
+
+- Las tarjetas se llaman `US-F1-01`, `US-T-02`, etc. (F1 a F4 son los frentes, T es transversal) y son un **resumen**: propósito, dependencias, link y una checklist con los criterios de aceptación.
+- La fuente de verdad de cada tarea es su sección en `docs/tareas-divididas.md`: alcance, archivos, tests, decisiones pendientes y criterios de aceptación. Si la tarjeta y el documento difieren, manda el documento.
+- Una tarea está **lista** solo cuando se cumplen todos los criterios de aceptación de su sección del documento y está tildada la checklist de la tarjeta. Solo entonces va a QA.
+- La rama de una tarea sigue el ID: `feature/US-F1-01-nombre-descriptivo`.
+- Si el documento tiene un error o una decisión pendiente que bloquea, no inventar: avisar al usuario, y si se corrige el documento hacerlo en un PR `docs/` aparte.
+
 ## Contexto técnico
 
 - **Back:** C# .NET 8, API REST, SQL Server, EF Core. Capas: Domain / Data / Application / Integrations / Api. Auth: JWT (empleados/admin) y API key (grupos externos).
 - **Front:** dos apps React (backoffice y web pública).
 - **Spec del back:** `docs/AnalisisBack.md` (local, ignorado por git; pedirlo al equipo).
+- **Tareas del back:** `docs/tareas-divididas.md` (versionado; una sección por tarjeta, con convenciones comunes C1 a C17).
 - **Reglas de negocio:** se citan por código (RN08, RN19, etc.) tal como figuran en la spec.
 
 ## Criterios de calidad antes del PR
@@ -98,6 +111,8 @@ El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó
 - [ ] `useEffect` con dependencias correctas
 
 ### General
+- [ ] El CI del PR está en verde (`backend`, `branch-name`, `secrets-scan`) y se atendió la review de Copilot
+- [ ] Cada criterio de aceptación de la tarea en `docs/tareas-divididas.md` está cumplido
 - [ ] SOLID / DRY / KISS
 - [ ] Naming claro y consistente
 - [ ] Sin magic numbers/strings, imports ni variables sin usar
