@@ -1,3 +1,5 @@
+using Aseguradora.Api.Middleware;
+using Aseguradora.Data;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,9 +30,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// The connection string comes from the ConnectionStrings__Default environment variable (.env), never from source.
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("Missing connection string: set ConnectionStrings__Default.");
+builder.Services.AddData(connectionString);
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
