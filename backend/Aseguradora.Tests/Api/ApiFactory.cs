@@ -1,3 +1,4 @@
+using Aseguradora.Tests.Support;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -20,6 +21,8 @@ public sealed class ApiFactory(string environment, IReadOnlyDictionary<string, s
         // UseSetting lands before Program.cs reads configuration at builder time.
         builder.UseSetting("ConnectionStrings:Default", UnreachableDatabase);
         builder.UseSetting("Migraciones:AplicarAlIniciar", "false");
+        // Frente 1 validates Jwt__Key on startup; tests keep the same key as TokenDePrueba.
+        builder.UseSetting("Jwt:Key", TokenDePrueba.ClaveJwt);
 
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
             builder.UseSetting(key, value);
