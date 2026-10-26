@@ -1,6 +1,9 @@
 using Aseguradora.Api.Middleware;
 using Aseguradora.Data;
+using Aseguradora.Data.Seed;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +12,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddHealthChecks();
+// Only the schemes are declared here; Frente 1 implements JWT and API key authentication.
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT for employees and administrators."
+    });
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "X-Api-Key",
+        Description = "API key for external systems."
+    });
+});
+builder.Services.AddHealthChecks().AddDbContextCheck<AseguradoraDbContext>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
@@ -35,7 +55,24 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Missing connection string: set ConnectionStrings__Default.");
 builder.Services.AddData(connectionString);
 
+// One line per front, in this order. Each owning task uncomments only its own line.
+// builder.Services.AddFrente1(builder.Configuration);
+// builder.Services.AddFrente2(builder.Configuration);
+// builder.Services.AddFrente3(builder.Configuration);
+// builder.Services.AddFrente4(builder.Configuration);
+// builder.Services.AddIntegraciones(builder.Configuration);
+
 var app = builder.Build();
+
+// Development and local compose migrate on startup; production migrates manually with --migrar.
+if (app.Configuration.GetValue<bool>("Migraciones:AplicarAlIniciar"))
+{
+    await using (var scope = app.Services.CreateAsyncScope())
+    {
+        await scope.ServiceProvider.GetRequiredService<AseguradoraDbContext>().Database.MigrateAsync();
+    }
+    await SeedData.EjecutarAsync(app.Services);
+}
 
 app.UseForwardedHeaders();
 app.UseMiddleware<ExceptionMiddleware>();
@@ -55,6 +92,10 @@ app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+// Anonymous on purpose: Docker and the tunnel probe it without credentials.
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
+
+// Lets WebApplicationFactory<Program> host the API in integration tests.
+public partial class Program { }

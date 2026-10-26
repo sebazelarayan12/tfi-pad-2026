@@ -1,6 +1,7 @@
 using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Aseguradora.Data.Seed;
 
@@ -107,6 +108,17 @@ public static class SeedData
             CuotaId = CuotaId(1),
             Importe = Prima
         });
+    }
+
+    /// <summary>
+    /// Runs every registered <see cref="ISeeder"/> inside one scope. Called after migrating, at startup
+    /// (Migraciones:AplicarAlIniciar) and by the --migrar command.
+    /// </summary>
+    public static async Task EjecutarAsync(IServiceProvider services, CancellationToken ct = default)
+    {
+        await using var scope = services.CreateAsyncScope();
+        foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
+            await seeder.SembrarAsync(scope.ServiceProvider, ct);
     }
 
     public static Guid CuotaId(int numero) => Guid.Parse($"f1000000-0000-0000-0000-{numero:D12}");

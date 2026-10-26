@@ -35,6 +35,8 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
                 Detail = detail,
                 Instance = context.Request.Path
             };
+            // Lets support match a client error report with the server log entry.
+            problem.Extensions["traceId"] = context.TraceIdentifier;
 
             context.Response.Clear();
             context.Response.StatusCode = status;

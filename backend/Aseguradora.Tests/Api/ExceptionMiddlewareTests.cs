@@ -53,6 +53,16 @@ public class ExceptionMiddlewareTests
     }
 
     [Fact]
+    public async Task ExceptionMiddleware_Error500_IncluyeTraceId()
+    {
+        var (status, _, body) = await InvokeAsync(new InvalidOperationException("boom"));
+
+        Assert.Equal(500, status);
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("traceId").GetString()));
+        Assert.DoesNotContain("boom", body.GetRawText());
+    }
+
+    [Fact]
     public async Task Request_without_exception_passes_through_untouched()
     {
         var middleware = new ExceptionMiddleware(
