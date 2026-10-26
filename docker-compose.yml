@@ -1,0 +1,43 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Default: Server=sqlserver;Database=Aseguradora;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True
+      # Vite dev servers of the two React fronts (default ports).
+      Cors__AllowedOrigins__0: ${CORS_ORIGIN_BACKOFFICE:-http://localhost:5173}
+      Cors__AllowedOrigins__1: ${CORS_ORIGIN_PUBLIC:-http://localhost:5174}
+    ports:
+      # Loopback only: reachable from this machine, never from the network.
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB:-4096}
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Optional: publishes the API through Cloudflare. Start it with `docker compose --profile tunnel up`.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - api
+
+volumes:
+  sqlserver-data:
