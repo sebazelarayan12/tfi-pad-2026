@@ -50,7 +50,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
         run: |
           if [[ "$HEAD_REF" == "development" ]]; then exit 0; fi
-          if ! [[ "$HEAD_REF" =~ ^(feature|fix|docs|chore)/[a-z0-9][a-zA-Z0-9._-]*$ ]]; then
+          if ! [[ "$HEAD_REF" =~ ^(feature|fix|docs|chore)/[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
             echo "Invalid branch name '$HEAD_REF'. Use feature/US-XX-name, fix/US-XX-name, docs/name or chore/name (see docs/workflow.md)."
             exit 1
           fi
