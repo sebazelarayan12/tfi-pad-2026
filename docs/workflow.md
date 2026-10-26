@@ -22,6 +22,8 @@ chore/nombre-descriptivo
 
 ## Tablero de Trello
 
+Tablero: https://trello.com/b/Lo6WcbfU/pad
+
 Listas (confirmar nombres exactos contra el tablero real antes de mover tarjetas):
 
 `Backlog` → `Sprint` → `Todo` → `En Progreso` → `Hecho` (más `Blocked` para bloqueos)
