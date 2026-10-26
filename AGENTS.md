@@ -9,5 +9,6 @@ Hard rules (full detail in `docs/workflow.md`):
 - Branch names: `feature/US-XX-descriptive-name`, `fix/US-XX-...`, `docs/...`, `chore/...`.
 - Every change goes through a Pull Request targeting `development`.
 - Use Conventional Commits.
+- Never hardcode secrets, passwords, API keys, tokens or connection strings with credentials in code, config files, Dockerfiles or compose files. Read them from environment variables (`.env`, never committed) and commit only a `.env.example` with fake placeholder values.
 - Do not push, open PRs, or merge unless the user explicitly asks.
 - Work is tracked in Trello (one card = one branch = one PR). If Trello or GitHub tools are unavailable, follow the fallback section of the workflow.
