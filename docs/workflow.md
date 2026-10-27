@@ -12,6 +12,7 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 6. Commits en formato Conventional Commits: `feat(backend): US-XX descripcion`, `fix(front): ...`, `docs: ...`.
 7. **Prueba manual local antes del PR.** Si el cambio tiene algo que se pueda probar a mano (un endpoint, una pantalla, un comando, el stack de Docker), la persona responsable lo prueba en su máquina y confirma que funciona antes de abrir el PR. Un asistente de IA no abre el PR sin esa confirmación, aunque esté ejecutando el flujo completo: le pasa al usuario los pasos concretos para probar y espera. Si no hay nada que probar a mano (solo docs, tests o refactor interno), se dice explícitamente y se sigue.
 8. **Atender los comentarios de los compañeros en tus PRs.** Antes de abrir un PR nuevo, revisar los comentarios en tus propios PRs (abiertos y ya mergeados): fixes sugeridos, preguntas, observaciones, sean bloqueantes o no. Cada comentario se resuelve: se aplica el cambio (en la misma rama si el PR sigue abierto, o en una rama `fix/` nueva si ya se mergeó) o se responde explicando por qué no. Ningún comentario queda sin respuesta.
+9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. Los asistentes de IA recomiendan las que falten, una sola vez y solo cuando la tarea las necesita.
 
 ## Nombres de rama
 
@@ -91,6 +92,23 @@ El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó
 - Una tarea está **lista** solo cuando se cumplen todos los criterios de aceptación de su sección del documento y está tildada la checklist de la tarjeta. Solo entonces va a QA.
 - La rama de una tarea sigue el ID: `feature/US-F1-01-nombre-descriptivo`.
 - Si el documento tiene un error o una decisión pendiente que bloquea, no inventar: avisar al usuario, y si se corrige el documento hacerlo en un PR `docs/` aparte.
+
+## Skills del equipo
+
+Regla 9: cuando alguien usa una skill específica de un lenguaje, framework o herramienta del proyecto (ej. .NET, React), la agrega a esta tabla en el mismo PR. Así el resto del equipo puede instalarla.
+
+Cómo se usa la tabla (para asistentes de IA):
+
+- Solo se mira cuando la tarea toca el área de una skill de la tabla. No se revisa al arrancar la sesión.
+- Se compara contra la lista de skills disponibles que ya está en el contexto de la sesión; no hace falta buscar en disco.
+- Si la skill falta: recomendarla una sola vez en esa conversación, con el comando de instalación y el motivo. Si el usuario la rechaza, no insistir.
+- Si ya está instalada: no decir nada.
+
+Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente después para que la cargue). Catálogo para buscar skills y copiar su comando: https://skills.sh/
+
+| Skill | Para qué | Instalar |
+|-------|----------|----------|
+| `dotnet-best-practices` | Buenas prácticas de C#/.NET al escribir o revisar el back | `npx skills add github/awesome-copilot --skill dotnet-best-practices -g` |
 
 ## Contexto técnico
 
