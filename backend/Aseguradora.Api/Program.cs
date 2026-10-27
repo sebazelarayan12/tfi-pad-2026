@@ -1,3 +1,4 @@
+using Aseguradora.Api.Frentes.Frente1;
 using Aseguradora.Api.Middleware;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
@@ -11,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+// Error responses without a body (401 and 403 from the auth middleware) become ProblemDetails.
+builder.Services.AddProblemDetails();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 // Only the schemes are declared here; Frente 1 implements JWT and API key authentication.
@@ -57,7 +60,7 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddData(connectionString);
 
 // One line per front, in this order. Each owning task uncomments only its own line.
-// builder.Services.AddFrente1(builder.Configuration);
+builder.Services.AddFrente1(builder.Configuration);
 // builder.Services.AddFrente2(builder.Configuration);
 // builder.Services.AddFrente3(builder.Configuration);
 // builder.Services.AddFrente4(builder.Configuration);
@@ -77,6 +80,7 @@ if (app.Configuration.GetValue<bool>("Migraciones:AplicarAlIniciar"))
 
 app.UseForwardedHeaders();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -90,6 +94,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
