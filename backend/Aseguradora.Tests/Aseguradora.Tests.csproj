@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Aseguradora.Domain\Aseguradora.Domain.csproj" />
     <ProjectReference Include="..\Aseguradora.Application\Aseguradora.Application.csproj" />
     <ProjectReference Include="..\Aseguradora.Data\Aseguradora.Data.csproj" />
+    <ProjectReference Include="..\Aseguradora.Integrations\Aseguradora.Integrations.csproj" />
     <ProjectReference Include="..\Aseguradora.Api\Aseguradora.Api.csproj" />
   </ItemGroup>
 
