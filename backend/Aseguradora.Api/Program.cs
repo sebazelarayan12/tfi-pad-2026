@@ -1,6 +1,7 @@
 using Aseguradora.Api.Middleware;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
+using Aseguradora.Integrations;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -60,7 +61,7 @@ builder.Services.AddData(connectionString);
 // builder.Services.AddFrente2(builder.Configuration);
 // builder.Services.AddFrente3(builder.Configuration);
 // builder.Services.AddFrente4(builder.Configuration);
-// builder.Services.AddIntegraciones(builder.Configuration);
+builder.Services.AddIntegraciones(builder.Configuration);
 
 var app = builder.Build();
 
