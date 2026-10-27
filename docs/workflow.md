@@ -10,6 +10,8 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 4. **Antes de cualquier commit, verificar la rama actual** (`git branch --show-current`). Si es `main` o `development`: parar, crear rama, y recién ahí commitear.
 5. **No hacer push, abrir PR ni mergear sin pedido explícito del usuario**, salvo que la instrucción sea ejecutar el flujo completo ("Hacé la tarjeta US-XX").
 6. Commits en formato Conventional Commits: `feat(backend): US-XX descripcion`, `fix(front): ...`, `docs: ...`.
+7. **Prueba manual local antes del PR.** Si el cambio tiene algo que se pueda probar a mano (un endpoint, una pantalla, un comando, el stack de Docker), la persona responsable lo prueba en su máquina y confirma que funciona antes de abrir el PR. Un asistente de IA no abre el PR sin esa confirmación, aunque esté ejecutando el flujo completo: le pasa al usuario los pasos concretos para probar y espera. Si no hay nada que probar a mano (solo docs, tests o refactor interno), se dice explícitamente y se sigue.
+8. **Atender los comentarios de los compañeros en tus PRs.** Antes de abrir un PR nuevo, revisar los comentarios en tus propios PRs (abiertos y ya mergeados): fixes sugeridos, preguntas, observaciones, sean bloqueantes o no. Cada comentario se resuelve: se aplica el cambio (en la misma rama si el PR sigue abierto, o en una rama `fix/` nueva si ya se mergeó) o se responde explicando por qué no. Ningún comentario queda sin respuesta.
 
 ## Nombres de rama
 
@@ -48,10 +50,13 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 10. Verificar build y tests, y cada criterio de aceptación de la tarea en `docs/tareas-divididas.md`
 11. Review propio contra los criterios de calidad
 12. Si falla: corregir y volver al 9 (máx. 3 iteraciones)
-13. Si está bloqueada: mover a Blocked, avisar y parar
-14. Commit, push de la rama, PR hacia development; mover a QA con comentario + URL del PR
-15. Al mergearse el PR, mover a Hecho con comentario
-16. Devolver al usuario: URL del PR, resumen, archivos modificados
+13. Revisar los comentarios de los compañeros en tus PRs propios (abiertos y mergeados) y resolver cada uno, bloqueante o no (regla 8)
+14. Prueba manual local: si hay algo que se pueda probar a mano, pasar los pasos al usuario y esperar su confirmación (regla 7)
+15. Si está bloqueada: mover a Blocked, avisar y parar
+16. Commit, push de la rama, PR hacia development; mover a QA con comentario + URL del PR
+17. Atender los comentarios que lleguen al PR (compañeros y Copilot) hasta que se mergee
+18. Al mergearse el PR, mover a Hecho con comentario
+19. Devolver al usuario: URL del PR, resumen, archivos modificados
 ```
 
 ### Trello: movimientos y comentarios
@@ -60,9 +65,9 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 |------|--------|---------------------|
 | 3 | Backlog → Sprint → Todo | `📋 Movido a Sprint` / `📝 Listo para implementar` |
 | 6 | Todo → En Progreso | `🚀 Iniciado por [quien] — [fecha]` |
-| 13 | → Blocked | `⚠️ BLOCKED: [razón]` |
-| 14 | En Progreso → QA | `🔎 En revisión — PR: [url]` |
-| 15 | QA → Hecho | `✅ Completado — PR: [url]` |
+| 15 | → Blocked | `⚠️ BLOCKED: [razón]` |
+| 16 | En Progreso → QA | `🔎 En revisión — PR: [url]` |
+| 18 | QA → Hecho | `✅ Completado — PR: [url]` |
 
 Si no se encuentra la tarjeta: informar al usuario y terminar.
 
@@ -77,7 +82,7 @@ gh pr create --base development --head feature/US-XX-nombre-descriptivo \
   --title "feat(backend): US-XX descripcion" --body "..."
 ```
 
-El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó.
+El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó (tests y prueba manual local, o "sin prueba manual" con el motivo).
 
 ## Tareas divididas y tarjetas
 
@@ -113,6 +118,8 @@ El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó
 ### General
 - [ ] El CI del PR está en verde (`backend`, `branch-name`, `secrets-scan`) y se atendió la review de Copilot
 - [ ] Cada criterio de aceptación de la tarea en `docs/tareas-divididas.md` está cumplido
+- [ ] Probado a mano en local por la persona responsable (si aplica)
+- [ ] Sin comentarios de compañeros pendientes en tus PRs propios
 - [ ] SOLID / DRY / KISS
 - [ ] Naming claro y consistente
 - [ ] Sin magic numbers/strings, imports ni variables sin usar
