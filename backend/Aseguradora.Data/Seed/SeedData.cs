@@ -25,6 +25,8 @@ public static class SeedData
 
     public static void Apply(ModelBuilder modelBuilder)
     {
+        IdentityRolesSeed.Apply(modelBuilder);
+
         modelBuilder.Entity<Plan>().HasData(new Plan
         {
             Id = PlanRcId,

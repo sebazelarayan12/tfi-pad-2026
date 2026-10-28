@@ -1,10 +1,12 @@
+using Aseguradora.Data.Identity;
 using Aseguradora.Data.Seed;
 using Aseguradora.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Aseguradora.Data;
 
-public class AseguradoraDbContext(DbContextOptions<AseguradoraDbContext> options) : DbContext(options)
+public class AseguradoraDbContext(DbContextOptions<AseguradoraDbContext> options) : IdentityDbContext<Usuario>(options)
 {
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Vehiculo> Vehiculos => Set<Vehiculo>();
@@ -19,6 +21,7 @@ public class AseguradoraDbContext(DbContextOptions<AseguradoraDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AseguradoraDbContext).Assembly);
         SeedData.Apply(modelBuilder);
     }
