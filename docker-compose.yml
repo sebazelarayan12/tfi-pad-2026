@@ -1,6 +1,8 @@
 services:
   api:
     build: ./backend
+    # Comes back after a VM reboot; a manual `docker compose stop` still keeps it stopped.
+    restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       # Zone of the daily expiry job; the image ships tzdata for it.
@@ -41,6 +43,7 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
@@ -58,6 +61,7 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     profiles: ["tunnel"]
+    restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
