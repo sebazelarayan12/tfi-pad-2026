@@ -44,6 +44,16 @@ public class ExceptionMiddlewareTests
     }
 
     [Fact]
+    public async Task CredencialesInvalidas_Responde401ConMensajeGenerico()
+    {
+        var (status, contentType, body) = await InvokeAsync(new CredencialesInvalidasException());
+
+        Assert.Equal(401, status);
+        Assert.StartsWith("application/problem+json", contentType);
+        Assert.Equal(CredencialesInvalidasException.Mensaje, body.GetProperty("detail").GetString());
+    }
+
+    [Fact]
     public async Task TransicionInvalida_Responde400ProblemDetails()
     {
         var (status, contentType, body) = await InvokeAsync(new TransicionInvalidaException("Transición no permitida."));

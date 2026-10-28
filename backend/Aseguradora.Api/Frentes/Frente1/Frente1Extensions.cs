@@ -1,4 +1,5 @@
 using Aseguradora.Api.Security;
+using Aseguradora.Application.Security;
 using Aseguradora.Data.Identity;
 using Aseguradora.Data.Seed;
 
@@ -15,6 +16,12 @@ public static class Frente1Extensions
         services.AddSeguridad(config);
         services.AddIdentityAseguradora();
         services.AddScoped<ISeeder, AdministradorInicialSeeder>();
+
+        // CU01 and CU03: Application rules over an Identity-backed store, and the JWT issuer.
+        services.AddScoped<IUsuarioStore, IdentityUsuarioStore>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<AutenticacionService>();
+
         return services;
     }
 }
