@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Aseguradora.Api.Middleware;
 using Aseguradora.Application.Exceptions;
+using Aseguradora.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -40,6 +41,26 @@ public class ExceptionMiddlewareTests
         Assert.Equal(expectedStatus, body.GetProperty("status").GetInt32());
         Assert.Equal("motivo de prueba", body.GetProperty("detail").GetString());
         Assert.Equal("/api/test", body.GetProperty("instance").GetString());
+    }
+
+    [Fact]
+    public async Task TransicionInvalida_Responde400ProblemDetails()
+    {
+        var (status, contentType, body) = await InvokeAsync(new TransicionInvalidaException("Transición no permitida."));
+
+        Assert.Equal(400, status);
+        Assert.StartsWith("application/problem+json", contentType);
+        Assert.Equal(400, body.GetProperty("status").GetInt32());
+        Assert.Equal("Transición no permitida.", body.GetProperty("detail").GetString());
+    }
+
+    [Fact]
+    public async Task ReglaDeDominio_Responde400ProblemDetails()
+    {
+        var (status, _, body) = await InvokeAsync(new ReglaDeDominioException("Vigencia inválida."));
+
+        Assert.Equal(400, status);
+        Assert.Equal("Vigencia inválida.", body.GetProperty("detail").GetString());
     }
 
     [Fact]

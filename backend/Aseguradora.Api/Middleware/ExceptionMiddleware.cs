@@ -1,4 +1,5 @@
 using Aseguradora.Application.Exceptions;
+using Aseguradora.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aseguradora.Api.Middleware;
@@ -48,6 +49,8 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
     {
         NotFoundException => (StatusCodes.Status404NotFound, exception.Message),
         BusinessRuleException => (StatusCodes.Status400BadRequest, exception.Message),
+        // Also covers TransicionInvalidaException, its subclass.
+        ReglaDeDominioException => (StatusCodes.Status400BadRequest, exception.Message),
         ExternalServiceException => (StatusCodes.Status502BadGateway, exception.Message),
         // Never leak internal details of unexpected failures.
         _ => (StatusCodes.Status500InternalServerError, UnexpectedErrorMessage)
