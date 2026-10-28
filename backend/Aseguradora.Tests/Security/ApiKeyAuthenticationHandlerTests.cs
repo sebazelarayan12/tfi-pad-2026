@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Aseguradora.Tests.Fixtures;
 using Aseguradora.Tests.Support;
 
 namespace Aseguradora.Tests.Security;
@@ -14,7 +15,7 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task Clave_correcta_autentica_con_el_proveedor()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TokenDePrueba.ApiKeyHeader, TokenDePrueba.ApiKeyValida("pasarela2"));
 
@@ -28,7 +29,7 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task Clave_ausente_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
 
         var response = await factory.CreateClient().GetAsync(ProbeApiKey);
 
@@ -38,7 +39,7 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task Clave_incorrecta_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TokenDePrueba.ApiKeyHeader, TokenDePrueba.ApiKeyValida("pasarela1") + "x");
 
@@ -50,7 +51,7 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task Clave_con_espacios_en_el_header_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = factory.CreateClient();
         var request = new HttpRequestMessage(HttpMethod.Get, ProbeApiKey);
         request.Headers.TryAddWithoutValidation(

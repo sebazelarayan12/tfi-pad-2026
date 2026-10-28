@@ -1,3 +1,4 @@
+using Aseguradora.Tests.Fixtures;
 using Aseguradora.Tests.Support;
 using Microsoft.Extensions.Options;
 
@@ -12,7 +13,7 @@ public class OpcionesValidacionTests
     [Fact]
     public void Arranque_sin_Jwt_Key_falla()
     {
-        using var factory = new AseguradoraWebFactoryTemporal(claveJwt: null);
+        using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true, ClaveJwt = null };
 
         var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
 
@@ -22,10 +23,11 @@ public class OpcionesValidacionTests
     [Fact]
     public void Arranque_con_Jwt_Key_corta_falla()
     {
-        using var factory = new AseguradoraWebFactoryTemporal(new Dictionary<string, string>
+        using var factory = new AseguradoraWebFactory
         {
-            ["Jwt:Key"] = new string('x', 31)
-        });
+            UsarAutenticacionReal = true,
+            Ajustes = { ["Jwt:Key"] = new string('x', 31) }
+        };
 
         var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
 
@@ -35,7 +37,7 @@ public class OpcionesValidacionTests
     [Fact]
     public void Arranque_con_Jwt_Key_valida_inicia()
     {
-        using var factory = new AseguradoraWebFactoryTemporal();
+        using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
 
         using var client = factory.CreateClient();
 

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Aseguradora.Application.Security;
+using Aseguradora.Tests.Fixtures;
 using Aseguradora.Tests.Support;
 
 namespace Aseguradora.Tests.Security;
@@ -19,7 +20,7 @@ public class AutorizacionTests
     [Fact]
     public async Task Empleado_sin_credenciales_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
 
         var response = await factory.CreateClient().GetAsync(ProbeEmpleado);
 
@@ -29,7 +30,7 @@ public class AutorizacionTests
     [Fact]
     public async Task Rol_Empleado_en_Admin_responde_403()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = ClienteConToken(factory, Roles.Empleado);
 
         var response = await client.GetAsync(ProbeAdmin);
@@ -40,7 +41,7 @@ public class AutorizacionTests
     [Fact]
     public async Task Rol_Administrador_pasa_Empleado_y_Admin()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = ClienteConToken(factory, Roles.Administrador);
 
         var empleado = await client.GetAsync(ProbeEmpleado);
@@ -54,7 +55,7 @@ public class AutorizacionTests
     public async Task Rol_Empleado_pasa_politica_Empleado()
     {
         // Regression: the JWT handler must expose the role as ClaimTypes.Role.
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = ClienteConToken(factory, Roles.Empleado);
 
         var response = await client.GetAsync(ProbeEmpleado);
@@ -65,7 +66,7 @@ public class AutorizacionTests
     [Fact]
     public async Task Token_expirado_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = ClienteConToken(factory, Roles.Empleado, TimeSpan.FromMinutes(-10));
 
         var response = await client.GetAsync(ProbeEmpleado);
@@ -76,7 +77,7 @@ public class AutorizacionTests
     [Fact]
     public async Task ApiKey_valida_pasa_politica_ApiKey_con_claim_proveedor()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TokenDePrueba.ApiKeyHeader, TokenDePrueba.ApiKeyValida(TokenDePrueba.ProveedorValido));
 
@@ -90,7 +91,7 @@ public class AutorizacionTests
     [Fact]
     public async Task ApiKey_en_politica_Empleado_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TokenDePrueba.ApiKeyHeader, TokenDePrueba.ApiKeyValida(TokenDePrueba.ProveedorValido));
 
@@ -102,7 +103,7 @@ public class AutorizacionTests
     [Fact]
     public async Task JWT_en_politica_ApiKey_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var client = ClienteConToken(factory, Roles.Administrador);
 
         var response = await client.GetAsync(ProbeApiKey);
@@ -113,7 +114,7 @@ public class AutorizacionTests
     [Fact]
     public async Task ApiKey_ausente_o_incorrecta_responde_401()
     {
-        await using var factory = new AseguradoraWebFactoryTemporal();
+        await using var factory = new AseguradoraWebFactory { UsarAutenticacionReal = true };
         var sinClave = factory.CreateClient();
         var incorrecta = factory.CreateClient();
         incorrecta.DefaultRequestHeaders.Add(TokenDePrueba.ApiKeyHeader, "clave-que-no-existe");
@@ -126,7 +127,7 @@ public class AutorizacionTests
     }
 
     private static HttpClient ClienteConToken(
-        AseguradoraWebFactoryTemporal factory,
+        AseguradoraWebFactory factory,
         string rol,
         TimeSpan? vigencia = null)
     {
