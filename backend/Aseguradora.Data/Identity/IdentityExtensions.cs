@@ -14,6 +14,7 @@ public static class IdentityExtensions
         services
             .AddIdentityCore<Usuario>()
             .AddRoles<IdentityRole>()
+            .AddErrorDescriber<IdentityErrorDescriberEspanol>()
             .AddEntityFrameworkStores<AseguradoraDbContext>();
         return services;
     }

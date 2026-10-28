@@ -26,6 +26,7 @@ public class AutenticacionServiceTests
         Assert.True(respuesta.ExpiraEn > DateTimeOffset.UtcNow);
         Assert.Equal(UsuarioStoreFalso.EmailAdministrador, tokens.UsuarioRecibido?.Email);
         Assert.Equal(Roles.Administrador, tokens.RolRecibido);
+        Assert.Equal(UsuarioStoreFalso.EmailAdministrador, Assert.Single(store.Verificaciones).Email);
     }
 
     [Fact]
@@ -38,6 +39,21 @@ public class AutenticacionServiceTests
             () => servicio.LoginAsync(solicitud));
 
         Assert.Equal(CredencialesInvalidasException.Mensaje, excepcion.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ConEmailInexistente_DelegaLaVerificacionDePassword()
+    {
+        var store = new UsuarioStoreFalso();
+        var servicio = new AutenticacionService(store, new TokenServiceFalso());
+        var solicitud = new LoginRequest("no-existe@example.com", "Password_Prueba1!");
+
+        await Assert.ThrowsAsync<CredencialesInvalidasException>(
+            () => servicio.LoginAsync(solicitud));
+
+        var verificacion = Assert.Single(store.Verificaciones);
+        Assert.Null(verificacion.Email);
+        Assert.Equal(solicitud.Password, verificacion.Password);
     }
 
     [Fact]

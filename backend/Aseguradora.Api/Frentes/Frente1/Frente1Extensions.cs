@@ -2,6 +2,7 @@ using Aseguradora.Api.Security;
 using Aseguradora.Application.Security;
 using Aseguradora.Data.Identity;
 using Aseguradora.Data.Seed;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Aseguradora.Api.Frentes.Frente1;
 
@@ -19,6 +20,9 @@ public static class Frente1Extensions
 
         // CU01 and CU03: Application rules over an Identity-backed store, and the JWT issuer.
         services.AddScoped<IUsuarioStore, IdentityUsuarioStore>();
+        // US-T-05 (PR #19) registers TimeProvider in Program.cs; TryAdd keeps this branch working
+        // before that merge without overriding the shared registration afterwards.
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<AutenticacionService>();
 

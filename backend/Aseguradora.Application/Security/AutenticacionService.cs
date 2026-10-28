@@ -17,14 +17,18 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
 
     /// <summary>
     /// Validates the credentials and returns a token with the user's role. An unknown email and
-    /// a wrong password fail with the same <see cref="CredencialesInvalidasException"/>.
+    /// a wrong password fail with the same <see cref="CredencialesInvalidasException"/> and run
+    /// the same password hash work, so the response does not reveal which emails exist.
     /// </summary>
     public async Task<LoginResponse> LoginAsync(LoginRequest solicitud, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(solicitud);
 
         var usuario = await _usuarios.BuscarPorEmailAsync(solicitud.Email, ct);
-        if (usuario is null || !await _usuarios.VerificarPasswordAsync(usuario, solicitud.Password, ct))
+        // Verify even when the email does not exist: the store checks the password against a
+        // dummy hash, so both paths take a similar time (no account enumeration by response time).
+        var passwordValida = await _usuarios.VerificarPasswordAsync(usuario, solicitud.Password, ct);
+        if (usuario is null || !passwordValida)
             throw new CredencialesInvalidasException();
 
         var roles = await _usuarios.ObtenerRolesAsync(usuario, ct);

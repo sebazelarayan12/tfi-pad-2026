@@ -16,6 +16,7 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
 
     private readonly Dictionary<string, Cuenta> _cuentas = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Creacion> _creaciones = [];
+    private readonly List<Verificacion> _verificaciones = [];
     private int _siguienteId = 1;
 
     public UsuarioStoreFalso()
@@ -26,6 +27,9 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
 
     /// <summary>Data of every successful <see cref="CrearAsync"/> call, in order.</summary>
     public IReadOnlyList<Creacion> Creaciones => _creaciones;
+
+    /// <summary>Every <see cref="VerificarPasswordAsync"/> call, in order.</summary>
+    public IReadOnlyList<Verificacion> Verificaciones => _verificaciones;
 
     /// <summary>Id of an account that already exists in the fake store.</summary>
     public string IdDe(string email) => _cuentas[email].Id;
@@ -42,10 +46,14 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
         Task.FromResult(_cuentas.TryGetValue(email, out var cuenta) ? cuenta.ACuenta() : null);
 
     public Task<bool> VerificarPasswordAsync(
-        UsuarioCuenta usuario,
+        UsuarioCuenta? usuario,
         string password,
-        CancellationToken ct = default) =>
-        Task.FromResult(_cuentas.Values.Any(cuenta => cuenta.Id == usuario.Id && cuenta.Password == password));
+        CancellationToken ct = default)
+    {
+        _verificaciones.Add(new(usuario?.Email, password));
+        return Task.FromResult(usuario is not null &&
+            _cuentas.Values.Any(cuenta => cuenta.Id == usuario.Id && cuenta.Password == password));
+    }
 
     public Task<IReadOnlyList<string>> ObtenerRolesAsync(
         UsuarioCuenta usuario,
@@ -76,6 +84,8 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
     }
 
     public sealed record Creacion(string Email, string Password, string Rol, string Nombre, string Apellido);
+
+    public sealed record Verificacion(string? Email, string Password);
 
     private sealed record Cuenta(string Id, string Email, string Rol, string Password)
     {

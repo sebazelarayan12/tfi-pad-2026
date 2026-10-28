@@ -10,6 +10,14 @@ namespace Aseguradora.Data.Identity;
 /// </summary>
 public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuarioStore
 {
+    // Dummy hash for unknown emails: verifying it costs the same PBKDF2 work as a real
+    // password, so response time does not reveal whether the account exists. It uses the
+    // default Identity hasher, which is the one configured in AddIdentityAseguradora.
+    private static readonly Usuario UsuarioFicticio = new();
+
+    private static readonly Lazy<string> HashFicticio = new(() =>
+        new PasswordHasher<Usuario>().HashPassword(UsuarioFicticio, Guid.NewGuid().ToString("N")));
+
     public async Task<UsuarioCuenta?> BuscarPorEmailAsync(string email, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -18,12 +26,17 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
     }
 
     public async Task<bool> VerificarPasswordAsync(
-        UsuarioCuenta usuario,
+        UsuarioCuenta? usuario,
         string password,
         CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(usuario);
         ct.ThrowIfCancellationRequested();
+
+        if (usuario is null)
+        {
+            usuarios.PasswordHasher.VerifyHashedPassword(UsuarioFicticio, HashFicticio.Value, password);
+            return false;
+        }
 
         var entidad = await usuarios.FindByIdAsync(usuario.Id);
         return entidad is not null && await usuarios.CheckPasswordAsync(entidad, password);
