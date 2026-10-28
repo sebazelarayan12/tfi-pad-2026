@@ -10,6 +10,9 @@ services:
       # Local compose creates the database on startup; production sets it to false and runs --migrar.
       Migraciones__AplicarAlIniciar: ${MIGRACIONES_APLICAR_AL_INICIAR:-true}
       Jwt__Key: ${JWT_KEY}
+      # Initial administrator created on startup (US-F1-02). Leave empty to skip it.
+      Seed__Administrador__Email: ${SEED_ADMINISTRADOR_EMAIL:-}
+      Seed__Administrador__Password: ${SEED_ADMINISTRADOR_PASSWORD:-}
       # One key per external group, named after the provider it authenticates.
       ApiKeys__pasarela1: ${APIKEY_PASARELA1}
       ApiKeys__pasarela2: ${APIKEY_PASARELA2}
