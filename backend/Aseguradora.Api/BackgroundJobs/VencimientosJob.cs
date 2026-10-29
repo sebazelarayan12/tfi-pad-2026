@@ -80,14 +80,15 @@ public sealed class VencimientosJob(
         if (control is not null && control.UltimaFechaProcesada >= hoy)
             return false;
 
-        var servicio = scope.ServiceProvider.GetRequiredService<IVencimientosService>();
-        var resumen = await servicio.EjecutarAsync(hoy, ct);
-
+        // Left pending in the scope's unit of work: the single SaveChanges of the service stores it with
+        // the day's changes, so a failure never leaves the changes saved with the old control date.
         if (control is null)
             await controles.AddAsync(new ControlProceso { Nombre = NombreProceso, UltimaFechaProcesada = hoy }, ct);
         else
             control.UltimaFechaProcesada = hoy;
-        await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(ct);
+
+        var servicio = scope.ServiceProvider.GetRequiredService<IVencimientosService>();
+        var resumen = await servicio.EjecutarAsync(hoy, ct);
 
         logger.LogInformation(
             "Vencimientos del {Fecha}: {Cuotas} cuotas vencidas, {Canceladas} pólizas canceladas, {Suspendidas} suspendidas y {Vencidas} vencidas.",

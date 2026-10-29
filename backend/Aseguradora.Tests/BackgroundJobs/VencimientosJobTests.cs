@@ -39,6 +39,34 @@ public sealed class VencimientosJobTests : IDisposable
     }
 
     [Fact]
+    public async Task GuardaCambiosYControlEnUnSoloSaveChanges()
+    {
+        var cuotaId = await CrearCuotaVencidaAsync();
+        var guardados = new List<int>();
+
+        await CrearJob(OnceDeDiciembre, guardados: guardados).EjecutarSiCorrespondeAsync(CancellationToken.None);
+
+        // One SaveChanges stores the overdue installment and the control row together.
+        Assert.Single(guardados);
+        await using var context = _fixture.CreateContext();
+        Assert.Equal(EstadoCuota.Vencida, (await context.Cuotas.SingleAsync(c => c.Id == cuotaId)).Estado);
+        Assert.True(await context.Set<ControlProceso>().AnyAsync(c => c.Nombre == VencimientosJob.NombreProceso));
+    }
+
+    [Fact]
+    public async Task SiFallaElGuardado_NoQuedaNiElControlNiLosCambios()
+    {
+        var cuotaId = await CrearCuotaVencidaAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CrearJob(OnceDeDiciembre, fallaAlGuardar: true).EjecutarSiCorrespondeAsync(CancellationToken.None));
+
+        await using var context = _fixture.CreateContext();
+        Assert.Equal(EstadoCuota.Pendiente, (await context.Cuotas.SingleAsync(c => c.Id == cuotaId)).Estado);
+        Assert.False(await context.Set<ControlProceso>().AnyAsync());
+    }
+
+    [Fact]
     public async Task NoCorreSiYaProcesoHoy()
     {
         var cuotaId = await CrearCuotaVencidaAsync();
@@ -150,13 +178,15 @@ public sealed class VencimientosJobTests : IDisposable
         Assert.False(await context.Set<ControlProceso>().AnyAsync());
     }
 
-    private VencimientosJob CrearJob(DateTimeOffset ahora, IConfiguration? configuracion = null)
+    private VencimientosJob CrearJob(
+        DateTimeOffset ahora, IConfiguration? configuracion = null, List<int>? guardados = null, bool fallaAlGuardar = false)
     {
         var reloj = new RelojFalso(ahora);
         var services = new ServiceCollection();
         services.AddScoped<AseguradoraDbContext>(_ => _fixture.CreateContext());
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IUnitOfWork>(sp =>
+            new UnitOfWorkObservado(new UnitOfWork(sp.GetRequiredService<AseguradoraDbContext>()), guardados, fallaAlGuardar));
         services.AddScoped<IVencimientosService, VencimientosService>();
         services.AddSingleton<TimeProvider>(reloj);
         var proveedor = services.BuildServiceProvider();
@@ -193,5 +223,19 @@ public sealed class VencimientosJobTests : IDisposable
         context.Polizas.Add(poliza);
         await context.SaveChangesAsync();
         return cuota2.Id;
+    }
+
+    /// <summary>Records each SaveChanges, or fails it, to check how the job saves.</summary>
+    private sealed class UnitOfWorkObservado(IUnitOfWork real, List<int>? guardados, bool falla) : IUnitOfWork
+    {
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            if (falla)
+                throw new InvalidOperationException("Falla simulada al guardar.");
+
+            var filas = await real.SaveChangesAsync(cancellationToken);
+            guardados?.Add(filas);
+            return filas;
+        }
     }
 }

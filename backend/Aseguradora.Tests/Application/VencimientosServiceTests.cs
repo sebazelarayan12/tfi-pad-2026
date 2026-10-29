@@ -36,6 +36,23 @@ public sealed class VencimientosServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UltimaCuotaDePolizaYaVencida_RecibeRecargo()
+    {
+        // FechaFin (15/12) falls before the last installment (10/01): the policy expired first and left
+        // the open set, but its unpaid installment still gets RN08.
+        var poliza = await CrearPolizaAsync(
+            EstadoPoliza.Vencida, cuotasPagadas: 2, cuotas: 3, fechaFin: new DateOnly(2026, 12, 15));
+
+        var resumen = await EjecutarAsync(new DateOnly(2027, 1, 11));
+
+        var cuota3 = await CuotaAsync(poliza, 3);
+        Assert.Equal(EstadoCuota.Vencida, cuota3.Estado);
+        Assert.Equal(600.00m, cuota3.Recargo);
+        Assert.Equal(EstadoPoliza.Vencida, (await PolizaAsync(poliza)).Estado);
+        Assert.True(resumen.CuotasVencidas >= 1);
+    }
+
+    [Fact]
     public async Task SinRecargoEnDiaDeVencimiento()
     {
         var poliza = await CrearPolizaAsync(EstadoPoliza.Vigente, cuotasPagadas: 1, cuotas: 3);

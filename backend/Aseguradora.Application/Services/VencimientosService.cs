@@ -6,7 +6,8 @@ namespace Aseguradora.Application.Services;
 
 /// <summary>
 /// Daily expiry process (CU14). Loads the policies that can still change (Pendiente, Vigente and
-/// Suspendida) with their installments, applies the rules in the order of the spec and saves once.
+/// Suspendida) with their installments, applies the rules in the order of the spec and saves once,
+/// together with any change the caller left pending in the same unit of work.
 /// Every transition only fires from its source state, so a second run on the same day is a no-op.
 /// </summary>
 public sealed class VencimientosService(
@@ -17,7 +18,7 @@ public sealed class VencimientosService(
 {
     private const int CuotasVencidasParaSuspender = 2;
     private const string MotivoCancelacionPrimeraCuota =
-        "Cancelada automáticamente: la cuota 1 venció sin pagarse (RN19).";
+        "Cuota 1 vencida sin pago (RN19).";
 
     private static readonly EstadoPoliza[] EstadosQueCambian =
         [EstadoPoliza.Pendiente, EstadoPoliza.Vigente, EstadoPoliza.Suspendida];
@@ -30,14 +31,16 @@ public sealed class VencimientosService(
         var cuotasPorPoliza = (await cuotas.FindAsync(c => ids.Contains(c.PolizaId), ct))
             .ToLookup(c => c.PolizaId);
 
-        // 1. RN08: unpaid installments past their due date. Vencer only acts on Pendiente ones, so the
-        //    surcharge is never applied twice.
+        // 1. RN08: every unpaid installment past its due date, also those of a policy that is no longer
+        //    open (the last installment can fall due after FechaFin). The tracked instances are the same
+        //    as in the lookup above, so the rules below see the new states. Vencer only acts on
+        //    Pendiente ones, so the surcharge is never applied twice.
+        var atrasadas = await cuotas.FindAsync(c => c.Estado == EstadoCuota.Pendiente && c.FechaVencimiento < hoy, ct);
         var cuotasVencidas = 0;
-        foreach (var cuota in cuotasPorPoliza.SelectMany(grupo => grupo))
+        foreach (var cuota in atrasadas)
         {
-            var estadoAnterior = cuota.Estado;
             cuota.Vencer(hoy);
-            if (cuota.Estado != estadoAnterior)
+            if (cuota.Estado == EstadoCuota.Vencida)
                 cuotasVencidas++;
         }
 
