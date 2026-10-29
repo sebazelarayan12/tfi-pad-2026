@@ -1,8 +1,10 @@
 using Aseguradora.Api.BackgroundJobs;
+using Aseguradora.Application.PagoFacil;
 using Aseguradora.Application.Services;
 using Aseguradora.Data.Numeracion;
 using Aseguradora.Data.Seed;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Aseguradora.Api.Frentes.Frente3;
 
@@ -27,6 +29,14 @@ public static class Frente3Extensions
         // CU14: daily expiry process (US-F3-05).
         services.AddScoped<IVencimientosService, VencimientosService>();
         services.AddHostedService<VencimientosJob>();
+
+        // CU20: Pago Fácil coupon (US-F3-06). A missing company code fails on the first coupon,
+        // with the message of PagoFacilOpciones, without stopping the rest of the API.
+        services.AddOptions<PagoFacilOpciones>()
+            .Bind(config.GetSection(PagoFacilOpciones.Seccion))
+            .ValidateDataAnnotations();
+        services.AddScoped(sp => sp.GetRequiredService<IOptions<PagoFacilOpciones>>().Value);
+        services.AddScoped<ICuponPagoFacilService, CuponPagoFacilService>();
 
         return services;
     }
