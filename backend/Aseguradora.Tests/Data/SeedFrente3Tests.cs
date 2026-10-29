@@ -4,6 +4,7 @@ using Aseguradora.Data.Repositories;
 using Aseguradora.Data.Seed;
 using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
+using Aseguradora.Tests.Builders;
 using Aseguradora.Tests.Fakes;
 using Aseguradora.Tests.Support;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +66,7 @@ public sealed class SeedFrente3Tests : IDisposable
     {
         await using var context = _fixture.CreateContext();
         var cotizacion = await SeedFrente3.AgregarCotizacionDePrueba(context, CancellationToken.None);
+        Assert.NotNull(cotizacion);
         var service = new PolizaService(
             new EfRepository<Cotizacion>(context),
             new EfRepository<Cliente>(context),
@@ -81,6 +83,35 @@ public sealed class SeedFrente3Tests : IDisposable
         Assert.Equal(EstadoPoliza.Pendiente, poliza.Estado);
         Assert.Equal(SeedFrente3.PrimaMensualPrueba, poliza.PrimaMensual);
         Assert.Equal(6, poliza.Cuotas.Count);
+    }
+
+    [Theory]
+    [InlineData("dni")]
+    [InlineData("email")]
+    [InlineData("patente")]
+    public async Task Sembrar_DatoUnicoOcupadoPorOtro_NoAgregaNadaNiFalla(string ocupado)
+    {
+        await using (var context = _fixture.CreateContext())
+        {
+            // Another client (with its own id) already uses the DNI, email or plate of the test data.
+            var otro = new ClienteBuilder().Construir();
+            if (ocupado == "dni")
+                otro.Dni = "31000001";
+            if (ocupado == "email")
+                otro.Email = "maria.prueba.f3@example.com";
+            context.Clientes.Add(otro);
+            if (ocupado == "patente")
+                context.Vehiculos.Add(new VehiculoBuilder().DeCliente(otro).Con(v => v.Patente = "AC456EF").Construir());
+            await context.SaveChangesAsync();
+        }
+
+        await using (var context = _fixture.CreateContext())
+            await new SeedFrente3(context, new Entorno(Environments.Development))
+                .SembrarAsync(EmptyServiceProvider.Instance, CancellationToken.None);
+
+        await using var verificacion = _fixture.CreateContext();
+        Assert.False(await verificacion.Cotizaciones.AnyAsync(c => c.Id == SeedFrente3.CotizacionPruebaId));
+        Assert.False(await verificacion.Clientes.AnyAsync(c => c.Id == SeedFrente3.ClientePruebaId));
     }
 
     private sealed class Entorno(string nombre) : IHostEnvironment

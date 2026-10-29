@@ -26,6 +26,8 @@ public sealed class SeedFrente3(AseguradoraDbContext context, IHostEnvironment e
     public const decimal PrimaMensualPrueba = 12000.00m;
 
     private const string PatentePrueba = "AC456EF";
+    private const string DniPrueba = "31000001";
+    private const string EmailPrueba = "maria.prueba.f3@example.com";
     private const int AnioVehiculoPrueba = 2022;
     private const int EdadConductorPrueba = 35;
 
@@ -44,12 +46,22 @@ public sealed class SeedFrente3(AseguradoraDbContext context, IHostEnvironment e
     }
 
     /// <summary>
-    /// Inserts the test client, vehicle and quote that are missing, and returns the quote.
+    /// Inserts the test client, vehicle and quote that are missing, and returns the quote. Returns null,
+    /// inserting nothing, when another client or vehicle already uses the test DNI, email or plate.
     /// Public so tests can use it without a Development host.
     /// </summary>
-    public static async Task<Cotizacion> AgregarCotizacionDePrueba(AseguradoraDbContext context, CancellationToken ct)
+    public static async Task<Cotizacion?> AgregarCotizacionDePrueba(AseguradoraDbContext context, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(context);
+
+        // Another record already holds the DNI, email or plate of the test data: inserting it would break
+        // the unique indexes and stop the startup, so the test data is left out.
+        var datosOcupados =
+            await context.Clientes.AnyAsync(
+                c => c.Id != ClientePruebaId && (c.Dni == DniPrueba || c.Email == EmailPrueba), ct)
+            || await context.Vehiculos.AnyAsync(v => v.Id != VehiculoPruebaId && v.Patente == PatentePrueba, ct);
+        if (datosOcupados)
+            return null;
 
         if (!await context.Clientes.AnyAsync(c => c.Id == ClientePruebaId, ct))
             context.Clientes.Add(CrearCliente());
@@ -73,13 +85,13 @@ public sealed class SeedFrente3(AseguradoraDbContext context, IHostEnvironment e
     private static Cliente CrearCliente() => new()
     {
         Id = ClientePruebaId,
-        Dni = "31000001",
+        Dni = DniPrueba,
         Cuil = "20310000015",
         Nombre = "María",
         Apellido = "Prueba Emisión",
         FechaNacimiento = new DateOnly(1991, 5, 10),
         Sexo = 'F',
-        Email = "maria.prueba.f3@example.com",
+        Email = EmailPrueba,
         Calle = "Congreso",
         Numero = "500",
         Localidad = "San Miguel de Tucumán",

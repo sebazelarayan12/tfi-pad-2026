@@ -7,10 +7,12 @@ using Aseguradora.Data.Seed;
 using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Aseguradora.Domain.Exceptions;
+using Aseguradora.Domain.Interfaces;
 using Aseguradora.Tests.Builders;
 using Aseguradora.Tests.Data;
 using Aseguradora.Tests.Fakes;
 using Aseguradora.Tests.Support;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Aseguradora.Tests.Application;
@@ -315,15 +317,91 @@ public sealed class PolizaServiceEmisionTests : IDisposable
         Assert.Equal("POL-0000002", polizaDos.Numero);
     }
 
-    private PolizaService CrearServicio(AseguradoraDbContext context) => new(
+    [Fact]
+    public async Task Emitir_ArgumentoNulo_Lanza()
+    {
+        await using var context = _fixture.CreateContext();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => CrearServicio(context).EmitirAsync(null!, CancellationToken.None));
+        Assert.Equal(0, _numerador.Entregados);
+    }
+
+    [Theory]
+    [InlineData(EstadoPoliza.Pendiente)]
+    [InlineData(EstadoPoliza.Vigente)]
+    [InlineData(EstadoPoliza.Suspendida)]
+    public async Task Emitir_CarreraMismoVehiculo_ElIndiceFrenaLaSegundaConBusinessRule(EstadoPoliza estadoExistente)
+    {
+        await using var context = _fixture.CreateContext();
+        var escenario = await CrearEscenarioAsync(context);
+        // The other issue was saved after this one checked RN04: the check sees no policy yet.
+        await AgregarPolizaExistenteAsync(context, escenario, estadoExistente);
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            CrearServicio(context, verificaPolizas: false).EmitirAsync(
+                new EmitirPolizaRequest(escenario.Cotizacion.Id, 6), CancellationToken.None));
+
+        Assert.Contains("RN04", ex.Message);
+        Assert.IsType<ViolacionUnicidadException>(ex.InnerException);
+    }
+
+    [Fact]
+    public async Task Emitir_CarreraMismaCotizacion_ElIndiceFrenaLaSegundaConBusinessRule()
+    {
+        Escenario escenario;
+        await using (var otraEmision = _fixture.CreateContext())
+        {
+            escenario = await CrearEscenarioAsync(otraEmision);
+            // The other issue with the same quote was saved first, and its policy is already Cancelada,
+            // so only the unique index on CotizacionId can stop this one.
+            otraEmision.Polizas.Add(new PolizaBuilder()
+                .Para(escenario.Cliente, escenario.Vehiculo, escenario.Plan)
+                .Con(p => { p.Estado = EstadoPoliza.Cancelada; p.CotizacionId = escenario.Cotizacion.Id; })
+                .Construir());
+            await otraEmision.SaveChangesAsync();
+        }
+
+        // A separate context, like a separate request: in the same one EF would detach the quote from
+        // the first policy instead of reaching the database.
+        await using var context = _fixture.CreateContext();
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            CrearServicio(context, verificaPolizas: false).EmitirAsync(
+                new EmitirPolizaRequest(escenario.Cotizacion.Id, 6), CancellationToken.None));
+
+        Assert.IsType<ViolacionUnicidadException>(ex.InnerException);
+    }
+
+    private PolizaService CrearServicio(AseguradoraDbContext context, bool verificaPolizas = true) => new(
         new EfRepository<Cotizacion>(context),
         new EfRepository<Cliente>(context),
         new EfRepository<Vehiculo>(context),
         new EfRepository<Plan>(context),
-        new EfRepository<Poliza>(context),
+        verificaPolizas ? new EfRepository<Poliza>(context) : new PolizasQueNoVenOtrasEmisiones(context),
         _numerador,
         new UnitOfWork(context),
         new RelojFalso(Ahora));
+
+    /// <summary>Simulates a concurrent issue: the existence checks run before the other one was saved.</summary>
+    private sealed class PolizasQueNoVenOtrasEmisiones(AseguradoraDbContext context) : IRepository<Poliza>
+    {
+        private readonly EfRepository<Poliza> _real = new(context);
+
+        public Task<bool> AnyAsync(Expression<Func<Poliza, bool>> predicate, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task<Poliza?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            _real.GetByIdAsync(id, cancellationToken);
+        public Task<IReadOnlyList<Poliza>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            _real.GetAllAsync(cancellationToken);
+        public Task<IReadOnlyList<Poliza>> FindAsync(Expression<Func<Poliza, bool>> predicate, CancellationToken cancellationToken = default) =>
+            _real.FindAsync(predicate, cancellationToken);
+        public Task AddAsync(Poliza entity, CancellationToken cancellationToken = default) =>
+            _real.AddAsync(entity, cancellationToken);
+        public void Update(Poliza entity) => _real.Update(entity);
+        public void Remove(Poliza entity) => _real.Remove(entity);
+        public IQueryable<Poliza> Query() => _real.Query();
+    }
 
     private async Task<BusinessRuleException> EmitirYEsperarErrorAsync(AseguradoraDbContext context, Guid cotizacionId)
     {

@@ -62,7 +62,17 @@ public sealed class PolizaService(
         };
 
         await polizas.AddAsync(poliza, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (ViolacionUnicidadException ex)
+        {
+            // Two issues at the same time passed the checks above; the unique indexes on CotizacionId
+            // and on the vehicle's active policy stop the second one (RN04).
+            throw new BusinessRuleException(
+                "Otra emisión con la misma cotización o el mismo vehículo se guardó al mismo tiempo (RN04). Recargue los datos.", ex);
+        }
 
         return Mapear(poliza, vehiculo, plan);
     }
