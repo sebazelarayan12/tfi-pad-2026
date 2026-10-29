@@ -6,7 +6,8 @@ namespace Aseguradora.Api.Middleware;
 
 /// <summary>
 /// Turns exceptions into ProblemDetails responses so controllers need no try/catch.
-/// NotFound -> 404, BusinessRule -> 400, ExternalService -> 502, anything else -> 500.
+/// NotFound -> 404, BusinessRule -> 400, CredencialesInvalidas -> 401, ExternalService -> 502,
+/// anything else -> 500.
 /// </summary>
 public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
 {
@@ -49,6 +50,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
     {
         NotFoundException => (StatusCodes.Status404NotFound, exception.Message),
         BusinessRuleException => (StatusCodes.Status400BadRequest, exception.Message),
+        CredencialesInvalidasException => (StatusCodes.Status401Unauthorized, exception.Message),
         // Also covers TransicionInvalidaException, its subclass.
         ReglaDeDominioException => (StatusCodes.Status400BadRequest, exception.Message),
         ExternalServiceException => (StatusCodes.Status502BadGateway, exception.Message),
