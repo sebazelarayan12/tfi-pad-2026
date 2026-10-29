@@ -23,7 +23,8 @@ public sealed partial record VehiculoAltaRequest
     public string Patente { get; init; } = string.Empty;
 
     /// <summary>Declared use of the vehicle (<see cref="UsoVehiculo.Particular"/> or <see cref="UsoVehiculo.Comercial"/>).</summary>
-    public UsoVehiculo Uso { get; init; }
+    [Required]
+    public UsoVehiculo? Uso { get; init; }
 
     /// <summary>
     /// Normalizes a license plate to trimmed uppercase and checks whether it matches <see cref="PatronPatente"/>.

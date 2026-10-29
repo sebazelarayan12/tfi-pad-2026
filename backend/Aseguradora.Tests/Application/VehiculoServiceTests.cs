@@ -148,6 +148,47 @@ public sealed class VehiculoServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task AltaAsync_con_cliente_inactivo_lanza_BusinessRuleException()
+    {
+        await using var context = _fixture.CreateContext();
+        var cliente = await context.Clientes.SingleAsync(c => c.Id == SeedData.ClienteId);
+        cliente.Activo = false;
+        await context.SaveChangesAsync();
+
+        var service = CrearServicio(context);
+        var cantidadInicial = await context.Vehiculos.CountAsync();
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.AltaAsync(new VehiculoAltaRequest
+            {
+                ClienteId = SeedData.ClienteId,
+                Patente = "AE789FG",
+                Uso = UsoVehiculo.Particular
+            }, CancellationToken.None));
+
+        Assert.Contains("dado de baja", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(cantidadInicial, await context.Vehiculos.CountAsync());
+    }
+
+    [Fact]
+    public async Task AltaAsync_sin_uso_lanza_BusinessRuleException()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var cantidadInicial = await context.Vehiculos.CountAsync();
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.AltaAsync(new VehiculoAltaRequest
+            {
+                ClienteId = SeedData.ClienteId,
+                Patente = "AE789FG",
+                Uso = null
+            }, CancellationToken.None));
+
+        Assert.Equal(cantidadInicial, await context.Vehiculos.CountAsync());
+    }
+
+    [Fact]
     public async Task AltaAsync_con_dnrpa_caido_no_persiste_nada()
     {
         await using var context = _fixture.CreateContext();
