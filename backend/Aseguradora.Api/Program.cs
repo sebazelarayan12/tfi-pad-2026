@@ -1,3 +1,4 @@
+using Aseguradora.Api.Frentes.Frente4;
 using Aseguradora.Api.Comandos;
 using Aseguradora.Api.Frentes.Frente1;
 using Aseguradora.Api.Frentes.Frente2;
@@ -69,7 +70,7 @@ builder.Services.AddData(connectionString);
 builder.Services.AddFrente1(builder.Configuration);
 builder.Services.AddFrente2(builder.Configuration);
 builder.Services.AddFrente3(builder.Configuration);
-// builder.Services.AddFrente4(builder.Configuration);
+builder.Services.AddFrente4(builder.Configuration);
 builder.Services.AddIntegraciones(builder.Configuration);
 
 var app = builder.Build();
