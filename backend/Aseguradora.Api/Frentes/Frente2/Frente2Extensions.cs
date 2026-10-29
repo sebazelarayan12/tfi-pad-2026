@@ -1,4 +1,6 @@
 using Aseguradora.Application.External;
+using Aseguradora.Application.Services;
+using Aseguradora.Data.Seed;
 using Aseguradora.Integrations;
 using Aseguradora.Integrations.Dnrpa;
 
@@ -21,6 +23,8 @@ public static class Frente2Extensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(config);
 
+        services.AddScoped<IPlanService, PlanService>();
+        services.AddScoped<ISeeder, PlanesSeeder>();
         services.AgregarIntegracion<IDnrpaService, DnrpaMockService, DnrpaHttpService>(config, "Dnrpa");
 
         return services;
