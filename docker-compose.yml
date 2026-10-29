@@ -16,6 +16,8 @@ services:
       # Local compose creates the database on startup; production sets it to false and runs --migrar.
       Migraciones__AplicarAlIniciar: ${MIGRACIONES_APLICAR_AL_INICIAR:-true}
       Jwt__Key: ${JWT_KEY}
+      Facturacion__Cuit: ${FACTURACION_CUIT:-}
+      Facturacion__PuntoVenta: ${FACTURACION_PUNTO_VENTA:-0}
       # Initial administrator created on startup (US-F1-02). Leave empty to skip it.
       Seed__Administrador__Email: ${SEED_ADMINISTRADOR_EMAIL:-}
       Seed__Administrador__Password: ${SEED_ADMINISTRADOR_PASSWORD:-}
