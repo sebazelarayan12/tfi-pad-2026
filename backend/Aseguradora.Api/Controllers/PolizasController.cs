@@ -28,7 +28,7 @@ public sealed class PolizasController(IPolizaService polizas) : ControllerBase
     public async Task<ActionResult<PolizaDetalleResponse>> Emitir(EmitirPolizaRequest request, CancellationToken ct)
     {
         var emitida = await _polizas.EmitirAsync(request, ct);
-        return Created($"/api/polizas/{emitida.Id}", emitida);
+        return CreatedAtAction(nameof(Obtener), new { id = emitida.Id }, emitida);
     }
 
     /// <summary>Lists policies, newest first, filtered by state, client and plate (CU11).</summary>

@@ -10,8 +10,11 @@ namespace Aseguradora.Application.Dtos.Polizas;
 /// <param name="ClienteId">Identifier of the policy holder.</param>
 /// <param name="VehiculoId">Identifier of the insured vehicle.</param>
 /// <param name="Patente">License plate of the insured vehicle.</param>
+/// <param name="Marca">Make of the insured vehicle.</param>
+/// <param name="Modelo">Model of the insured vehicle.</param>
 /// <param name="PlanId">Identifier of the coverage plan.</param>
 /// <param name="CodigoPlan">Code of the coverage plan (e.g., RC, TC, TR).</param>
+/// <param name="NombrePlan">Name of the coverage plan.</param>
 /// <param name="CotizacionId">Identifier of the quote the policy was issued from.</param>
 /// <param name="PrimaMensual">Monthly premium copied from the quote (RN06).</param>
 /// <param name="VigenciaMeses">Policy term in months (RN07).</param>
@@ -26,8 +29,11 @@ public sealed record PolizaDetalleResponse(
     Guid ClienteId,
     Guid VehiculoId,
     string Patente,
+    string Marca,
+    string Modelo,
     Guid PlanId,
     string CodigoPlan,
+    string NombrePlan,
     Guid? CotizacionId,
     decimal PrimaMensual,
     int VigenciaMeses,

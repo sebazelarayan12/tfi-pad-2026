@@ -81,45 +81,36 @@ public sealed class PolizaService(
     }
 
     /// <inheritdoc />
-    public async Task<PaginaResponse<PolizaListItemResponse>> ListarAsync(PolizaFiltro filtro, CancellationToken ct = default)
+    public Task<PaginaResponse<PolizaListItemResponse>> ListarAsync(PolizaFiltro filtro, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(filtro);
+        ct.ThrowIfCancellationRequested();
 
-        IReadOnlyList<Guid>? vehiculoIds = null;
+        var consulta = polizas.Query();
+        if (filtro.Estado is { } estado)
+            consulta = consulta.Where(p => p.Estado == estado);
+        if (filtro.ClienteId is { } clienteId)
+            consulta = consulta.Where(p => p.ClienteId == clienteId);
         if (!string.IsNullOrWhiteSpace(filtro.Patente))
         {
             var patente = filtro.Patente.Trim().ToUpperInvariant();
-            vehiculoIds = (await vehiculos.FindAsync(v => v.Patente == patente, ct)).Select(v => v.Id).ToList();
+            consulta = consulta.Where(p => p.Vehiculo.Patente == patente);
         }
 
-        var estado = filtro.Estado;
-        var clienteId = filtro.ClienteId;
-        var encontradas = await polizas.FindAsync(
-            p => (estado == null || p.Estado == estado)
-                 && (clienteId == null || p.ClienteId == clienteId)
-                 && (vehiculoIds == null || vehiculoIds.Contains(p.VehiculoId)),
-            ct);
-
-        // Newest first; the number breaks ties between policies issued at the same instant.
-        var pagina = encontradas
+        // Filter, order, page and count run in the database; only the page is loaded.
+        var total = consulta.Count();
+        var items = consulta
+            // Newest first; the number breaks ties between policies issued at the same instant.
             .OrderByDescending(p => p.FechaEmision)
-            .ThenByDescending(p => p.Numero, StringComparer.Ordinal)
+            .ThenByDescending(p => p.Numero)
             .Skip((filtro.Pagina - 1) * filtro.Tamano)
             .Take(filtro.Tamano)
-            .ToList();
-
-        var idsVehiculos = pagina.Select(p => p.VehiculoId).Distinct().ToList();
-        var idsPlanes = pagina.Select(p => p.PlanId).Distinct().ToList();
-        var patentes = (await vehiculos.FindAsync(v => idsVehiculos.Contains(v.Id), ct)).ToDictionary(v => v.Id, v => v.Patente);
-        var codigos = (await planes.FindAsync(p => idsPlanes.Contains(p.Id), ct)).ToDictionary(p => p.Id, p => p.Codigo);
-
-        var items = pagina
             .Select(p => new PolizaListItemResponse(
-                p.Id, p.Numero, p.ClienteId, patentes[p.VehiculoId], codigos[p.PlanId],
+                p.Id, p.Numero, p.ClienteId, p.Vehiculo.Patente, p.Plan.Codigo,
                 p.PrimaMensual, p.FechaInicio, p.FechaFin, p.Estado))
             .ToList();
 
-        return new PaginaResponse<PolizaListItemResponse>(items, filtro.Pagina, filtro.Tamano, encontradas.Count);
+        return Task.FromResult(new PaginaResponse<PolizaListItemResponse>(items, filtro.Pagina, filtro.Tamano, total));
     }
 
     /// <inheritdoc />
@@ -251,8 +242,11 @@ public sealed class PolizaService(
         ClienteId: poliza.ClienteId,
         VehiculoId: poliza.VehiculoId,
         Patente: vehiculo.Patente,
+        Marca: vehiculo.Marca,
+        Modelo: vehiculo.Modelo,
         PlanId: poliza.PlanId,
         CodigoPlan: plan.Codigo,
+        NombrePlan: plan.Nombre,
         CotizacionId: poliza.CotizacionId,
         PrimaMensual: poliza.PrimaMensual,
         VigenciaMeses: poliza.VigenciaMeses,

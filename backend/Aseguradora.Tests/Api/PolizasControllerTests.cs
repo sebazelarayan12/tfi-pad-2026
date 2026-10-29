@@ -186,6 +186,7 @@ public sealed class PolizasControllerTests : IDisposable
 
     [Theory]
     [InlineData("?pagina=0")]
+    [InlineData("?pagina=21474837")]
     [InlineData("?tamano=0")]
     [InlineData("?tamano=101")]
     [InlineData("?estado=Inexistente")]
@@ -211,8 +212,11 @@ public sealed class PolizasControllerTests : IDisposable
         Assert.NotNull(poliza);
         Assert.Equal(SeedData.VehiculoId, poliza.VehiculoId);
         Assert.Equal("AB123CD", poliza.Patente);
+        Assert.Equal("Toyota", poliza.Marca);
+        Assert.Equal("Corolla XEi", poliza.Modelo);
         Assert.Equal(SeedData.PlanRcId, poliza.PlanId);
         Assert.Equal("RC", poliza.CodigoPlan);
+        Assert.Equal("Responsabilidad Civil", poliza.NombrePlan);
         Assert.Equal(6, poliza.Cuotas.Count);
     }
 
@@ -291,6 +295,21 @@ public sealed class PolizasControllerTests : IDisposable
             $"{RutaPolizas}/{SeedData.PolizaId}/cancelar", new CancelarPolizaRequest { Motivo = new string('x', 201) });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancelar_MotivoDe200ConEspaciosAlrededor_200()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+        var motivo = new string('x', 200);
+
+        var response = await empleado.PostAsJsonAsync(
+            $"{RutaPolizas}/{SeedData.PolizaId}/cancelar", new { motivo = $"   {motivo}   " });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await using var context = _sqlite.CreateContext();
+        Assert.Equal(motivo, (await context.Polizas.SingleAsync(p => p.Id == SeedData.PolizaId)).MotivoCancelacion);
     }
 
     [Fact]
