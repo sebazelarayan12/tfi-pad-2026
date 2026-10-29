@@ -1,10 +1,16 @@
 services:
   api:
     build: ./backend
+    # Comes back after a VM reboot; a manual `docker compose stop` still keeps it stopped.
+    restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      # Zone of the daily expiry job; the image ships tzdata for it.
+      TZ: America/Argentina/Buenos_Aires
+      # Swagger is off in Production; set it to true only in a restricted environment.
+      Swagger__Habilitado: ${SWAGGER_HABILITADO:-false}
       ConnectionStrings__Default: Server=sqlserver;Database=Aseguradora;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True
-      # Vite dev servers of the two React fronts (default ports).
+      # Defaults are the Vite dev servers of the two React fronts; production sets the Pages domains.
       Cors__AllowedOrigins__0: ${CORS_ORIGIN_BACKOFFICE:-http://localhost:5173}
       Cors__AllowedOrigins__1: ${CORS_ORIGIN_PUBLIC:-http://localhost:5174}
       # Local compose creates the database on startup; production sets it to false and runs --migrar.
@@ -37,6 +43,7 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
@@ -54,6 +61,7 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     profiles: ["tunnel"]
+    restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
