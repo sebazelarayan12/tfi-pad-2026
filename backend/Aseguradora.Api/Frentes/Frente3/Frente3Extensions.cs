@@ -11,6 +11,10 @@ public static class Frente3Extensions
     public static IServiceCollection AddFrente3(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<IActualizadorEstadoPoliza, ActualizadorEstadoPoliza>();
+
+        // CU19: insurance check for external systems (US-F3-04).
+        services.AddScoped<ISeguroVigenteService, SeguroVigenteService>();
+
         return services;
     }
 }
