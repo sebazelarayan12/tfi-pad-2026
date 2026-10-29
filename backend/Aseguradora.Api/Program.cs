@@ -1,5 +1,6 @@
 using Aseguradora.Api.Comandos;
 using Aseguradora.Api.Frentes.Frente1;
+using Aseguradora.Api.Frentes.Frente2;
 using Aseguradora.Api.Frentes.Frente3;
 using Aseguradora.Api.Middleware;
 using Aseguradora.Data;
@@ -66,7 +67,7 @@ builder.Services.AddData(connectionString);
 
 // One line per front, in this order. Each owning task uncomments only its own line.
 builder.Services.AddFrente1(builder.Configuration);
-// builder.Services.AddFrente2(builder.Configuration);
+builder.Services.AddFrente2(builder.Configuration);
 builder.Services.AddFrente3(builder.Configuration);
 // builder.Services.AddFrente4(builder.Configuration);
 builder.Services.AddIntegraciones(builder.Configuration);
