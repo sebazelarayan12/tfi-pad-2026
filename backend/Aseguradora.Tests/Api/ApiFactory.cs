@@ -19,6 +19,8 @@ public sealed class ApiFactory(string environment, IReadOnlyDictionary<string, s
         builder.UseEnvironment(environment);
 
         // UseSetting lands before Program.cs reads configuration at builder time.
+        builder.UseSetting("Facturacion:Cuit", "00000000000");
+        builder.UseSetting("Facturacion:PuntoVenta", "1");
         builder.UseSetting("ConnectionStrings:Default", UnreachableDatabase);
         builder.UseSetting("Migraciones:AplicarAlIniciar", "false");
         // Frente 1 validates Jwt__Key on startup; tests keep the same key as TokenDePrueba.
