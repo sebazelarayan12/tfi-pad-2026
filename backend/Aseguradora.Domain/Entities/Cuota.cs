@@ -35,7 +35,7 @@ public class Cuota : EntityBase
             return;
 
         Estado = EstadoCuota.Vencida;
-        Recargo = Math.Round(Importe * TasaRecargoMora.Valor, 2, MidpointRounding.AwayFromZero);
+        Recargo = TasaRecargoMora.Calcular(Importe);
     }
 
     /// <summary>The only way to pay an installment: Pendiente or Vencida -> Pagada.</summary>

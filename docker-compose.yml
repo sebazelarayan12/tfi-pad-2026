@@ -29,6 +29,7 @@ services:
       Integraciones__Arca__ApiKey: ${INTEGRACIONES_ARCA_APIKEY}
       Integraciones__Pasarelas__pasarela1__ApiKey: ${INTEGRACIONES_PASARELA1_APIKEY}
       Integraciones__Pasarelas__pasarela2__ApiKey: ${INTEGRACIONES_PASARELA2_APIKEY}
+      PagoFacil__CodigoEmpresa: ${PAGOFACIL_CODIGO_EMPRESA}
     ports:
       # Loopback only: reachable from this machine, never from the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"
