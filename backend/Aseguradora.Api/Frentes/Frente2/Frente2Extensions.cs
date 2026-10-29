@@ -1,3 +1,7 @@
+using Aseguradora.Application.External;
+using Aseguradora.Integrations;
+using Aseguradora.Integrations.Dnrpa;
+
 namespace Aseguradora.Api.Frentes.Frente2;
 
 /// <summary>
@@ -16,6 +20,8 @@ public static class Frente2Extensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(config);
+
+        services.AgregarIntegracion<IDnrpaService, DnrpaMockService, DnrpaHttpService>(config, "Dnrpa");
 
         return services;
     }
