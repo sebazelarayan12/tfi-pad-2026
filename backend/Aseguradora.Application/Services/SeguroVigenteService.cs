@@ -35,7 +35,9 @@ public sealed class SeguroVigenteService(
                     && p.FechaInicio <= hoy
                     && p.FechaFin >= hoy,
                 ct))
+            // Deterministic if a vehicle ever had two: the one that lasts longer, then by number.
             .OrderByDescending(p => p.FechaFin)
+            .ThenBy(p => p.Numero, StringComparer.Ordinal)
             .FirstOrDefault();
         if (poliza is null)
             return sinSeguro;

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Aseguradora.Application.Dtos.Externo;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
@@ -118,6 +119,39 @@ public sealed class ExternoSeguroControllerTests : IDisposable
         var response = await cliente.GetAsync(Ruta("AB123CD"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_ContratoJson_UsaLosNombresDeLaSpec()
+    {
+        // ReadFromJsonAsync ignores casing, so a renamed property would pass the other tests while
+        // breaking external clients. The raw JSON is checked here (spec 9.5 A).
+        var response = await ClienteConApiKey().GetAsync(Ruta("AB123CD"));
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var raiz = json.RootElement;
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            ["patente", "tieneSeguro", "numeroPoliza", "plan", "vigenteDesde", "vigenteHasta"],
+            raiz.EnumerateObject().Select(p => p.Name).ToArray());
+        Assert.Equal("AB123CD", raiz.GetProperty("patente").GetString());
+        Assert.True(raiz.GetProperty("tieneSeguro").GetBoolean());
+        Assert.Equal("POL-0000001", raiz.GetProperty("numeroPoliza").GetString());
+        Assert.Equal("Responsabilidad Civil", raiz.GetProperty("plan").GetString());
+        Assert.Equal("2026-10-15", raiz.GetProperty("vigenteDesde").GetString());
+        Assert.Equal("2027-04-15", raiz.GetProperty("vigenteHasta").GetString());
+    }
+
+    [Fact]
+    public async Task Get_ContratoJsonSinSeguro_DevuelveNulls()
+    {
+        var response = await ClienteConApiKey().GetAsync(Ruta("ZZ999ZZ"));
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var raiz = json.RootElement;
+
+        Assert.False(raiz.GetProperty("tieneSeguro").GetBoolean());
+        foreach (var nombre in new[] { "numeroPoliza", "plan", "vigenteDesde", "vigenteHasta" })
+            Assert.Equal(JsonValueKind.Null, raiz.GetProperty(nombre).ValueKind);
     }
 
     [Fact]
