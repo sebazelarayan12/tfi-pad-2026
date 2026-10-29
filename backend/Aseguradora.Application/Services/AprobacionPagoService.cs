@@ -10,7 +10,7 @@ namespace Aseguradora.Application.Services;
 public sealed class AprobacionPagoService(
     IRepository<Cuota> cuotas, IRepository<Poliza> polizas, IUnitOfWork unitOfWork,
     IActualizadorEstadoPoliza actualizador, IFacturacionService facturacion,
-    ILogger<AprobacionPagoService> logger) : IAprobacionPagoService
+    ILogger<AprobacionPagoService> logger, IRepository<Factura> facturas) : IAprobacionPagoService
 {
     private readonly IRepository<Cuota> _cuotas = cuotas ?? throw new ArgumentNullException(nameof(cuotas));
     private readonly IRepository<Poliza> _polizas = polizas ?? throw new ArgumentNullException(nameof(polizas));
@@ -19,11 +19,23 @@ public sealed class AprobacionPagoService(
     private readonly IFacturacionService _facturacion = facturacion ?? throw new ArgumentNullException(nameof(facturacion));
     private readonly ILogger<AprobacionPagoService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+    private readonly IRepository<Factura> _facturas = facturas ?? throw new ArgumentNullException(nameof(facturas));
+
     /// <inheritdoc />
     public async Task<Pago> AprobarAsync(Pago pago, DateTime fechaAcreditacion, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(pago);
-        if (pago.Estado == EstadoPago.Aprobado) return pago;
+        if (pago.Estado == EstadoPago.Aprobado)
+        {
+            if (pago.RequiereRevisionPorDuplicado || await _facturas.AnyAsync(f => f.PagoId == pago.Id, ct))
+                return pago;
+            var ids = _cuotas.Query().Where(c => c.PagoCuotas.Any(d => d.PagoId == pago.Id))
+                .Select(c => c.PolizaId).Distinct().ToList();
+            foreach (var id in ids) await _actualizador.ReevaluarAsync(id, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _facturacion.EmitirAsync(pago.Id, ct);
+            return pago;
+        }
         if (pago.PagoCuotas.Count == 0) throw new BusinessRuleException("El pago no contiene cuotas.");
         var seleccion = new List<Cuota>();
         foreach (var detalle in pago.PagoCuotas)
@@ -44,6 +56,7 @@ public sealed class AprobacionPagoService(
         pago.Aprobar(fechaAcreditacion);
         if (seleccion.Any(c => c.Estado == EstadoCuota.Pagada))
         {
+            pago.RequiereRevisionPorDuplicado = true;
             await _unitOfWork.SaveChangesAsync(ct);
             _logger.LogError("PAGO_DUPLICADO_REQUIERE_REVISION PagoId={PagoId}", pago.Id);
             return pago;

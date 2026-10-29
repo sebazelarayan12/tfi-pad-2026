@@ -40,6 +40,29 @@ jobs:
           path: backend/**/TestResults/*.trx
           if-no-files-found: ignore
 
+  concurrencia-sqlserver:
+    name: concurrencia-sqlserver
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ASEGURADORA_TESTS_DOCKER: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Verificar Docker
+        run: docker info
+      - name: Concurrencia de cobros en SQL Server real
+        run: dotnet test backend/Aseguradora.sln -c Release --filter "FullyQualifiedName~DosContextosCobrandoLaMismaCuotaSoloPersistenUnCobro" --logger "trx;LogFileName=concurrencia.trx"
+      - name: Publicar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: concurrencia-sqlserver
+          path: backend/**/TestResults/concurrencia.trx
+          if-no-files-found: error
+
   branch-name:
     name: branch-name
     if: github.event_name == 'pull_request'

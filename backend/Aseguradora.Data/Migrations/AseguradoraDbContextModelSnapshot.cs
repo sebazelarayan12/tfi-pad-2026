@@ -463,6 +463,9 @@ namespace Aseguradora.Data.Migrations
                     b.Property<Guid?>("RendicionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("RequiereRevisionPorDuplicado")
+                        .HasColumnType("bit");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -493,7 +496,8 @@ namespace Aseguradora.Data.Migrations
                             FechaCreacion = new DateTime(2026, 10, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             ImporteTotal = 12000.00m,
                             Medio = 2,
-                            Numero = "PAG-000001"
+                            Numero = "PAG-000001",
+                            RequiereRevisionPorDuplicado = false
                         });
                 });
 

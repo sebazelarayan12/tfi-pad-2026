@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Aseguradora.Application.Dtos;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.External;
@@ -11,7 +12,7 @@ namespace Aseguradora.Application.Services;
 public sealed class FacturacionService(
     IRepository<Pago> pagos, IRepository<Cuota> cuotas, IRepository<Poliza> polizas,
     IRepository<Cliente> clientes, IRepository<Factura> facturas, IUnitOfWork unitOfWork,
-    IArcaService arca, FacturacionOpciones opciones, TimeProvider reloj) : IFacturacionService
+    IArcaService arca, FacturacionOpciones opciones, TimeProvider reloj, ILogger<FacturacionService> logger) : IFacturacionService
 {
     private readonly IRepository<Pago> _pagos = pagos ?? throw new ArgumentNullException(nameof(pagos));
     private readonly IRepository<Cuota> _cuotas = cuotas ?? throw new ArgumentNullException(nameof(cuotas));
@@ -23,6 +24,9 @@ public sealed class FacturacionService(
     private readonly FacturacionOpciones _opciones = opciones ?? throw new ArgumentNullException(nameof(opciones));
     private readonly TimeProvider _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
 
+    private readonly ILogger<FacturacionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    // IVA incluido del 21 %: decisión por defecto de C8 y ejemplo 9.2.
     private const decimal FactorIva = 1.21m;
 
     /// <inheritdoc />
@@ -30,6 +34,7 @@ public sealed class FacturacionService(
     {
         var pago = await _pagos.GetByIdAsync(pagoId, ct)
             ?? throw new NotFoundException("El pago no existe.");
+        if (pago.RequiereRevisionPorDuplicado) return;
         if (pago.Estado != EstadoPago.Aprobado)
             throw new BusinessRuleException("Solo se facturan pagos aprobados.");
         var existentes = await _facturas.FindAsync(f => f.PagoId == pagoId, ct);
@@ -68,12 +73,27 @@ public sealed class FacturacionService(
         {
             var response = await _arca.EmitirFacturaAsync(request, ct);
             if (response.Estado == "APROBADA")
-                factura.Autorizar(response.NumeroComprobante, response.Cae, response.VencimientoCae);
+            {
+                // Registrar antes de validar/persistir permite conciliar si falla cualquiera de ambos pasos.
+                _logger.LogInformation("ARCA_AUTORIZACION_RECIBIDA PagoId={PagoId} Numero={Numero} Cae={Cae} Vencimiento={Vencimiento}",
+                    pago.Id, response.NumeroComprobante, response.Cae, response.VencimientoCae);
+                try
+                {
+                    factura.Autorizar(response.NumeroComprobante, response.Cae, response.VencimientoCae);
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ARCA_AUTORIZACION_NO_PERSISTIDA PagoId={PagoId} Numero={Numero} Cae={Cae}",
+                        pago.Id, response.NumeroComprobante, response.Cae);
+                    throw;
+                }
+            }
+            else _logger.LogWarning("ARCA_ESTADO_NO_APROBADO PagoId={PagoId} Estado={Estado}", pago.Id, response.Estado);
         }
         catch (ExternalServiceException)
         {
             // El pago ya fue confirmado y la factura queda disponible para US-F4-09.
         }
-        await _unitOfWork.SaveChangesAsync(ct);
     }
 }

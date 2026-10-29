@@ -14,7 +14,7 @@ public class UnitOfWork(AseguradoraDbContext context) : IUnitOfWork
         catch (DbUpdateConcurrencyException exception) when (
             exception.Entries.Any(e => e.Entity is Pago or Cuota))
         {
-            throw new BusinessRuleException("El pago o sus cuotas fueron modificados por otro cobro. Recargue los datos.");
+            throw new BusinessRuleException("El pago o sus cuotas fueron modificados por otro cobro. Recargue los datos.", exception);
         }
     }
 }

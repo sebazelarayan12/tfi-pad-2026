@@ -38,3 +38,22 @@ Prueba manual del stack (por el responsable antes del PR):
 3. docker compose ps: api y sqlserver healthy.
 4. curl.exe http://127.0.0.1:8080/health: Healthy.
 5. Confirmar que la migración AddPagoCuotaRowVersion se aplicó sin errores.
+
+## Correcciones de revisión del PR 26
+
+La API valida Facturacion:Cuit y Facturacion:PuntoVenta al iniciar mediante ValidateOnStart.
+Sin esos valores no arranca; completar .env antes de recrear el stack.
+Un pago aprobado sin factura puede recuperarse con AprobarAsync: reevalúa las pólizas
+y emite la factura sin volver a pagar las cuotas. Si ya existe factura, incluso pendiente,
+AprobarAsync no llama a ARCA; los reintentos pendientes siguen siendo de US-F4-09.
+Los duplicados totales o parciales se persisten con RequiereRevisionPorDuplicado y
+no se facturan durante la recuperación. Se mantiene el default C8: las cuotas aún
+pendientes no cambian y el excedente requiere revisión manual del equipo. Cambiar
+esa regla necesita un PR docs separado. La migración AddPagoRevisionDuplicado agrega
+una columna bit con default false; no elimina datos.
+La respuesta aprobada de ARCA se registra con número, CAE, vencimiento y pago antes
+de validarla y guardarla. Los errores posteriores dejan un registro para conciliación
+manual; esto no sustituye la idempotencia que debe acordarse con ARCA real.
+El job concurrencia-sqlserver ejecuta el escenario real de RowVersion con Docker.
+
+Las nuevas pruebas de revisión están pendientes de ejecución por Fernando.

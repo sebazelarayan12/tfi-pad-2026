@@ -52,6 +52,9 @@ public class Pago : EntityBase
         return fecha.ToUniversalTime();
     }
 
+    /// <summary>Excedente que requiere revisión manual y nunca debe facturarse automáticamente (C8).</summary>
+    public bool RequiereRevisionPorDuplicado { get; set; }
+
     public Guid ClienteId { get; set; }
 
     /// <summary>Sum of the paid installments plus surcharges.</summary>
