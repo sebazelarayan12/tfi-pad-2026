@@ -1,4 +1,3 @@
-using Aseguradora.Application.Dtos;
 using Aseguradora.Application.External;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Integrations.Arca;

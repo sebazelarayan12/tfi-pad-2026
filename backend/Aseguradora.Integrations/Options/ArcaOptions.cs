@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 namespace Aseguradora.Integrations.Options;
-/// <summary>Define ArcaOptions para la integración de pagos y facturación.</summary>
+/// <summary>Configuración de la integración con ARCA (mock o cliente HTTP).</summary>
 public class ArcaOptions
 {
     /// <summary>Selecciona el mock en memoria en lugar del cliente HTTP.</summary>

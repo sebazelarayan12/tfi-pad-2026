@@ -40,11 +40,26 @@ public sealed class DnrpaHttpService(HttpClient httpClient, ILogger<DnrpaHttpSer
         try
         {
             var datos = await response.Content.ReadFromJsonAsync<DatosDnrpa>(JsonOptions, ct);
-            return datos ?? throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió una respuesta vacía.");
+            if (datos is null)
+                throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió una respuesta vacía.");
+
+            return TieneCamposObligatorios(datos)
+                ? datos
+                : throw new ExternalServiceException($"{Servicio}: la respuesta del servicio externo no incluye todos los campos obligatorios.");
         }
         catch (JsonException ex)
         {
             throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió un JSON inválido.", ex);
         }
     }
+
+    // System.Text.Json deja en null los strings ausentes; sin esto, un titular faltante se vería como "titular distinto" (RN03).
+    private static bool TieneCamposObligatorios(DatosDnrpa datos) =>
+        !string.IsNullOrWhiteSpace(datos.Patente)
+        && !string.IsNullOrWhiteSpace(datos.Marca)
+        && !string.IsNullOrWhiteSpace(datos.Modelo)
+        && !string.IsNullOrWhiteSpace(datos.NumeroMotor)
+        && !string.IsNullOrWhiteSpace(datos.NumeroChasis)
+        && !string.IsNullOrWhiteSpace(datos.TitularDni)
+        && !string.IsNullOrWhiteSpace(datos.TitularNombre);
 }

@@ -1,11 +1,5 @@
 using Aseguradora.Application.Dtos;
-using Aseguradora.Application.External;
-using Aseguradora.Application.Exceptions;
 using Aseguradora.Integrations.Arca;
-using Aseguradora.Integrations.Pasarela;
-using Aseguradora.Integrations.Pagos;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 namespace Aseguradora.Tests.Pagos;
 public class ArcaMockServiceTests
 {
