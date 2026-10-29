@@ -161,7 +161,9 @@ Configurar en el panel de Cloudflare, sobre la zona `nexaseguros.me`:
 
 ### 6.5 IP real del cliente (RN20)
 
-Detrás del túnel la API ve la dirección de `cloudflared`. `Program.cs` configura `ForwardedHeaders` para leer la IP del header `CF-Connecting-IP`. Es seguro porque la API **no publica puertos a la red** (solo `127.0.0.1` en la VM) y la VM solo tiene el SSH abierto: la única vía de entrada es el túnel.
+Detrás del túnel la API ve la dirección de `cloudflared`. `ClientIpResolver` (límite RN20 de `/api/publico/*`) lee la IP del header `CF-Connecting-IP`, pero solo cuando la conexión viene de una red listada en `ForwardedHeaders:RedesConfiables`; si no, usa la IP de la conexión. El middleware `ForwardedHeaders` de `Program.cs` ya no toca la IP, solo restaura el esquema (`X-Forwarded-Proto`).
+
+El compose completa esa lista con `REDES_CONFIABLES` (por defecto `172.16.0.0/12`, el rango privado de Docker donde vive `cloudflared`). Si se vacía, el header se ignora y todos los visitantes comparten un único contador de 10 intentos por minuto. Es seguro confiar en el header porque la API **no publica puertos a la red** (solo `127.0.0.1` en la VM) y la VM solo tiene el SSH abierto: la única vía de entrada es el túnel.
 
 ## 7. Flags y configuración del contenedor
 
