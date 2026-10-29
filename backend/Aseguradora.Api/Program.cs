@@ -50,13 +50,13 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
-// Behind the Cloudflare Tunnel the API only sees cloudflared's address, so the real client IP
-// is read from CF-Connecting-IP. Trusting it is safe only while the API is reachable solely
-// through cloudflared (no public ports).
+// Behind the Cloudflare Tunnel the API only sees cloudflared's address. Cloudflare sends the real
+// client IP in CF-Connecting-IP, not X-Forwarded-For; RN20 reads it in ClientIpResolver, only from
+// the networks listed in ForwardedHeaders:RedesConfiables. This middleware only restores the
+// scheme, so it never consumes the header or rewrites RemoteIpAddress before the rate limiter.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedForHeaderName = "CF-Connecting-IP";
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -102,6 +102,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// RN20: applies to /api/publico/* only (US-F1-07); must run before authentication.
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
