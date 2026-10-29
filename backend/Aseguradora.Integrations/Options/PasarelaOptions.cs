@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 namespace Aseguradora.Integrations.Options;
-/// <summary>Define PasarelaOptions para la integración de pagos y facturación.</summary>
+/// <summary>Configuración de un proveedor de pasarela de pagos (mock o cliente HTTP).</summary>
 public class PasarelaOptions
 {
     /// <summary>Selecciona el mock en memoria en lugar del cliente HTTP.</summary>

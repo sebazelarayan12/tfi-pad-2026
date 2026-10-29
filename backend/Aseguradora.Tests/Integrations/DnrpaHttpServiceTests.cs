@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json.Nodes;
 using Aseguradora.Api.Frentes.Frente2;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.External;
@@ -157,5 +158,39 @@ public class DnrpaHttpServiceTests
         Assert.Equal("AE789FG", datos.Patente);
         Assert.Equal(TipoVehiculo.Camioneta, datos.Tipo);
         Assert.Equal("30123456", datos.TitularDni);
+    }
+
+    [Theory]
+    [InlineData("patente")]
+    [InlineData("marca")]
+    [InlineData("modelo")]
+    [InlineData("numeroMotor")]
+    [InlineData("numeroChasis")]
+    [InlineData("titularDni")]
+    [InlineData("titularNombre")]
+    public async Task Lanza_ExternalServiceException_si_falta_un_campo_obligatorio(string campoOmitido)
+    {
+        var json = JsonNode.Parse("""
+            {
+              "patente": "AB123CD",
+              "marca": "Toyota",
+              "modelo": "Corolla XEi",
+              "anio": 2021,
+              "tipo": "AUTO",
+              "numeroMotor": "2ZR1234567",
+              "numeroChasis": "9BRBL3HE5M0123456",
+              "titularDni": "30123456",
+              "titularNombre": "Juan Carlos Pérez"
+            }
+            """)!.AsObject();
+        json.Remove(campoOmitido);
+
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(json.ToJsonString())));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IDnrpaService>();
+
+        await Assert.ThrowsAsync<ExternalServiceException>(
+            () => service.ObtenerVehiculoAsync("AB123CD", CancellationToken.None));
     }
 }

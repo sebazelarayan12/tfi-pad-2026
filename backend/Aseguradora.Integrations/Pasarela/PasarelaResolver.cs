@@ -1,7 +1,7 @@
 using Aseguradora.Application.External;
 using Aseguradora.Application.Exceptions;
 namespace Aseguradora.Integrations.Pasarela;
-/// <summary>Define PasarelaResolver para la integración de pagos y facturación.</summary>
+/// <summary>Resuelve el servicio de pasarela de pagos a partir del nombre del proveedor.</summary>
 public sealed class PasarelaResolver : IPasarelaResolver
 {
     private readonly IReadOnlyDictionary<string, IPasarelaService> proveedores;
