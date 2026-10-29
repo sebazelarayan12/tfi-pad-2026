@@ -21,4 +21,5 @@ Las URLs de checkout usan dominios .example de prueba y no procesan cobros.
    `docker compose up -d --build --wait`.
 2. Verificar `docker compose ps` y `curl.exe http://127.0.0.1:8080/health`.
 3. Confirmar que api y sqlserver estén healthy y /health devuelva Healthy.
-4. Los contratos se verifican con `dotnet test backend --filter FullyQualifiedName~ContratosMockTests`.
+4. Los contratos se verifican con `dotnet test backend --filter FullyQualifiedName~Aseguradora.Tests.Pagos`.
+

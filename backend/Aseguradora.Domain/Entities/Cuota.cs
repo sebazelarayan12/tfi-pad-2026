@@ -1,4 +1,6 @@
 using Aseguradora.Domain.Enums;
+using Aseguradora.Domain.Exceptions;
+using Aseguradora.Domain.Services;
 
 namespace Aseguradora.Domain.Entities;
 
@@ -19,4 +21,36 @@ public class Cuota : EntityBase
 
     public Poliza Poliza { get; set; } = null!;
     public ICollection<PagoCuota> PagoCuotas { get; set; } = new List<PagoCuota>();
+
+    /// <summary>
+    /// Pendiente -> Vencida once <paramref name="hoy"/> is past the due date, adding the late surcharge (RN08).
+    /// Any other state is left alone, so running it twice never charges the surcharge twice.
+    /// </summary>
+    public void Vencer(DateOnly hoy)
+    {
+        if (Estado != EstadoCuota.Pendiente || hoy <= FechaVencimiento)
+            return;
+
+        Estado = EstadoCuota.Vencida;
+        Recargo = Math.Round(Importe * TasaRecargoMora.Valor, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>The only way to pay an installment: Pendiente or Vencida -> Pagada.</summary>
+    public void Pagar(DateTime fecha)
+    {
+        if (Estado is not (EstadoCuota.Pendiente or EstadoCuota.Vencida))
+            throw new TransicionInvalidaException($"No se puede pagar una cuota en estado {Estado}.");
+
+        Estado = EstadoCuota.Pagada;
+        FechaPago = fecha;
+    }
+
+    /// <summary>Pendiente or Vencida -> Anulada.</summary>
+    public void Anular()
+    {
+        if (Estado is not (EstadoCuota.Pendiente or EstadoCuota.Vencida))
+            throw new TransicionInvalidaException($"No se puede anular una cuota en estado {Estado}.");
+
+        Estado = EstadoCuota.Anulada;
+    }
 }

@@ -1,5 +1,8 @@
 using Aseguradora.Api.Frentes.Frente4;
+using Aseguradora.Api.Comandos;
 using Aseguradora.Api.Frentes.Frente1;
+using Aseguradora.Api.Frentes.Frente2;
+using Aseguradora.Api.Frentes.Frente3;
 using Aseguradora.Api.Middleware;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
@@ -37,6 +40,9 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddHealthChecks().AddDbContextCheck<AseguradoraDbContext>();
 
+// Dates are computed with this provider, never with DateTime.Now, so tests can replace it.
+builder.Services.AddSingleton(TimeProvider.System);
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy => policy
@@ -62,33 +68,35 @@ builder.Services.AddData(connectionString);
 
 // One line per front, in this order. Each owning task uncomments only its own line.
 builder.Services.AddFrente1(builder.Configuration);
-// builder.Services.AddFrente2(builder.Configuration);
-// builder.Services.AddFrente3(builder.Configuration);
+builder.Services.AddFrente2(builder.Configuration);
+builder.Services.AddFrente3(builder.Configuration);
 builder.Services.AddFrente4(builder.Configuration);
 builder.Services.AddIntegraciones(builder.Configuration);
 
 var app = builder.Build();
 
+// `dotnet Aseguradora.Api.dll --migrar` migrates, seeds and exits without serving requests.
+if (MigracionComando.Solicitado(args))
+    return await MigracionComando.EjecutarAsync(app.Services);
+
 // Development and local compose migrate on startup; production migrates manually with --migrar.
 if (app.Configuration.GetValue<bool>("Migraciones:AplicarAlIniciar"))
-{
-    await using (var scope = app.Services.CreateAsyncScope())
-    {
-        await scope.ServiceProvider.GetRequiredService<AseguradoraDbContext>().Database.MigrateAsync();
-    }
-    await SeedData.EjecutarAsync(app.Services);
-}
+    await MigracionComando.AplicarAsync(app.Services);
 
 app.UseForwardedHeaders();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Swagger is on in Development and off in Production unless Swagger:Habilitado says otherwise.
+if (app.Configuration.GetValue<bool?>("Swagger:Habilitado") ?? app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
+if (app.Environment.IsDevelopment())
+{
     // In containers TLS ends at Cloudflare and the API only speaks plain HTTP.
     app.UseHttpsRedirection();
 }
@@ -103,6 +111,7 @@ app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
+return 0;
 
 // Lets WebApplicationFactory<Program> host the API in integration tests.
 public partial class Program { }

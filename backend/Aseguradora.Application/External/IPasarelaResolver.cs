@@ -1,3 +1,7 @@
-using Aseguradora.Application.Dtos;
 namespace Aseguradora.Application.External;
-public interface IPasarelaResolver { IPasarelaService Obtener(string proveedor); }
+/// <summary>Define IPasarelaResolver para la integración de pagos y facturación.</summary>
+public interface IPasarelaResolver
+{
+    /// <summary>Obtiene el proveedor o lanza NotFoundException si no está registrado.</summary>
+    IPasarelaService Obtener(string proveedor);
+}
