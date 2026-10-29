@@ -651,6 +651,10 @@ namespace Aseguradora.Data.Migrations
 
                     b.HasIndex("VehiculoId");
 
+                    b.HasIndex(new[] { "VehiculoId" }, "UX_Polizas_VehiculoConPolizaActiva")
+                        .IsUnique()
+                        .HasFilter("[Estado] IN (0, 1, 2)");
+
                     b.ToTable("Polizas", (string)null);
 
                     b.HasData(
