@@ -62,6 +62,56 @@ public sealed class CuponPagoFacilServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Cupon_CuotaPendienteYaVencida_CobraElRecargo()
+    {
+        // Due 10/12 and asked on 11/12 before the daily job marked it Vencida.
+        var hoy = Vencimiento.AddDays(1);
+
+        var cupon = await GenerarAsync(hoy);
+
+        Assert.Equal(12600.00m, cupon.ImportePrimerVencimiento);
+        Assert.Equal(hoy, cupon.FechaPrimerVencimiento);
+        Assert.Equal(12600.00m, cupon.ImporteSegundoVencimiento);
+
+        // Same coupon as once the job runs and the installment is Vencida.
+        await CambiarCuotaAsync(c => c.Vencer(hoy));
+        Assert.Equal(cupon.CodigoBarras, (await GenerarAsync(hoy)).CodigoBarras);
+    }
+
+    [Fact]
+    public async Task Cupon_RedondeoEnPuntoMedio_SubeElCentavo()
+    {
+        await CambiarCuotaAsync(c => c.Importe = 10.10m);
+
+        var cupon = await GenerarAsync(AntesDelVencimiento);
+
+        // 10.10 * 0.05 = 0.505 -> 0.51 (half away from zero).
+        Assert.Equal(10.61m, cupon.ImporteSegundoVencimiento);
+    }
+
+    [Fact]
+    public async Task Cupon_ImporteQueNoEntraEnElCodigo_LanzaBusinessRule()
+    {
+        // The 2nd amount has 7 digits of cents (up to 99999.99): 95238.10 * 1.05 = 100000.01.
+        await CambiarCuotaAsync(c => c.Importe = 95238.10m);
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => GenerarAsync(AntesDelVencimiento));
+        Assert.Contains("Pago Fácil", ex.Message);
+    }
+
+    [Fact]
+    public async Task Cupon_ImporteMaximoQueEntra_Genera()
+    {
+        // 95238.09 * 1.05 = 99999.99, the largest 2nd amount that fits.
+        await CambiarCuotaAsync(c => c.Importe = 95238.09m);
+
+        var cupon = await GenerarAsync(AntesDelVencimiento);
+
+        Assert.Equal(99999.99m, cupon.ImporteSegundoVencimiento);
+        Assert.True(CodigoBarrasPagoFacil.Validar(cupon.CodigoBarras));
+    }
+
+    [Fact]
     public async Task Cupon_MismoDia_MismoCodigo()
     {
         var primero = await GenerarAsync(AntesDelVencimiento);

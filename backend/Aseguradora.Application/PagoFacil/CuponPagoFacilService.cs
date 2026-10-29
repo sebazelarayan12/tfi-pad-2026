@@ -10,8 +10,8 @@ namespace Aseguradora.Application.PagoFacil;
 
 /// <summary>
 /// Builds the coupon of a Pendiente or Vencida installment (CU20, RN11). The 1st due date is the
-/// installment's own date, or today if it already passed; the 2nd comes
-/// <see cref="DiasAlSegundoVencimiento"/> days later and charges the 5% surcharge (RN08).
+/// installment's own date, or today if it already passed (then with the surcharge); the 2nd comes
+/// <see cref="DiasAlSegundoVencimiento"/> days later and always charges the 5% surcharge (RN08).
 /// </summary>
 public sealed class CuponPagoFacilService(
     IRepository<Cuota> cuotas,
@@ -32,8 +32,13 @@ public sealed class CuponPagoFacilService(
         var poliza = await polizas.GetByIdAsync(cuota.PolizaId, ct)
             ?? throw new NotFoundException("La póliza de la cuota no existe.");
 
-        var importe1 = cuota.Importe + cuota.Recargo;
-        var importe2 = Math.Round(cuota.Importe * (1 + TasaRecargoMora.Valor), 2, MidpointRounding.AwayFromZero);
+        // A Pendiente installment already past due (the daily job has not run yet) pays the surcharge it
+        // is about to get (RN08), so the coupon matches what US-F3-08 will expect once the job runs.
+        var recargo = cuota.Estado == EstadoCuota.Pendiente && hoy > cuota.FechaVencimiento
+            ? TasaRecargoMora.Calcular(cuota.Importe)
+            : cuota.Recargo;
+        var importe1 = cuota.Importe + recargo;
+        var importe2 = cuota.Importe + TasaRecargoMora.Calcular(cuota.Importe);
         var fecha1 = cuota.FechaVencimiento > hoy ? cuota.FechaVencimiento : hoy;
         var fecha2 = fecha1.AddDays(DiasAlSegundoVencimiento);
 
