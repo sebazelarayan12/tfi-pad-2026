@@ -1,5 +1,6 @@
 using Aseguradora.Api.Security;
 using Aseguradora.Application.External;
+using Aseguradora.Application.Publico;
 using Aseguradora.Application.Security;
 using Aseguradora.Data.Identity;
 using Aseguradora.Data.Seed;
@@ -20,6 +21,11 @@ public static class Frente1Extensions
         services.AddSeguridad(config);
         services.AddIdentityAseguradora();
         services.AddScoped<ISeeder, AdministradorInicialSeeder>();
+
+        // RN20: global rate limit for the whole /api/publico/* prefix (C15).
+        services.AddPublicoRateLimit(config);
+        // Shared DNI + policy/payment check for the public endpoints of F3 and F4 (US-F1-07).
+        services.AddScoped<IVerificadorPublico, VerificadorPublico>();
 
         // CU01 and CU03: Application rules over an Identity-backed store, and the JWT issuer.
         services.AddScoped<IUsuarioStore, IdentityUsuarioStore>();
