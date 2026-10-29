@@ -151,6 +151,44 @@ public sealed class VehiculosControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task POST_con_cliente_inactivo_devuelve_400()
+    {
+        await using (var setupContext = _sqlite.CreateContext())
+        {
+            var cliente = await setupContext.Clientes.SingleAsync(c => c.Id == SeedData.ClienteId);
+            cliente.Activo = false;
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_sin_uso_en_json_devuelve_400()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.PostAsJsonAsync(RutaVehiculos, new
+        {
+            clienteId = SeedData.ClienteId,
+            patente = "AE789FG"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task POST_con_patente_formato_invalido_devuelve_400()
     {
         await using var factory = CrearFactory();
