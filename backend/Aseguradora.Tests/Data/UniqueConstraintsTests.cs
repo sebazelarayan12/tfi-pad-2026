@@ -182,6 +182,9 @@ public class UniqueConstraintsTests : IDisposable
         VehiculoId = SeedData.VehiculoId,
         PlanId = SeedData.PlanRcId,
         CotizacionId = cotizacionId,
-        VigenciaMeses = 1
+        VigenciaMeses = 1,
+        // The seeded vehicle already has a Vigente policy: an inactive state keeps the RN04 index out
+        // of the way, so only the quote index is under test.
+        Estado = EstadoPoliza.Cancelada
     };
 }

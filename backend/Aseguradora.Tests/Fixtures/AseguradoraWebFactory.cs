@@ -99,6 +99,8 @@ public sealed class AseguradoraWebFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Production");
 
         // UseSetting lands before Program.cs reads configuration at builder time.
+        builder.UseSetting("Facturacion:Cuit", "00000000000");
+        builder.UseSetting("Facturacion:PuntoVenta", "1");
         builder.UseSetting("ConnectionStrings:Default", _connectionString ?? BaseInaccesible);
         // With a container the host migrates and runs the ISeeder implementations at startup.
         builder.UseSetting("Migraciones:AplicarAlIniciar", _connectionString is null ? "false" : "true");

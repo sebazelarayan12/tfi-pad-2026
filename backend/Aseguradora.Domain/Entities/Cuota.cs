@@ -6,6 +6,9 @@ namespace Aseguradora.Domain.Entities;
 
 public class Cuota : EntityBase
 {
+    /// <summary>Token generado por SQL Server para controlar cobros concurrentes.</summary>
+    public byte[]? RowVersion { get; set; }
+
     public Guid PolizaId { get; set; }
 
     /// <summary>1 to N, where N is the VigenciaMeses of the policy.</summary>

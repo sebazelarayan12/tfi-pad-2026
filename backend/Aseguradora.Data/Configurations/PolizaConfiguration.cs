@@ -1,4 +1,5 @@
 using Aseguradora.Domain.Entities;
+using Aseguradora.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -6,6 +7,8 @@ namespace Aseguradora.Data.Configurations;
 
 public class PolizaConfiguration : IEntityTypeConfiguration<Poliza>
 {
+    public const string IndiceVehiculoConPolizaActiva = "UX_Polizas_VehiculoConPolizaActiva";
+
     public void Configure(EntityTypeBuilder<Poliza> builder)
     {
         builder.ToTable("Polizas");
@@ -17,6 +20,15 @@ public class PolizaConfiguration : IEntityTypeConfiguration<Poliza>
         builder.Property(p => p.MotivoCancelacion).HasMaxLength(200);
 
         builder.HasIndex(p => p.Numero).IsUnique();
+
+        // Kept for the foreign key: the filtered index below does not cover every policy.
+        builder.HasIndex(p => p.VehiculoId);
+
+        // RN04 in the database: a vehicle has at most one Pendiente, Vigente or Suspendida policy, so two
+        // issues at the same time cannot both be saved. The service checks it first with a clear message.
+        builder.HasIndex(p => p.VehiculoId, IndiceVehiculoConPolizaActiva)
+            .IsUnique()
+            .HasFilter($"[Estado] IN ({(int)EstadoPoliza.Pendiente}, {(int)EstadoPoliza.Vigente}, {(int)EstadoPoliza.Suspendida})");
 
         builder.HasOne(p => p.Cliente)
             .WithMany(c => c.Polizas)

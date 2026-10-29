@@ -1,5 +1,7 @@
 using Aseguradora.Api.BackgroundJobs;
 using Aseguradora.Application.Services;
+using Aseguradora.Data.Numeracion;
+using Aseguradora.Data.Seed;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Aseguradora.Api.Frentes.Frente3;
@@ -14,9 +16,15 @@ public static class Frente3Extensions
     {
         services.AddScoped<IActualizadorEstadoPoliza, ActualizadorEstadoPoliza>();
 
-        // CU14: daily expiry process (US-F3-05).
         // Program.cs registers TimeProvider; TryAdd keeps this front working on its own.
         services.TryAddSingleton(TimeProvider.System);
+
+        // CU10: policy issuing (US-F3-02).
+        services.AddScoped<INumeradorPolizas, NumeradorPolizasSql>();
+        services.AddScoped<IPolizaService, PolizaService>();
+        services.AddScoped<ISeeder, SeedFrente3>();
+
+        // CU14: daily expiry process (US-F3-05).
         services.AddScoped<IVencimientosService, VencimientosService>();
         services.AddHostedService<VencimientosJob>();
 
