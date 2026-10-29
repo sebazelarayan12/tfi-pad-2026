@@ -8,6 +8,8 @@ public class CuotaConfiguration : IEntityTypeConfiguration<Cuota>
 {
     public void Configure(EntityTypeBuilder<Cuota> builder)
     {
+        builder.Property(e => e.RowVersion).IsRowVersion();
+
         builder.ToTable("Cuotas");
 
         builder.HasKey(c => c.Id);
