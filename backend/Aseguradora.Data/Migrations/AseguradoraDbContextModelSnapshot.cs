@@ -211,6 +211,29 @@ namespace Aseguradora.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Aseguradora.Domain.Entities.ControlProceso", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateOnly>("UltimaFechaProcesada")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("ControlesProceso", (string)null);
+                });
+
             modelBuilder.Entity("Aseguradora.Domain.Entities.Cotizacion", b =>
                 {
                     b.Property<Guid>("Id")

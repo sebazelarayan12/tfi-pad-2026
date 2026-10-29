@@ -1,3 +1,4 @@
+using Aseguradora.Api.BackgroundJobs;
 using Aseguradora.Application.Services;
 using Aseguradora.Data.Numeracion;
 using Aseguradora.Data.Seed;
@@ -22,6 +23,10 @@ public static class Frente3Extensions
         services.AddScoped<INumeradorPolizas, NumeradorPolizasSql>();
         services.AddScoped<IPolizaService, PolizaService>();
         services.AddScoped<ISeeder, SeedFrente3>();
+
+        // CU14: daily expiry process (US-F3-05).
+        services.AddScoped<IVencimientosService, VencimientosService>();
+        services.AddHostedService<VencimientosJob>();
 
         // CU19: insurance check for external systems (US-F3-04).
         services.AddScoped<ISeguroVigenteService, SeguroVigenteService>();
