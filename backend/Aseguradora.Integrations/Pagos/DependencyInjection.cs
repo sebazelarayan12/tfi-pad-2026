@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Aseguradora.Integrations.Pagos;
-/// <summary>Define DependencyInjection para la integración de pagos y facturación.</summary>
+/// <summary>Registro en el contenedor de DI de las integraciones de pagos y facturación.</summary>
 public static class DependencyInjection
 {
     private const string Pasarela1 = "pasarela1";

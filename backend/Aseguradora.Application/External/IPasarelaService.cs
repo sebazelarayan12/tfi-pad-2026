@@ -1,6 +1,6 @@
 using Aseguradora.Application.Dtos;
 namespace Aseguradora.Application.External;
-/// <summary>Define IPasarelaService para la integración de pagos y facturación.</summary>
+/// <summary>Contrato con una pasarela de pagos para crear y consultar pagos.</summary>
 public interface IPasarelaService
 {
     /// <summary>Crea un checkout pendiente para la referencia externa indicada.</summary>

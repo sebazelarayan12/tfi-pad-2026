@@ -1,6 +1,6 @@
 using Aseguradora.Application.Dtos;
 namespace Aseguradora.Application.External;
-/// <summary>Define IArcaService para la integración de pagos y facturación.</summary>
+/// <summary>Contrato con ARCA para emitir y consultar facturas.</summary>
 public interface IArcaService
 {
     /// <summary>Autoriza una factura idempotente y valida que neto más IVA coincida con el total.</summary>
