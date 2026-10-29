@@ -36,8 +36,8 @@ public sealed class VehiculoService(
         if (!VehiculoAltaRequest.EsPatenteValida(patente))
             throw new BusinessRuleException($"La patente '{patente}' no tiene un formato válido (AA000AA o AAA000).");
 
-        if (!Enum.IsDefined(request.Uso))
-            throw new BusinessRuleException("El uso del vehículo no es válido.");
+        if (request.Uso is null || !Enum.IsDefined(request.Uso.Value))
+            throw new BusinessRuleException("El uso del vehículo es obligatorio y debe ser válido.");
 
         var cliente = await _clientes.GetByIdAsync(request.ClienteId, ct)
             ?? throw new NotFoundException($"El cliente {request.ClienteId} no existe.");
@@ -65,7 +65,7 @@ public sealed class VehiculoService(
             Modelo = datosDnrpa.Modelo,
             Anio = datosDnrpa.Anio,
             Tipo = datosDnrpa.Tipo,
-            Uso = request.Uso,
+            Uso = request.Uso.Value,
             NumeroMotor = datosDnrpa.NumeroMotor,
             NumeroChasis = datosDnrpa.NumeroChasis,
             ValidadoDnrpa = true,

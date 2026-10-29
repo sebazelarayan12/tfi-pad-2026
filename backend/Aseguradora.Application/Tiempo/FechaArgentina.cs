@@ -20,6 +20,13 @@ public static class FechaArgentina
         return DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(reloj.GetUtcNow(), Zona).DateTime);
     }
 
+    /// <summary>The UTC instant of <paramref name="fecha"/> at <paramref name="hora"/>, Argentina time.</summary>
+    public static DateTimeOffset AUtc(DateOnly fecha, TimeOnly hora)
+    {
+        var local = fecha.ToDateTime(hora, DateTimeKind.Unspecified);
+        return new DateTimeOffset(local, Zona.GetUtcOffset(local)).ToUniversalTime();
+    }
+
     private static TimeZoneInfo ObtenerZona()
     {
         try

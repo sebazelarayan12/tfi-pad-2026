@@ -1,3 +1,4 @@
+using Aseguradora.Api.BackgroundJobs;
 using Aseguradora.Api.Security;
 using Aseguradora.Tests.Support;
 using Microsoft.AspNetCore.Authentication;
@@ -110,6 +111,10 @@ public sealed class AseguradoraWebFactory : WebApplicationFactory<Program>
 
         foreach (var (proveedor, clave) in TokenDePrueba.ClavesApi())
             builder.UseSetting($"{ApiKeyOpciones.Seccion}:{proveedor}", clave);
+
+        // The daily expiry job (US-F3-05) would change the seeded data at startup; a test that needs it
+        // turns it back on through Ajustes.
+        builder.UseSetting(VencimientosJob.ClaveHabilitado, "false");
 
         foreach (var (clave, valor) in Ajustes)
             builder.UseSetting(clave, valor);
