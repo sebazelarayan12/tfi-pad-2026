@@ -24,6 +24,7 @@ public static class Frente2Extensions
         ArgumentNullException.ThrowIfNull(config);
 
         services.AddScoped<IPlanService, PlanService>();
+        services.AddScoped<IVehiculoService, VehiculoService>();
         services.AddScoped<ISeeder, PlanesSeeder>();
         services.AgregarIntegracion<IDnrpaService, DnrpaMockService, DnrpaHttpService>(config, "Dnrpa");
 
