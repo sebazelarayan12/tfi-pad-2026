@@ -1,3 +1,4 @@
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Dtos.Polizas;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.Tiempo;
@@ -9,8 +10,9 @@ using Aseguradora.Domain.Services;
 namespace Aseguradora.Application.Services;
 
 /// <summary>
-/// Issues policies from quotes (CU10). Every rule is checked before anything is added, and the
-/// policy and its installments are saved with a single <see cref="IUnitOfWork.SaveChangesAsync"/>.
+/// Issues, lists, shows and cancels policies (CU10 to CU13). Issuing checks every rule before anything
+/// is added, and the policy and its installments are saved with a single
+/// <see cref="IUnitOfWork.SaveChangesAsync"/>.
 /// </summary>
 public sealed class PolizaService(
     IRepository<Cotizacion> cotizaciones,
@@ -18,6 +20,7 @@ public sealed class PolizaService(
     IRepository<Vehiculo> vehiculos,
     IRepository<Plan> planes,
     IRepository<Poliza> polizas,
+    IRepository<Cuota> cuotas,
     INumeradorPolizas numerador,
     IUnitOfWork unitOfWork,
     TimeProvider reloj) : IPolizaService
@@ -74,6 +77,100 @@ public sealed class PolizaService(
                 "Otra emisión con la misma cotización o el mismo vehículo se guardó al mismo tiempo (RN04). Recargue los datos.", ex);
         }
 
+        return Mapear(poliza, vehiculo, plan);
+    }
+
+    /// <inheritdoc />
+    public async Task<PaginaResponse<PolizaListItemResponse>> ListarAsync(PolizaFiltro filtro, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(filtro);
+
+        IReadOnlyList<Guid>? vehiculoIds = null;
+        if (!string.IsNullOrWhiteSpace(filtro.Patente))
+        {
+            var patente = filtro.Patente.Trim().ToUpperInvariant();
+            vehiculoIds = (await vehiculos.FindAsync(v => v.Patente == patente, ct)).Select(v => v.Id).ToList();
+        }
+
+        var estado = filtro.Estado;
+        var clienteId = filtro.ClienteId;
+        var encontradas = await polizas.FindAsync(
+            p => (estado == null || p.Estado == estado)
+                 && (clienteId == null || p.ClienteId == clienteId)
+                 && (vehiculoIds == null || vehiculoIds.Contains(p.VehiculoId)),
+            ct);
+
+        // Newest first; the number breaks ties between policies issued at the same instant.
+        var pagina = encontradas
+            .OrderByDescending(p => p.FechaEmision)
+            .ThenByDescending(p => p.Numero, StringComparer.Ordinal)
+            .Skip((filtro.Pagina - 1) * filtro.Tamano)
+            .Take(filtro.Tamano)
+            .ToList();
+
+        var idsVehiculos = pagina.Select(p => p.VehiculoId).Distinct().ToList();
+        var idsPlanes = pagina.Select(p => p.PlanId).Distinct().ToList();
+        var patentes = (await vehiculos.FindAsync(v => idsVehiculos.Contains(v.Id), ct)).ToDictionary(v => v.Id, v => v.Patente);
+        var codigos = (await planes.FindAsync(p => idsPlanes.Contains(p.Id), ct)).ToDictionary(p => p.Id, p => p.Codigo);
+
+        var items = pagina
+            .Select(p => new PolizaListItemResponse(
+                p.Id, p.Numero, p.ClienteId, patentes[p.VehiculoId], codigos[p.PlanId],
+                p.PrimaMensual, p.FechaInicio, p.FechaFin, p.Estado))
+            .ToList();
+
+        return new PaginaResponse<PolizaListItemResponse>(items, filtro.Pagina, filtro.Tamano, encontradas.Count);
+    }
+
+    /// <inheritdoc />
+    public async Task<PolizaDetalleResponse> ObtenerAsync(Guid id, CancellationToken ct = default)
+    {
+        var poliza = await CargarConCuotasAsync(id, ct);
+        return await MapearAsync(poliza, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<CuotaResponse>> ObtenerCuotasAsync(Guid id, CancellationToken ct = default)
+    {
+        if (!await polizas.AnyAsync(p => p.Id == id, ct))
+            throw new NotFoundException($"La póliza {id} no existe.");
+
+        var deLaPoliza = await cuotas.FindAsync(c => c.PolizaId == id, ct);
+        return deLaPoliza.OrderBy(c => c.Numero).Select(MapearCuota).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<PolizaDetalleResponse> CancelarAsync(Guid id, CancelarPolizaRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var poliza = await CargarConCuotasAsync(id, ct);
+        // RN13: only Pendiente, Vigente or Suspendida; voids every unpaid installment.
+        poliza.Cancelar(request.Motivo, reloj.GetUtcNow().UtcDateTime);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return await MapearAsync(poliza, ct);
+    }
+
+    private async Task<Poliza> CargarConCuotasAsync(Guid id, CancellationToken ct)
+    {
+        var poliza = await polizas.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"La póliza {id} no existe.");
+
+        // Loaded through the same unit of work, so they also fill poliza.Cuotas.
+        var deLaPoliza = await cuotas.FindAsync(c => c.PolizaId == id, ct);
+        foreach (var cuota in deLaPoliza.Where(c => !poliza.Cuotas.Contains(c)))
+            poliza.Cuotas.Add(cuota);
+
+        return poliza;
+    }
+
+    private async Task<PolizaDetalleResponse> MapearAsync(Poliza poliza, CancellationToken ct)
+    {
+        var vehiculo = await vehiculos.GetByIdAsync(poliza.VehiculoId, ct)
+            ?? throw new NotFoundException($"El vehículo {poliza.VehiculoId} de la póliza no existe.");
+        var plan = await planes.GetByIdAsync(poliza.PlanId, ct)
+            ?? throw new NotFoundException($"El plan {poliza.PlanId} de la póliza no existe.");
         return Mapear(poliza, vehiculo, plan);
     }
 
@@ -165,6 +262,9 @@ public sealed class PolizaService(
         Estado: poliza.Estado,
         Cuotas: poliza.Cuotas
             .OrderBy(c => c.Numero)
-            .Select(c => new CuotaResponse(c.Id, c.Numero, c.Importe, c.Recargo, c.FechaVencimiento, c.Estado, c.FechaPago))
+            .Select(MapearCuota)
             .ToList());
+
+    private static CuotaResponse MapearCuota(Cuota c) =>
+        new(c.Id, c.Numero, c.Importe, c.Recargo, c.FechaVencimiento, c.Estado, c.FechaPago);
 }

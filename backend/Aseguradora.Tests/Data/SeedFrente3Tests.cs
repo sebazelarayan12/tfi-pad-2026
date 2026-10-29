@@ -73,6 +73,7 @@ public sealed class SeedFrente3Tests : IDisposable
             new EfRepository<Vehiculo>(context),
             new EfRepository<Plan>(context),
             new EfRepository<Poliza>(context),
+            new EfRepository<Cuota>(context),
             // Starts at 2 like the real sequence: the seeded policy already is POL-0000001.
             new NumeradorPolizasFalso(primero: 2),
             new UnitOfWork(context),

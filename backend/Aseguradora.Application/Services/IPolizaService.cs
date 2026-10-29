@@ -1,3 +1,4 @@
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Dtos.Polizas;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Domain.Exceptions;
@@ -5,7 +6,7 @@ using Aseguradora.Domain.Exceptions;
 namespace Aseguradora.Application.Services;
 
 /// <summary>
-/// Service contract for issuing insurance policies (CU10).
+/// Service contract for issuing, querying and cancelling insurance policies (CU10 to CU13).
 /// </summary>
 public interface IPolizaService
 {
@@ -20,4 +21,23 @@ public interface IPolizaService
     /// <exception cref="BusinessRuleException">Thrown when an issuing rule fails.</exception>
     /// <exception cref="ReglaDeDominioException">Thrown when the term is not 1, 6 or 12 months.</exception>
     Task<PolizaDetalleResponse> EmitirAsync(EmitirPolizaRequest request, CancellationToken ct = default);
+
+    /// <summary>Lists policies, newest first, filtered by state, client and plate (CU11).</summary>
+    /// <param name="filtro">Optional filters and the page to return.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<PaginaResponse<PolizaListItemResponse>> ListarAsync(PolizaFiltro filtro, CancellationToken ct = default);
+
+    /// <summary>Gets a policy with its vehicle, plan and installments (CU11).</summary>
+    /// <exception cref="NotFoundException">Thrown when the policy does not exist.</exception>
+    Task<PolizaDetalleResponse> ObtenerAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Gets the installments of a policy ordered by number (CU13).</summary>
+    /// <exception cref="NotFoundException">Thrown when the policy does not exist.</exception>
+    Task<IReadOnlyList<CuotaResponse>> ObtenerCuotasAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Cancels a policy and voids its unpaid installments (CU12, RN13).</summary>
+    /// <exception cref="NotFoundException">Thrown when the policy does not exist.</exception>
+    /// <exception cref="ReglaDeDominioException">Thrown when the reason is empty or too long.</exception>
+    /// <exception cref="TransicionInvalidaException">Thrown when the policy is Vencida or already Cancelada.</exception>
+    Task<PolizaDetalleResponse> CancelarAsync(Guid id, CancelarPolizaRequest request, CancellationToken ct = default);
 }

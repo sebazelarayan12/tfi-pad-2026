@@ -378,6 +378,7 @@ public sealed class PolizaServiceEmisionTests : IDisposable
         new EfRepository<Vehiculo>(context),
         new EfRepository<Plan>(context),
         verificaPolizas ? new EfRepository<Poliza>(context) : new PolizasQueNoVenOtrasEmisiones(context),
+        new EfRepository<Cuota>(context),
         _numerador,
         new UnitOfWork(context),
         new RelojFalso(Ahora));
