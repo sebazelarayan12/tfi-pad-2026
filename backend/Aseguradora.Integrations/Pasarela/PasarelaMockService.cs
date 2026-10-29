@@ -3,7 +3,7 @@ using Aseguradora.Application.Dtos;
 using Aseguradora.Application.External;
 using Aseguradora.Application.Exceptions;
 namespace Aseguradora.Integrations.Pasarela;
-/// <summary>Define PasarelaMockService para la integración de pagos y facturación.</summary>
+/// <summary>Pasarela de pagos en memoria: guarda los pagos creados por referencia externa y los consulta por identificador.</summary>
 public sealed class PasarelaMockService : IPasarelaService
 {
     private readonly string proveedor;

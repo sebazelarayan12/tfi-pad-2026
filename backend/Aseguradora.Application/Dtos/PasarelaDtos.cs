@@ -1,10 +1,10 @@
 namespace Aseguradora.Application.Dtos;
-/// <summary>Define PasarelaPagador para la integración de pagos y facturación.</summary>
+/// <summary>Datos del pagador que se informan a la pasarela.</summary>
 public record PasarelaPagador(
     string Nombre,
     string Dni,
     string Email);
-/// <summary>Define PasarelaCrearPagoRequest para la integración de pagos y facturación.</summary>
+/// <summary>Solicitud de creación de un pago en la pasarela, con importe y URLs de retorno y notificación (contrato 9.3).</summary>
 public record PasarelaCrearPagoRequest(
     string ReferenciaExterna,
     decimal Importe,
@@ -14,13 +14,13 @@ public record PasarelaCrearPagoRequest(
     string UrlRetornoExito,
     string UrlRetornoError,
     string UrlNotificacion);
-/// <summary>Define PasarelaCrearPagoResponse para la integración de pagos y facturación.</summary>
+/// <summary>Pago creado en la pasarela, con la URL de checkout y su fecha de expiración.</summary>
 public record PasarelaCrearPagoResponse(
     string IdPago,
     string Estado,
     string UrlPago,
     DateTime FechaExpiracion);
-/// <summary>Define PasarelaPagoResponse para la integración de pagos y facturación.</summary>
+/// <summary>Estado de un pago consultado en la pasarela.</summary>
 public record PasarelaPagoResponse(
     string IdPago,
     string? ReferenciaExterna,
