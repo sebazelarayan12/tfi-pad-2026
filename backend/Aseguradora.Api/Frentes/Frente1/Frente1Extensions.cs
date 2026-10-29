@@ -1,8 +1,11 @@
 using Aseguradora.Api.Security;
+using Aseguradora.Application.External;
 using Aseguradora.Application.Publico;
 using Aseguradora.Application.Security;
 using Aseguradora.Data.Identity;
 using Aseguradora.Data.Seed;
+using Aseguradora.Integrations;
+using Aseguradora.Integrations.Renaper;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Aseguradora.Api.Frentes.Frente1;
@@ -31,6 +34,9 @@ public static class Frente1Extensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<AutenticacionService>();
+
+        // CU04: Renaper behind IRenaperService, mock or real chosen by Integraciones:Renaper:UsarMock (C13).
+        services.AgregarIntegracion<IRenaperService, RenaperMockService, RenaperHttpService>(config, "Renaper");
 
         return services;
     }
