@@ -3,7 +3,7 @@
 Sistema de gestión para una aseguradora de autos, motos y camionetas: clientes, vehículos, cotizaciones, pólizas, cuotas mensuales y cobros. Es el Trabajo Final Integrador de Programación de Aplicaciones Distribuidas (UTN, 4.º año), y se integra con los sistemas de otros grupos de la cursada.
 
 > [!NOTE]
-> **Estado:** etapa de diseño. La spec del back está definida, con algunos puntos en revisión, y la solución .NET todavía no existe. Este README se completa a medida que se crea el código.
+> **Estado:** el back (API, datos, integraciones mock y tests) está en desarrollo y desplegado en `https://api.nexaseguros.me`. Los fronts en React y varios endpoints todavía no existen. Las tareas se siguen en [`docs/tareas-divididas.md`](docs/tareas-divididas.md).
 
 ## Qué hace
 
@@ -72,16 +72,41 @@ Servicios que ofrecemos a otros grupos: seguro vigente por patente, deuda por DN
 
 ## API
 
-Unos 42 endpoints en 11 controllers, documentados en Swagger.
+Swagger está disponible en local (`Development`) y apagado en producción por defecto.
 
-| Área | Ruta base | Acceso |
-| --- | --- | --- |
-| Autenticación y usuarios | `/api/auth` | Público / Admin |
-| Clientes, vehículos, cotizaciones, pólizas, pagos | `/api/clientes`, `/api/vehiculos`, `/api/cotizaciones`, `/api/polizas`, `/api/pagos` | Empleado |
-| Planes | `/api/planes` | Público (lectura) / Admin |
-| Pago Fácil | `/api/pagofacil` | Empleado |
-| Web pública | `/api/publico` | Sin login, con DNI y número de póliza |
-| Sistemas externos | `/api/externo`, `/api/webhooks` | API key |
+| Área | Ruta base | Acceso | Estado |
+| --- | --- | --- | --- |
+| Autenticación y usuarios | `/api/auth` | Público / Admin | Disponible |
+| Planes | `/api/planes` | Público (lectura) / Admin | Disponible |
+| Vehículos | `/api/vehiculos` | Empleado | Disponible |
+| Pólizas | `/api/polizas` | Empleado | Disponible |
+| Pago Fácil | `/api/pagofacil` | Empleado | Parcial |
+| Seguro vigente (externo) | `/api/externo` | API key | Disponible |
+| Clientes, cotizaciones, pagos | `/api/clientes`, `/api/cotizaciones`, `/api/pagos` | Empleado | Pendiente |
+| Web pública | `/api/publico` | Sin login, con DNI y número de póliza | Pendiente |
+| Webhooks de pasarelas | `/api/webhooks` | API key | Pendiente |
+
+## Correr en local
+
+Requisitos: Docker y el SDK de .NET 8.
+
+```bash
+cp .env.example .env   # completar los valores; nunca se sube a Git
+docker compose up -d --build
+curl http://localhost:8080/health
+```
+
+> [!IMPORTANT]
+> La API no arranca si faltan `FACTURACION_CUIT` y `FACTURACION_PUNTO_VENTA` en el `.env`.
+
+Tests del back:
+
+```bash
+cd backend
+dotnet test
+```
+
+Sin Docker se omiten las pruebas de integración con SQL Server; para correrlas, `ASEGURADORA_TESTS_DOCKER=1`. Detalle en [`backend/Aseguradora.Tests/README.md`](backend/Aseguradora.Tests/README.md).
 
 ## Trabajar en el proyecto
 
@@ -99,4 +124,7 @@ Detalle completo en [`docs/workflow.md`](docs/workflow.md).
 ## Documentación
 
 - [`docs/workflow.md`](docs/workflow.md): flujo de ramas, Trello y PRs.
+- [`docs/tareas-divididas.md`](docs/tareas-divididas.md): una sección por tarjeta, con criterios de aceptación.
+- [`docs/despliegue.md`](docs/despliegue.md): API en Azure con Cloudflare Tunnel.
+- [`docs/pagos-mocks.md`](docs/pagos-mocks.md) y [`docs/aprobacion-pagos.md`](docs/aprobacion-pagos.md): pasarelas mock y aprobación de pagos.
 - `docs/AnalisisBack.md`: spec completa del back (casos de uso, reglas de negocio, modelo de datos, endpoints y contratos de integración). No está versionada: pedírsela al equipo.
