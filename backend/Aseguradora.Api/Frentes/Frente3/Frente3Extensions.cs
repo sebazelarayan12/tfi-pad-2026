@@ -38,6 +38,9 @@ public static class Frente3Extensions
         services.AddScoped(sp => sp.GetRequiredService<IOptions<PagoFacilOpciones>>().Value);
         services.AddScoped<ICuponPagoFacilService, CuponPagoFacilService>();
 
+        // CU19: insurance check for external systems (US-F3-04).
+        services.AddScoped<ISeguroVigenteService, SeguroVigenteService>();
+
         return services;
     }
 }
