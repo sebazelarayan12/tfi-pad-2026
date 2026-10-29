@@ -8,6 +8,8 @@ public class PagoConfiguration : IEntityTypeConfiguration<Pago>
 {
     public void Configure(EntityTypeBuilder<Pago> builder)
     {
+        builder.Property(e => e.RowVersion).IsRowVersion();
+
         builder.ToTable("Pagos");
 
         builder.HasKey(p => p.Id);

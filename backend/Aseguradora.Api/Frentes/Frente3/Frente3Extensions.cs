@@ -1,5 +1,8 @@
 using Aseguradora.Application.PagoFacil;
 using Aseguradora.Application.Services;
+using Aseguradora.Data.Numeracion;
+using Aseguradora.Data.Seed;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Aseguradora.Api.Frentes.Frente3;
@@ -13,6 +16,14 @@ public static class Frente3Extensions
     public static IServiceCollection AddFrente3(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<IActualizadorEstadoPoliza, ActualizadorEstadoPoliza>();
+
+        // Program.cs registers TimeProvider; TryAdd keeps this front working on its own.
+        services.TryAddSingleton(TimeProvider.System);
+
+        // CU10: policy issuing (US-F3-02).
+        services.AddScoped<INumeradorPolizas, NumeradorPolizasSql>();
+        services.AddScoped<IPolizaService, PolizaService>();
+        services.AddScoped<ISeeder, SeedFrente3>();
 
         // CU20: Pago Fácil coupon (US-F3-06). A missing company code fails on the first coupon,
         // with the message of PagoFacilOpciones, without stopping the rest of the API.
