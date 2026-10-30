@@ -98,7 +98,8 @@ public class ConcurrenciaCuotaTests(SqlServerContainerFixture fixture)
             new EfRepository<Cliente>(contexto), new EfRepository<Poliza>(contexto), new EfRepository<Pago>(contexto));
         return new PagoService(
             verificador, new EfRepository<Cuota>(contexto), new EfRepository<Cliente>(contexto), pagos,
-            new PasarelaSiempreAcepta(), new UnitOfWork(contexto), opciones, TimeProvider.System);
+            new PasarelaSiempreAcepta(), new UnitOfWork(contexto), opciones, TimeProvider.System,
+            new EfRepository<Poliza>(contexto), new EfRepository<Factura>(contexto), ServiciosPagoDePrueba.CrearAprobacion(contexto));
     }
 
     /// <summary>Simulates a concurrent request: the C8 check runs before the other payment was saved.</summary>
