@@ -4,6 +4,7 @@ using Aseguradora.Api.Frentes.Frente1;
 using Aseguradora.Api.Frentes.Frente2;
 using Aseguradora.Api.Frentes.Frente3;
 using Aseguradora.Api.Middleware;
+using Aseguradora.Api.Security;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
 using Aseguradora.Integrations;
@@ -20,7 +21,7 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-// Only the schemes are declared here; Frente 1 implements JWT and API key authentication.
+// The schemes are declared here and SeguridadSwaggerFilter links them to each operation.
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -37,6 +38,8 @@ builder.Services.AddSwaggerGen(options =>
         Name = "X-Api-Key",
         Description = "API key for external systems."
     });
+    // Each operation names the scheme it needs, so Swagger UI sends the stored credential.
+    options.OperationFilter<SeguridadSwaggerFilter>();
 });
 builder.Services.AddHealthChecks().AddDbContextCheck<AseguradoraDbContext>();
 

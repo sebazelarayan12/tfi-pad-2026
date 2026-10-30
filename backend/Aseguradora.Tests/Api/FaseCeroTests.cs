@@ -71,6 +71,27 @@ public class FaseCeroTests
         Assert.Equal("X-Api-Key", apiKey.GetProperty("name").GetString());
     }
 
+    [Theory]
+    [InlineData("/api/externo/clientes/{dni}/deuda", "get", new[] { "ApiKey" })]
+    [InlineData("/api/polizas", "get", new[] { "Bearer" })]
+    [InlineData("/api/planes", "post", new[] { "Bearer" })]
+    [InlineData("/api/planes", "get", new string[0])]
+    [InlineData("/api/publico/consulta", "post", new string[0])]
+    public async Task Swagger_EnDevelopment_CadaOperacionDeclaraSuEsquemaDeSeguridad(
+        string ruta, string metodo, string[] esquemasEsperados)
+    {
+        await using var factory = new ApiFactory(Development);
+
+        var json = await factory.CreateClient().GetStringAsync("/swagger/v1/swagger.json");
+
+        var operacion = JsonDocument.Parse(json).RootElement
+            .GetProperty("paths").GetProperty(ruta).GetProperty(metodo);
+        var declarados = operacion.TryGetProperty("security", out var security)
+            ? security.EnumerateArray().SelectMany(r => r.EnumerateObject().Select(p => p.Name)).ToArray()
+            : [];
+        Assert.Equal(esquemasEsperados, declarados);
+    }
+
     [Fact]
     public async Task Cors_OrigenListado_RecibeHeader()
     {
