@@ -175,6 +175,9 @@ El compose completa esa lista con `REDES_CONFIABLES` (por defecto `172.16.0.0/12
 | `TZ` | `America/Argentina/Buenos_Aires` en el contenedor de la API |
 | `tzdata` | La imagen de ASP.NET trae un sistema mínimo; el `Dockerfile` instala `tzdata` para que exista `/usr/share/zoneinfo/America/Argentina/Buenos_Aires` |
 | `healthcheck` | `curl http://localhost:8080/health` (la imagen instala `curl`). `GET /health` consulta la base |
+| `Pagos__UrlBaseApi` | URL pública de la API; el pago online (`POST /api/publico/pagos`) la usa para decirle a la pasarela dónde avisar el resultado (`{url}/api/webhooks/pasarela/{proveedor}`). En compose viene de `PAGOS_URL_BASE_API`. **En la VM debe ser `https://api.nexaseguros.me`**: con el valor por defecto (`http://localhost:8080`) la pasarela cobra pero su aviso no llega y el pago queda `Pendiente` |
+| `Pagos__UrlRetornoExito` / `Pagos__UrlRetornoError` | Páginas de la web pública a las que vuelve el cliente tras pagar. En compose vienen de `PAGOS_URL_RETORNO_EXITO` y `PAGOS_URL_RETORNO_ERROR`; en la VM, el dominio de Cloudflare Pages de la web pública |
+| `Pagos__ReservaMinutos` | Minutos (por defecto 60) en los que una cuota con un pago `Pendiente` no admite otro pago online. En compose viene de `PAGOS_RESERVA_MINUTOS` |
 | Réplicas | Una sola `api`. Con dos, `VencimientosJob` correría dos veces |
 
 La zona horaria del contenedor se comprueba con:

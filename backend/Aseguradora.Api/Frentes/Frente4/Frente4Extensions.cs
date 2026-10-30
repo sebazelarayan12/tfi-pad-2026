@@ -15,6 +15,11 @@ public static class Frente4Extensions
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<FacturacionOpciones>>().Value);
         services.AddScoped<IFacturacionService, FacturacionService>();
         services.AddScoped<IAprobacionPagoService, AprobacionPagoService>();
+        services.AddOptions<PagoOnlineOpciones>()
+            .Bind(configuration.GetSection(PagoOnlineOpciones.Seccion))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<PagoOnlineOpciones>>().Value);
+        services.AddScoped<IPagoService, PagoService>();
         return services;
     }
 }
