@@ -45,6 +45,10 @@ public sealed class PagoService(
         var pago = Pago.CrearPendiente(
             cliente.Id, await GenerarNumeroAsync(ct), MedioPago.Pasarela, cuotasAPagar, ahora, proveedor);
         await pagos.AddAsync(pago, ct);
+        // The C8 check above and this insert are not atomic. Touching the installments renews their
+        // RowVersion in the same save, so a concurrent request that read them first fails with a conflict.
+        foreach (var cuota in cuotasAPagar)
+            cuotas.Tocar(cuota);
         await unitOfWork.SaveChangesAsync(ct);
 
         var respuesta = await CrearEnPasarelaAsync(pago, poliza, cliente, proveedor, ct);

@@ -14,6 +14,14 @@ public interface IRepository<T> where T : EntityBase
     Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
     void Update(T entity);
+
+    /// <summary>
+    /// Makes the next save issue an UPDATE of <paramref name="entity"/> without changing any value, so its
+    /// concurrency token is checked and renewed. Another request that read the same row before this save
+    /// then fails with a concurrency conflict.
+    /// </summary>
+    void Tocar(T entity);
+
     void Remove(T entity);
 
     /// <summary>Query root for filters, includes and paging that the basic methods do not cover.</summary>
