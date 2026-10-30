@@ -26,6 +26,8 @@ public static class Frente1Extensions
         services.AddPublicoRateLimit(config);
         // Shared DNI + policy/payment check for the public endpoints of F3 and F4 (US-F1-07).
         services.AddScoped<IVerificadorPublico, VerificadorPublico>();
+        // CU02: public policy and installments query (US-F1-08).
+        services.AddScoped<IConsultaPublicaService, ConsultaPublicaService>();
 
         // CU01 and CU03: Application rules over an Identity-backed store, and the JWT issuer.
         services.AddScoped<IUsuarioStore, IdentityUsuarioStore>();
