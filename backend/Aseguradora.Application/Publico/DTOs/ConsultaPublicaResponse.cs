@@ -1,8 +1,9 @@
 namespace Aseguradora.Application.Publico.DTOs;
 
 /// <summary>
-/// What the public web shows for a policy. It has no ids or entities (RN20): only the stored
-/// product, vehicle and installment data.
+/// What the public web shows for a policy. It has no entities and no client, policy, vehicle or plan
+/// ids (RN20): only the stored product, vehicle and installment data. Each installment carries its
+/// own id because POST /api/publico/pagos asks for it.
 /// </summary>
 public sealed record ConsultaPublicaResponse(
     string NumeroPoliza,
@@ -22,6 +23,7 @@ public sealed record VehiculoPublico(string Patente, string Marca, string Modelo
 
 /// <summary>Installment with its surcharge and total. The state is the stored one (F3 CU14 updates it).</summary>
 public sealed record CuotaPublica(
+    Guid IdCuota,
     int Numero,
     decimal Importe,
     decimal Recargo,
