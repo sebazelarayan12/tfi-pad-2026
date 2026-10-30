@@ -244,4 +244,110 @@ public sealed class VehiculosControllerTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, respSinToken.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, respSinRol.StatusCode);
     }
+
+    [Fact]
+    public async Task GET_sin_clienteId_devuelve_400()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.GetAsync(RutaVehiculos);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GET_con_clienteId_devuelve_solo_vehiculos_activos_del_cliente()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.GetAsync($"{RutaVehiculos}?clienteId={SeedData.ClienteId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var lista = await response.Content.ReadFromJsonAsync<List<VehiculoResponse>>();
+        Assert.NotNull(lista);
+        Assert.NotEmpty(lista);
+        Assert.All(lista, v =>
+        {
+            Assert.Equal(SeedData.ClienteId, v.ClienteId);
+            Assert.True(v.Activo);
+        });
+    }
+
+    [Fact]
+    public async Task GET_id_inexistente_devuelve_404()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.GetAsync($"{RutaVehiculos}/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PUT_cambia_el_uso_y_no_la_patente()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.PutAsJsonAsync(
+            $"{RutaVehiculos}/{SeedData.VehiculoId}",
+            new ModificarUsoRequest { Uso = UsoVehiculo.Comercial });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var actualizado = await response.Content.ReadFromJsonAsync<VehiculoResponse>();
+        Assert.NotNull(actualizado);
+        Assert.Equal(UsoVehiculo.Comercial, actualizado.Uso);
+        Assert.Equal("AB123CD", actualizado.Patente);
+    }
+
+    [Fact]
+    public async Task PUT_sin_uso_devuelve_400()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.PutAsJsonAsync($"{RutaVehiculos}/{SeedData.VehiculoId}", new { });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DELETE_con_poliza_activa_devuelve_400()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+
+        var response = await empleado.DeleteAsync($"{RutaVehiculos}/{SeedData.VehiculoId}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var detail = doc.RootElement.GetProperty("detail").GetString();
+        Assert.NotNull(detail);
+        Assert.Contains("póliza activa", detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DELETE_valido_devuelve_204_y_deja_la_fila_inactiva()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+        var alta = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        });
+        var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();
+        Assert.NotNull(creado);
+
+        var response = await empleado.DeleteAsync($"{RutaVehiculos}/{creado.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        await using var context = _sqlite.CreateContext();
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == creado.Id);
+        Assert.False(enBase.Activo);
+    }
 }

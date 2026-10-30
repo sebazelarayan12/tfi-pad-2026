@@ -13,6 +13,7 @@ namespace Aseguradora.Application.Services;
 public sealed class VehiculoService(
     IRepository<Vehiculo> vehiculos,
     IRepository<Cliente> clientes,
+    IRepository<Poliza> polizas,
     IDnrpaService dnrpa,
     IUnitOfWork unitOfWork) : IVehiculoService
 {
@@ -21,6 +22,7 @@ public sealed class VehiculoService(
 
     private readonly IRepository<Vehiculo> _vehiculos = vehiculos ?? throw new ArgumentNullException(nameof(vehiculos));
     private readonly IRepository<Cliente> _clientes = clientes ?? throw new ArgumentNullException(nameof(clientes));
+    private readonly IRepository<Poliza> _polizas = polizas ?? throw new ArgumentNullException(nameof(polizas));
     private readonly IDnrpaService _dnrpa = dnrpa ?? throw new ArgumentNullException(nameof(dnrpa));
     private readonly IUnitOfWork _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
 
@@ -76,6 +78,62 @@ public sealed class VehiculoService(
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Mapear(vehiculo);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<VehiculoResponse>> ListarPorClienteAsync(Guid clienteId, CancellationToken ct = default)
+    {
+        var vehiculosActivos = await _vehiculos.FindAsync(v => v.ClienteId == clienteId && v.Activo, ct);
+        return vehiculosActivos
+            .OrderBy(v => v.Patente, StringComparer.Ordinal)
+            .Select(Mapear)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<VehiculoResponse> ObtenerAsync(Guid id, CancellationToken ct = default)
+    {
+        var vehiculo = await _vehiculos.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"El vehículo {id} no existe.");
+
+        return Mapear(vehiculo);
+    }
+
+    /// <inheritdoc />
+    public async Task<VehiculoResponse> ModificarUsoAsync(Guid id, UsoVehiculo uso, CancellationToken ct = default)
+    {
+        if (!Enum.IsDefined(uso))
+            throw new BusinessRuleException("El uso del vehículo no es válido.");
+
+        var vehiculo = await _vehiculos.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"El vehículo {id} no existe.");
+
+        vehiculo.Uso = uso;
+        _vehiculos.Update(vehiculo);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Mapear(vehiculo);
+    }
+
+    /// <inheritdoc />
+    public async Task DarDeBajaAsync(Guid id, CancellationToken ct = default)
+    {
+        var vehiculo = await _vehiculos.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"El vehículo {id} no existe.");
+
+        var tienePolizaActiva = await _polizas.AnyAsync(
+            p => p.VehiculoId == id
+                && (p.Estado == EstadoPoliza.Pendiente
+                    || p.Estado == EstadoPoliza.Vigente
+                    || p.Estado == EstadoPoliza.Suspendida),
+            ct);
+        if (tienePolizaActiva)
+            throw new BusinessRuleException(
+                $"El vehículo {id} tiene una póliza activa (Pendiente, Vigente o Suspendida) y no puede darse de baja (RN04).");
+
+        vehiculo.Activo = false;
+        _vehiculos.Update(vehiculo);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
     private static VehiculoResponse Mapear(Vehiculo vehiculo) => new(

@@ -9,6 +9,7 @@ using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Aseguradora.Integrations.Dnrpa;
 using Aseguradora.Tests.Data;
+using Aseguradora.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 
 namespace Aseguradora.Tests.Application;
@@ -29,6 +30,7 @@ public sealed class VehiculoServiceTests : IDisposable
         new(
             new EfRepository<Vehiculo>(context),
             new EfRepository<Cliente>(context),
+            new EfRepository<Poliza>(context),
             dnrpa ?? new DnrpaMockService(),
             new UnitOfWork(context));
 
@@ -204,5 +206,114 @@ public sealed class VehiculoServiceTests : IDisposable
             }, CancellationToken.None));
 
         Assert.Equal(cantidadInicial, await context.Vehiculos.CountAsync());
+    }
+
+    [Fact]
+    public async Task ListarPorClienteAsync_no_devuelve_inactivos()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var activo = await service.AltaAsync(new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        }, CancellationToken.None);
+        await service.DarDeBajaAsync(activo.Id, CancellationToken.None);
+
+        var lista = await service.ListarPorClienteAsync(SeedData.ClienteId, CancellationToken.None);
+
+        Assert.All(lista, v => Assert.True(v.Activo));
+        Assert.DoesNotContain(lista, v => v.Id == activo.Id);
+        Assert.Contains(lista, v => v.Id == SeedData.VehiculoId);
+    }
+
+    [Fact]
+    public async Task DarDeBajaAsync_con_poliza_Vigente_lanza_BusinessRuleException()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.DarDeBajaAsync(SeedData.VehiculoId, CancellationToken.None));
+
+        Assert.Contains("póliza activa", ex.Message, StringComparison.OrdinalIgnoreCase);
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == SeedData.VehiculoId);
+        Assert.True(enBase.Activo);
+    }
+
+    [Theory]
+    [InlineData(EstadoPoliza.Pendiente)]
+    [InlineData(EstadoPoliza.Suspendida)]
+    public async Task DarDeBajaAsync_con_poliza_Pendiente_o_Suspendida_lanza_BusinessRuleException(EstadoPoliza estado)
+    {
+        await using var context = _fixture.CreateContext();
+        var poliza = await PolizasDePrueba.AgregarPolizaAsync(context, estado, DateTime.UtcNow);
+        var service = CrearServicio(context);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.DarDeBajaAsync(poliza.VehiculoId, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(EstadoPoliza.Cancelada)]
+    [InlineData(EstadoPoliza.Vencida)]
+    public async Task DarDeBajaAsync_con_polizas_Cancelada_o_Vencida_permite_la_baja(EstadoPoliza estado)
+    {
+        await using var context = _fixture.CreateContext();
+        var poliza = await PolizasDePrueba.AgregarPolizaAsync(context, estado, DateTime.UtcNow);
+        var service = CrearServicio(context);
+
+        await service.DarDeBajaAsync(poliza.VehiculoId, CancellationToken.None);
+
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == poliza.VehiculoId);
+        Assert.False(enBase.Activo);
+    }
+
+    [Fact]
+    public async Task DarDeBajaAsync_no_borra_la_fila()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var creado = await service.AltaAsync(new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        }, CancellationToken.None);
+        var cantidadInicial = await context.Vehiculos.CountAsync();
+
+        await service.DarDeBajaAsync(creado.Id, CancellationToken.None);
+
+        Assert.Equal(cantidadInicial, await context.Vehiculos.CountAsync());
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == creado.Id);
+        Assert.False(enBase.Activo);
+    }
+
+    [Fact]
+    public async Task ModificarUsoAsync_cambia_solo_el_uso()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var antes = await service.ObtenerAsync(SeedData.VehiculoId, CancellationToken.None);
+        var nuevoUso = antes.Uso == UsoVehiculo.Comercial ? UsoVehiculo.Particular : UsoVehiculo.Comercial;
+
+        var despues = await service.ModificarUsoAsync(SeedData.VehiculoId, nuevoUso, CancellationToken.None);
+
+        Assert.Equal(nuevoUso, despues.Uso);
+        Assert.Equal(antes with { Uso = nuevoUso }, despues);
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == SeedData.VehiculoId);
+        Assert.Equal(nuevoUso, enBase.Uso);
+        Assert.Equal(antes.Patente, enBase.Patente);
+    }
+
+    [Fact]
+    public async Task ObtenerAsync_inexistente_lanza_NotFoundException()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.ObtenerAsync(Guid.NewGuid(), CancellationToken.None));
     }
 }
