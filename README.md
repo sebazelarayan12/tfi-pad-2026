@@ -72,7 +72,7 @@ Servicios que ofrecemos a otros grupos: seguro vigente por patente, deuda por DN
 
 ## API
 
-Swagger está disponible en local (`Development`) y apagado en producción por defecto.
+Swagger lo controla `SWAGGER_HABILITADO` en el `.env`: viene en `true` en `.env.example` (local) y apagado por defecto en producción.
 
 | Área | Ruta base | Acceso | Estado |
 | --- | --- | --- | --- |
@@ -92,7 +92,7 @@ Requisitos: Docker y el SDK de .NET 8.
 
 ```bash
 cp .env.example .env   # completar los valores; nunca se sube a Git
-docker compose up -d --build
+docker compose up -d --build --wait   # espera a que la API esté healthy (puede tardar un minuto)
 curl http://localhost:8080/health
 ```
 
@@ -106,7 +106,7 @@ cd backend
 dotnet test
 ```
 
-Sin Docker se omiten las pruebas de integración con SQL Server; para correrlas, `ASEGURADORA_TESTS_DOCKER=1`. Detalle en [`backend/Aseguradora.Tests/README.md`](backend/Aseguradora.Tests/README.md).
+Las pruebas de integración con SQL Server solo corren con `ASEGURADORA_TESTS_DOCKER=1` (y Docker disponible); sin esa variable se omiten. Detalle en [`backend/Aseguradora.Tests/README.md`](backend/Aseguradora.Tests/README.md).
 
 ## Trabajar en el proyecto
 

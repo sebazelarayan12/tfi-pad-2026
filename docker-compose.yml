@@ -32,7 +32,9 @@ services:
       PagoFacil__CodigoEmpresa: ${PAGOFACIL_CODIGO_EMPRESA}
       # Networks allowed to send CF-Connecting-IP (RN20). Default is Docker's private range, where
       # cloudflared lives; without it every visitor would share one rate-limit counter.
-      ForwardedHeaders__RedesConfiables__0: ${REDES_CONFIABLES:-172.16.0.0/12}
+      # `-` (not `:-`): the default applies only when REDES_CONFIABLES is unset, so setting it to an
+      # empty string in .env really turns the header off.
+      ForwardedHeaders__RedesConfiables__0: ${REDES_CONFIABLES-172.16.0.0/12}
     ports:
       # Loopback only: reachable from this machine, never from the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"

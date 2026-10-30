@@ -467,11 +467,11 @@ Orden recomendado: primera ola US-T-01, US-T-02, US-T-03, F1-01, F2-01, F3-01 y 
 | Prueba de punta a punta del flujo completo (Fase 2, sección 8) | pendiente | US-T-04 |
 | Colección Swagger / HTTP del flujo (Fase 2) | pendiente | US-T-04 |
 | Checklist de reemplazo mock -> real (Fase 2, sección 2) | pendiente | US-T-04 (`docs/integraciones.md`) |
-| Azure, despliegue y VM con Docker (11.1) | pendiente (decisión abierta) | US-T-05 |
+| Azure, despliegue y VM con Docker (11.1) | ya hecho (PR #19) | US-T-05 |
 | Cloudflare: Tunnel, WAF, rate limiting, Bot Fight Mode (11.1, 11.5) | pendiente | US-T-05 |
 | Zona horaria `America/Argentina/Buenos_Aires` y tzdata (11.3, 6 mejora 5) | pendiente (lógica del job: F3) | US-T-05 |
 | Swagger público en producción (sección 10, 11) | pendiente (decisión abierta) | US-T-05 |
-| Dominio propio (sección 10, 11.1) | pendiente (decisión abierta) | US-T-05 |
+| Dominio propio (sección 10, 11.1) | ya hecho (PR #19) | US-T-05 |
 | Migraciones en producción (11.2) | pendiente | US-T-05 |
 | Pago duplicado / confianza en webhook (sección 10) | fuera de transversal | F4 |
 | Limitador RN20 y `/api/publico/*` (11.4) | fuera de transversal | F1 |
