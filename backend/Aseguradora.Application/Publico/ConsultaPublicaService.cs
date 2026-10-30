@@ -35,7 +35,7 @@ public sealed class ConsultaPublicaService(
             new VehiculoPublico(vehiculo.Patente, vehiculo.Marca, vehiculo.Modelo, vehiculo.Anio),
             cuotasDePoliza
                 .OrderBy(c => c.Numero)
-                .Select(c => new CuotaPublica(c.Numero, c.Importe, c.Recargo, c.Importe + c.Recargo,
+                .Select(c => new CuotaPublica(c.Id, c.Numero, c.Importe, c.Recargo, c.Importe + c.Recargo,
                     c.FechaVencimiento, Etiqueta(c.Estado)))
                 .ToList());
     }

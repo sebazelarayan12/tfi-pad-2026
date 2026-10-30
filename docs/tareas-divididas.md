@@ -888,7 +888,7 @@ Nombres de rol (Application): `Roles.Administrador = "Administrador"`, `Roles.Em
 
 **Alcance (incluye):**
 - `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaRequest.cs`: `Dni` (8 dígitos) y `NumeroPoliza` (formato `POL-` + 7 dígitos), con Data Annotations.
-- `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaResponse.cs`: `numeroPoliza`, `estado`, `coberturaVigente` (`true` solo si la póliza está Vigente, RN10), `vigenteDesde`, `vigenteHasta`, `plan` (codigo, nombre), `vehiculo` (patente, marca, modelo, anio), `cuotas` (numero, importe, recargo, total, vencimiento, estado) ordenadas por número.
+- `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaResponse.cs`: `numeroPoliza`, `estado`, `coberturaVigente` (`true` solo si la póliza está Vigente, RN10), `vigenteDesde`, `vigenteHasta`, `plan` (codigo, nombre), `vehiculo` (patente, marca, modelo, anio), `cuotas` (idCuota, numero, importe, recargo, total, vencimiento, estado) ordenadas por número. `idCuota` es el único id que se expone: `POST /api/publico/pagos` pide `cuotaIds`, así que sin él la web no podría pasar de consultar a pagar.
 - `backend/Aseguradora.Application/Publico/ConsultaPublicaService.cs`: usa `IVerificadorPublico.VerificarPolizaAsync` (F1-07) y los repositorios (`IRepository<T>`) para vehículo, plan y cuotas. No usa `Include` de EF Core, porque Application no referencia EF.
 - `backend/Aseguradora.Api/Controllers/PublicoController.cs`: `POST /api/publico/consulta` (200), con `[AllowAnonymous]` (heredado de F1-07).
 

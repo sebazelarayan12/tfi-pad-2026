@@ -148,7 +148,7 @@ public sealed class PublicoConsultaControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Post_Response_HasNoInternalIdsOrEntities()
+    public async Task Post_Response_ExposesOnlyTheInstallmentIdsNeededToPay()
     {
         var respuesta = await CreateClientFromIp().PostAsJsonAsync(Ruta, Body());
 
@@ -157,16 +157,17 @@ public sealed class PublicoConsultaControllerTests : IDisposable
         Assert.DoesNotContain(SeedData.PolizaId.ToString(), texto);
         Assert.DoesNotContain(SeedData.VehiculoId.ToString(), texto);
         Assert.DoesNotContain(SeedData.PlanRcId.ToString(), texto);
-        Assert.DoesNotContain(SeedData.CuotaId(1).ToString(), texto);
 
         using var documento = JsonDocument.Parse(texto);
         var raiz = documento.RootElement;
         Assert.Equal(
             ["numeroPoliza", "estado", "coberturaVigente", "vigenteDesde", "vigenteHasta", "plan", "vehiculo", "cuotas"],
             raiz.EnumerateObject().Select(p => p.Name).ToArray());
+        var cuotas = raiz.GetProperty("cuotas");
         Assert.Equal(
-            ["numero", "importe", "recargo", "total", "vencimiento", "estado"],
-            raiz.GetProperty("cuotas")[0].EnumerateObject().Select(p => p.Name).ToArray());
+            ["idCuota", "numero", "importe", "recargo", "total", "vencimiento", "estado"],
+            cuotas[0].EnumerateObject().Select(p => p.Name).ToArray());
+        Assert.Equal(SeedData.CuotaId(1), cuotas[0].GetProperty("idCuota").GetGuid());
     }
 
     [Fact]

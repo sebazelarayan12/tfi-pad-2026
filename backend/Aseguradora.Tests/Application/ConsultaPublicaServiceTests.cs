@@ -102,9 +102,21 @@ public sealed class ConsultaPublicaServiceTests
         var respuesta = await servicio.ConsultarAsync(Request());
 
         Assert.Equal([1, 2, 3], respuesta.Cuotas.Select(c => c.Numero));
-        Assert.Equal(new CuotaPublica(3, 2000m, 150m, 2150m, poliza.FechaInicio.AddMonths(3), "PENDIENTE"),
+        Assert.Equal(new CuotaPublica(cuotas[0].Id, 3, 2000m, 150m, 2150m, poliza.FechaInicio.AddMonths(3), "PENDIENTE"),
             respuesta.Cuotas[2]);
         Assert.Equal(2000m, respuesta.Cuotas[0].Total);
+    }
+
+    [Fact]
+    public async Task Query_EachInstallmentCarriesItsIdSoTheWebCanPayIt()
+    {
+        var (cliente, vehiculo, plan, poliza) = PolicyOf(EstadoPoliza.Vigente);
+        var cuotas = new[] { Installment(poliza, 1, 2000m), Installment(poliza, 2, 2000m) };
+        var servicio = CreateService([cliente], [poliza], [vehiculo], [plan], cuotas);
+
+        var respuesta = await servicio.ConsultarAsync(Request());
+
+        Assert.Equal(cuotas.Select(c => c.Id), respuesta.Cuotas.Select(c => c.IdCuota));
     }
 
     [Fact]
