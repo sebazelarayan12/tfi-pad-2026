@@ -15,6 +15,7 @@ public static class Frente4Extensions
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<FacturacionOpciones>>().Value);
         services.AddScoped<IFacturacionService, FacturacionService>();
         services.AddScoped<IAprobacionPagoService, AprobacionPagoService>();
+        services.AddScoped<IDeudaExternaService, DeudaExternaService>();
         services.AddOptions<PagoOnlineOpciones>()
             .Bind(configuration.GetSection(PagoOnlineOpciones.Seccion))
             .ValidateDataAnnotations().ValidateOnStart();
