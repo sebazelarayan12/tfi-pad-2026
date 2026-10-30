@@ -350,4 +350,47 @@ public sealed class VehiculosControllerTests : IDisposable
         var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == creado.Id);
         Assert.False(enBase.Activo);
     }
+
+    [Theory]
+    [InlineData("GET")]
+    [InlineData("PUT")]
+    [InlineData("DELETE")]
+    public async Task Consulta_modificacion_y_baja_sin_token_devuelven_401_y_sin_rol_403(string metodo)
+    {
+        await using var factory = CrearFactory(usarAutenticacionReal: true);
+        var anonimo = factory.CreateClient();
+        var sinRol = factory.CreateClient();
+        sinRol.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TokenDePrueba.Token(rol: null));
+
+        HttpRequestMessage NuevaSolicitud()
+        {
+            var solicitud = new HttpRequestMessage(
+                new HttpMethod(metodo),
+                $"{RutaVehiculos}/{SeedData.VehiculoId}");
+            if (metodo == "PUT")
+                solicitud.Content = JsonContent.Create(new ModificarUsoRequest { Uso = UsoVehiculo.Comercial });
+            return solicitud;
+        }
+
+        var respSinToken = await anonimo.SendAsync(NuevaSolicitud());
+        var respSinRol = await sinRol.SendAsync(NuevaSolicitud());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, respSinToken.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, respSinRol.StatusCode);
+    }
+
+    [Fact]
+    public async Task GET_listado_sin_token_devuelve_401_y_sin_rol_403()
+    {
+        await using var factory = CrearFactory(usarAutenticacionReal: true);
+        var anonimo = factory.CreateClient();
+        var sinRol = factory.CreateClient();
+        sinRol.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TokenDePrueba.Token(rol: null));
+        var ruta = $"{RutaVehiculos}?clienteId={SeedData.ClienteId}";
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.GetAsync(ruta)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await sinRol.GetAsync(ruta)).StatusCode);
+    }
 }
