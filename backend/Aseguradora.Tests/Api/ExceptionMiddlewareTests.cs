@@ -94,6 +94,27 @@ public class ExceptionMiddlewareTests
     }
 
     [Fact]
+    public async Task NotFound_con_codigo_lo_incluye_en_el_ProblemDetails()
+    {
+        var (status, contentType, body) = await InvokeAsync(
+            new NotFoundException("No existe un cliente con ese DNI.", "CLIENTE_NO_ENCONTRADO"));
+
+        Assert.Equal(404, status);
+        Assert.StartsWith("application/problem+json", contentType);
+        Assert.Equal("No existe un cliente con ese DNI.", body.GetProperty("detail").GetString());
+        Assert.Equal("CLIENTE_NO_ENCONTRADO", body.GetProperty("codigo").GetString());
+    }
+
+    [Fact]
+    public async Task NotFound_sin_codigo_no_agrega_la_propiedad_codigo()
+    {
+        var (status, _, body) = await InvokeAsync(new NotFoundException("motivo de prueba"));
+
+        Assert.Equal(404, status);
+        Assert.False(body.TryGetProperty("codigo", out _));
+    }
+
+    [Fact]
     public async Task Request_without_exception_passes_through_untouched()
     {
         var middleware = new ExceptionMiddleware(
