@@ -30,10 +30,10 @@ public interface IVehiculoService
 
     /// <summary>Changes the declared use of a vehicle; it is the only editable field (CU07).</summary>
     /// <exception cref="NotFoundException">Thrown when the vehicle does not exist.</exception>
-    /// <exception cref="BusinessRuleException">Thrown when the use is not a defined value.</exception>
+    /// <exception cref="BusinessRuleException">Thrown when the use is not a defined value or the vehicle is deactivated.</exception>
     Task<VehiculoResponse> ModificarUsoAsync(Guid id, UsoVehiculo uso, CancellationToken ct = default);
 
-    /// <summary>Soft-deletes a vehicle that has no Pendiente, Vigente or Suspendida policy (RN04, RN15).</summary>
+    /// <summary>Soft-deletes a vehicle that has no Pendiente, Vigente or Suspendida policy (RN04, RN15). Idempotent: an already deactivated vehicle is left as is.</summary>
     /// <exception cref="NotFoundException">Thrown when the vehicle does not exist.</exception>
     /// <exception cref="BusinessRuleException">Thrown when the vehicle has an active policy.</exception>
     Task DarDeBajaAsync(Guid id, CancellationToken ct = default);

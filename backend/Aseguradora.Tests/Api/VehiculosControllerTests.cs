@@ -393,4 +393,45 @@ public sealed class VehiculosControllerTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.GetAsync(ruta)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await sinRol.GetAsync(ruta)).StatusCode);
     }
+
+    [Fact]
+    public async Task DELETE_repetido_sobre_vehiculo_inactivo_devuelve_204()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+        var alta = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        });
+        var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();
+        Assert.NotNull(creado);
+        await empleado.DeleteAsync($"{RutaVehiculos}/{creado.Id}");
+
+        var segundo = await empleado.DeleteAsync($"{RutaVehiculos}/{creado.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, segundo.StatusCode);
+    }
+
+    [Fact]
+    public async Task PUT_sobre_vehiculo_inactivo_devuelve_400()
+    {
+        await using var factory = CrearFactory();
+        var empleado = factory.CrearCliente(Roles.Empleado);
+        var alta = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        });
+        var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();
+        Assert.NotNull(creado);
+        await empleado.DeleteAsync($"{RutaVehiculos}/{creado.Id}");
+
+        var response = await empleado.PutAsJsonAsync(
+            $"{RutaVehiculos}/{creado.Id}", new ModificarUsoRequest { Uso = UsoVehiculo.Comercial });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

@@ -316,4 +316,43 @@ public sealed class VehiculoServiceTests : IDisposable
         await Assert.ThrowsAsync<NotFoundException>(() =>
             service.ObtenerAsync(Guid.NewGuid(), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task DarDeBajaAsync_sobre_vehiculo_ya_inactivo_es_idempotente()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var creado = await service.AltaAsync(new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        }, CancellationToken.None);
+        await service.DarDeBajaAsync(creado.Id, CancellationToken.None);
+
+        await service.DarDeBajaAsync(creado.Id, CancellationToken.None);
+
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == creado.Id);
+        Assert.False(enBase.Activo);
+    }
+
+    [Fact]
+    public async Task ModificarUsoAsync_sobre_vehiculo_inactivo_lanza_BusinessRuleException()
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+        var creado = await service.AltaAsync(new VehiculoAltaRequest
+        {
+            ClienteId = SeedData.ClienteId,
+            Patente = "AE789FG",
+            Uso = UsoVehiculo.Particular
+        }, CancellationToken.None);
+        await service.DarDeBajaAsync(creado.Id, CancellationToken.None);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.ModificarUsoAsync(creado.Id, UsoVehiculo.Comercial, CancellationToken.None));
+
+        var enBase = await context.Vehiculos.AsNoTracking().SingleAsync(v => v.Id == creado.Id);
+        Assert.Equal(UsoVehiculo.Particular, enBase.Uso);
+    }
 }

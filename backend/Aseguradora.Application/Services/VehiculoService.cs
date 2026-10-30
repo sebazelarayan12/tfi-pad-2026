@@ -108,6 +108,9 @@ public sealed class VehiculoService(
         var vehiculo = await _vehiculos.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"El vehículo {id} no existe.");
 
+        if (!vehiculo.Activo)
+            throw new BusinessRuleException($"El vehículo {id} está dado de baja y no puede modificarse.");
+
         vehiculo.Uso = uso;
         _vehiculos.Update(vehiculo);
         await _unitOfWork.SaveChangesAsync(ct);
@@ -120,6 +123,10 @@ public sealed class VehiculoService(
     {
         var vehiculo = await _vehiculos.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"El vehículo {id} no existe.");
+
+        // Idempotent: deactivating an already deactivated vehicle is a no-op.
+        if (!vehiculo.Activo)
+            return;
 
         var tienePolizaActiva = await _polizas.AnyAsync(
             p => p.VehiculoId == id
