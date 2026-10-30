@@ -83,7 +83,7 @@ Swagger lo controla `SWAGGER_HABILITADO` en el `.env`: viene en `true` en `.env.
 | Pago Fácil | `/api/pagofacil` | Empleado | Parcial |
 | Seguro vigente (externo) | `/api/externo` | API key | Disponible |
 | Clientes, cotizaciones, pagos | `/api/clientes`, `/api/cotizaciones`, `/api/pagos` | Empleado | Pendiente |
-| Web pública | `/api/publico` | Sin login, con DNI y número de póliza | Pendiente |
+| Web pública | `/api/publico` | Sin login, con DNI y número de póliza | Parcial |
 | Webhooks de pasarelas | `/api/webhooks` | API key | Pendiente |
 
 ## Correr en local
