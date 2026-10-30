@@ -51,7 +51,9 @@ public sealed class PagoService(
 
         pago.IdExterno = respuesta.IdPago;
         pago.LinkPago = respuesta.UrlPago;
-        await unitOfWork.SaveChangesAsync(ct);
+        // The gateway already holds the checkout, so a client that disconnects now must not leave the
+        // payment without its IdExterno and LinkPago.
+        await unitOfWork.SaveChangesAsync(CancellationToken.None);
 
         return new PagoPublicoResponse(pago.Numero, pago.Id, respuesta.UrlPago, respuesta.FechaExpiracion);
     }
@@ -102,7 +104,7 @@ public sealed class PagoService(
         {
             return await pasarelas.Obtener(proveedor).CrearPagoAsync(pedido, ct);
         }
-        catch (ExternalServiceException)
+        catch (Exception ex) when (ex is ExternalServiceException or OperationCanceledException)
         {
             // The installments stay as they were; only the payment is closed. CancellationToken.None so a
             // client that disconnects cannot leave the payment Pendiente and blocking the installments.

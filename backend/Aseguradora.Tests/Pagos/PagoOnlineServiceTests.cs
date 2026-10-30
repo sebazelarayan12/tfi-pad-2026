@@ -255,6 +255,38 @@ public sealed class PagoOnlineServiceTests : IDisposable
             c => Assert.Equal(EstadoCuota.Pendiente, c.Estado));
     }
 
+    [Fact]
+    public async Task IniciarPago_ClienteSeDesconectaDuranteLaPasarela_DejaElPagoRechazado()
+    {
+        using var desconexion = new CancellationTokenSource();
+        _pasarela.AlLlamar = () =>
+        {
+            desconexion.Cancel();
+            throw new OperationCanceledException(desconexion.Token);
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _servicio.IniciarPagoOnlineAsync(Pedido(Cuotas(2, 3)), desconexion.Token));
+
+        _db.ChangeTracker.Clear();
+        Assert.Equal(EstadoPago.Rechazado, PagoCreado().Estado);
+    }
+
+    [Fact]
+    public async Task IniciarPago_ClienteSeDesconectaTrasAceptarLaPasarela_GuardaIdExternoYLink()
+    {
+        using var desconexion = new CancellationTokenSource();
+        _pasarela.AlLlamar = desconexion.Cancel;
+
+        var respuesta = await _servicio.IniciarPagoOnlineAsync(Pedido(Cuotas(2, 3)), desconexion.Token);
+
+        _db.ChangeTracker.Clear();
+        var pago = PagoCreado();
+        Assert.Equal(EstadoPago.Pendiente, pago.Estado);
+        Assert.NotNull(pago.IdExterno);
+        Assert.Equal(respuesta.UrlPago, pago.LinkPago);
+    }
+
     private async Task AgregarPagoAsync(EstadoPago estado, int minutosAtras, int cuota)
     {
         var cuotaEntidad = _db.Cuotas.Single(c => c.Id == SeedData.CuotaId(cuota));
@@ -270,6 +302,7 @@ public sealed class PagoOnlineServiceTests : IDisposable
     private sealed class PasarelaFake : IPasarelaResolver, IPasarelaService
     {
         public bool Fallar { get; set; }
+        public Action? AlLlamar { get; set; }
         public int Llamadas { get; private set; }
         public string? ProveedorSolicitado { get; private set; }
         public PasarelaCrearPagoRequest? Request { get; private set; }
@@ -284,6 +317,7 @@ public sealed class PagoOnlineServiceTests : IDisposable
         {
             Llamadas++;
             Request = request;
+            AlLlamar?.Invoke();
             if (Fallar)
                 throw new ExternalServiceException("Pasarela no disponible.");
 
