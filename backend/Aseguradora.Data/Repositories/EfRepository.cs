@@ -26,6 +26,12 @@ public class EfRepository<T>(AseguradoraDbContext context) : IRepository<T> wher
 
     public void Update(T entity) => _set.Update(entity);
 
+    // Only a property flagged as modified makes EF send an UPDATE; the row version alone does not.
+    public void Tocar(T entity) =>
+        context.Entry(entity).Properties
+            .First(p => !p.Metadata.IsPrimaryKey() && !p.Metadata.IsConcurrencyToken)
+            .IsModified = true;
+
     public void Remove(T entity) => _set.Remove(entity);
 
     public IQueryable<T> Query() => _set;

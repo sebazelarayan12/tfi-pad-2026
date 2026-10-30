@@ -38,6 +38,8 @@ public class ActualizadorEstadoPolizaTests
 
         public void Update(T entity) => Escrituras++;
 
+        public void Tocar(T entity) => Escrituras++;
+
         public void Remove(T entity) => Escrituras++;
 
         public IQueryable<T> Query() => _items.AsQueryable();

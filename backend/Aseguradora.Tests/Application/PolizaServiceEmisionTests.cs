@@ -400,6 +400,7 @@ public sealed class PolizaServiceEmisionTests : IDisposable
         public Task AddAsync(Poliza entity, CancellationToken cancellationToken = default) =>
             _real.AddAsync(entity, cancellationToken);
         public void Update(Poliza entity) => _real.Update(entity);
+        public void Tocar(Poliza entity) => _real.Tocar(entity);
         public void Remove(Poliza entity) => _real.Remove(entity);
         public IQueryable<Poliza> Query() => _real.Query();
     }
