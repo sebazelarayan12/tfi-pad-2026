@@ -15,6 +15,15 @@ namespace Aseguradora.Api.Controllers;
 [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
 public sealed class PagosController(IPagoService pagos) : ControllerBase
 {
+    /// <summary>Consulta a la pasarela y aplica el resultado de un pago cuyo aviso no llegó.</summary>
+    [HttpPost("{id:guid}/conciliar")]
+    [ProducesResponseType(typeof(PagoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<PagoResponse>> Conciliar(Guid id, CancellationToken ct) =>
+        Ok(await pagos.ConciliarAsync(id, ct));
+
     /// <summary>Cobra las cuotas seleccionadas y emite su factura.</summary>
     [HttpPost("caja")]
     [ProducesResponseType(typeof(PagoResponse), StatusCodes.Status201Created)]

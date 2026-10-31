@@ -20,9 +20,9 @@ internal static class WebhookTestSupport
 
     public static WebhookPagoService Crear(AseguradoraDbContext db, bool confirmar = false,
         IPasarelaResolver? pasarela = null, IExclusionWebhook? exclusion = null,
-        ILogger<WebhookPagoService>? logger = null) => new(
+        ILogger<WebhookPagoService>? logger = null, bool fallaArca = false) => new(
         new EfRepository<Pago>(db), new EfRepository<Cuota>(db), new EfRepository<Poliza>(db),
-        new UnitOfWork(db), ServiciosPagoDePrueba.CrearAprobacion(db), pasarela ?? new PasarelaNoEsperada(),
+        new UnitOfWork(db), ServiciosPagoDePrueba.CrearAprobacion(db, fallaArca), pasarela ?? new PasarelaNoEsperada(),
         exclusion ?? new SinExclusion(), _ => confirmar, TimeProvider.System, logger ?? NullLogger<WebhookPagoService>.Instance,
         new RecargadorPago(db));
 

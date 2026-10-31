@@ -34,11 +34,12 @@ internal static class ServiciosPagoDePrueba
             facturacion, NullLogger<AprobacionPagoService>.Instance, facturas);
     }
 
-    public static PagoService Crear(AseguradoraDbContext db, IVerificadorPublico? verificador = null, bool fallaArca = false) =>
+    public static PagoService Crear(AseguradoraDbContext db, IVerificadorPublico? verificador = null, bool fallaArca = false,
+        IPasarelaResolver? pasarela = null) =>
         new(verificador ?? new VerificadorPublico(new EfRepository<Cliente>(db), new EfRepository<Poliza>(db), new EfRepository<Pago>(db)),
             new EfRepository<Cuota>(db), new EfRepository<Cliente>(db), new EfRepository<Pago>(db),
-            new PasarelaNoUtilizada(), new UnitOfWork(db), new PagoOnlineOpciones { ReservaMinutos = 60 }, TimeProvider.System,
-            new EfRepository<Poliza>(db), new EfRepository<Factura>(db), CrearAprobacion(db, fallaArca));
+            pasarela ?? new PasarelaNoUtilizada(), new UnitOfWork(db), new PagoOnlineOpciones { ReservaMinutos = 60 }, TimeProvider.System,
+            new EfRepository<Poliza>(db), new EfRepository<Factura>(db), CrearAprobacion(db, fallaArca), WebhookTestSupport.Crear(db, fallaArca: fallaArca));
 
     private sealed class PasarelaNoUtilizada : IPasarelaResolver
     {
