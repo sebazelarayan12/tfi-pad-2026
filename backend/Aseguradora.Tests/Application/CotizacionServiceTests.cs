@@ -9,6 +9,7 @@ using Aseguradora.Tests.Builders;
 using Aseguradora.Tests.Data;
 using Aseguradora.Tests.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Aseguradora.Tests.Application;
 
@@ -75,6 +76,64 @@ public sealed class CotizacionServiceTests : IDisposable
         Assert.Equal(Ahora.UtcDateTime.AddDays(15), resultado.FechaVencimiento);
     }
 
+    private static async Task SembrarPlanesRealesAsync(AseguradoraDbContext context) =>
+        await new PlanesSeeder(context).SembrarAsync(
+            new ServiceCollection().BuildServiceProvider(), CancellationToken.None);
+
+    [Fact]
+    public async Task CotizarVehiculo_con_planes_del_seed_devuelve_RC_TC_y_TR()
+    {
+        await using var context = _fixture.CreateContext();
+        await SembrarPlanesRealesAsync(context);
+        var service = CrearServicio(context);
+
+        var resultado = await service.CotizarVehiculoAsync(SeedData.VehiculoId, CancellationToken.None);
+
+        Assert.Equal(
+            new[] { ("RC", 12000.00m), ("TC", 18000.00m), ("TR", 30000.00m) },
+            resultado.Opciones.Select(o => (o.CodigoPlan, o.PrimaMensual)).ToArray());
+    }
+
+    [Fact]
+    public async Task CotizarVehiculo_de_una_moto_con_planes_del_seed_no_devuelve_TR()
+    {
+        await using var context = _fixture.CreateContext();
+        await SembrarPlanesRealesAsync(context);
+        var moto = await AgregarVehiculoAsync(context, await ClienteSeedAsync(context), v =>
+        {
+            v.Tipo = TipoVehiculo.Moto;
+            v.Anio = 2021;
+            v.Uso = UsoVehiculo.Particular;
+        });
+        var service = CrearServicio(context);
+
+        var resultado = await service.CotizarVehiculoAsync(moto.Id, CancellationToken.None);
+
+        Assert.DoesNotContain(resultado.Opciones, o => o.CodigoPlan == "TR");
+        Assert.Contains(resultado.Opciones, o => o.CodigoPlan == "RC");
+        Assert.Contains(resultado.Opciones, o => o.CodigoPlan == "TC");
+    }
+
+    [Fact]
+    public async Task CotizarVehiculo_de_un_auto_de_2000_con_planes_del_seed_no_devuelve_TR_y_aplica_factor_1_25()
+    {
+        await using var context = _fixture.CreateContext();
+        await SembrarPlanesRealesAsync(context);
+        var viejo = await AgregarVehiculoAsync(context, await ClienteSeedAsync(context), v =>
+        {
+            v.Tipo = TipoVehiculo.Auto;
+            v.Anio = 2000;
+            v.Uso = UsoVehiculo.Particular;
+        });
+        var service = CrearServicio(context);
+
+        var resultado = await service.CotizarVehiculoAsync(viejo.Id, CancellationToken.None);
+
+        Assert.Equal(
+            new[] { ("RC", 15000.00m), ("TC", 22500.00m) },
+            resultado.Opciones.Select(o => (o.CodigoPlan, o.PrimaMensual)).ToArray());
+    }
+
     [Fact]
     public async Task CotizarVehiculo_excluye_planes_que_no_aceptan_el_tipo()
     {
@@ -125,11 +184,16 @@ public sealed class CotizacionServiceTests : IDisposable
         Assert.Contains(resultado.Opciones, o => o.CodigoPlan == conLimite.Codigo);
     }
 
+    public static TheoryData<int, int, int, decimal> FechasDeNacimiento => new()
+    {
+        { 2001, 10, 30, 15600.00m }, // todavía no cumplió años: 24 -> factor 1,30
+        { 2001, 10, 29, 12000.00m }  // cumple hoy: 25 -> factor 1,00
+    };
+
     [Theory]
-    [InlineData(2001, 10, 30, 15600.00)] // todavía no cumplió años: 24 -> factor 1,30
-    [InlineData(2001, 10, 29, 12000.00)] // cumple hoy: 25 -> factor 1,00
+    [MemberData(nameof(FechasDeNacimiento))]
     public async Task CotizarVehiculo_calcula_la_edad_desde_fecha_de_nacimiento(
-        int anio, int mes, int dia, double primaEsperada)
+        int anio, int mes, int dia, decimal primaEsperada)
     {
         await using var context = _fixture.CreateContext();
         var cliente = new ClienteBuilder().Con(c => c.FechaNacimiento = new DateOnly(anio, mes, dia)).Construir();
@@ -146,7 +210,7 @@ public sealed class CotizacionServiceTests : IDisposable
         var resultado = await service.CotizarVehiculoAsync(vehiculo.Id, CancellationToken.None);
 
         var rc = Assert.Single(resultado.Opciones, o => o.CodigoPlan == "RC");
-        Assert.Equal((decimal)primaEsperada, rc.PrimaMensual);
+        Assert.Equal(primaEsperada, rc.PrimaMensual);
     }
 
     [Fact]
