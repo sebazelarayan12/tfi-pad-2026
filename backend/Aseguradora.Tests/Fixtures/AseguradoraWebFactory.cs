@@ -118,6 +118,7 @@ public sealed class AseguradoraWebFactory : WebApplicationFactory<Program>
         // The daily expiry job (US-F3-05) would change the seeded data at startup; a test that needs it
         // turns it back on through Ajustes.
         builder.UseSetting(VencimientosJob.ClaveHabilitado, "false");
+        builder.UseSetting("Facturacion:ReintentosHabilitados", "false");
 
         foreach (var (clave, valor) in Ajustes)
             builder.UseSetting(clave, valor);

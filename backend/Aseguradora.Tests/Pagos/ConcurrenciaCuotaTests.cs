@@ -159,6 +159,7 @@ public class ConcurrenciaCuotaTests(SqlServerContainerFixture fixture)
 
     private sealed class FacturacionFake : IFacturacionService
     {
+        public Task ReintentarPendientesAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public int Llamadas { get; private set; }
         public Task EmitirAsync(Guid pagoId, CancellationToken ct = default) { Llamadas++; return Task.CompletedTask; }
     }
