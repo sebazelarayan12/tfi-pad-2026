@@ -54,7 +54,7 @@ jobs:
       - name: Verificar Docker
         run: docker info
       - name: Concurrencia de cobros en SQL Server real
-        run: dotnet test backend/Aseguradora.sln -c Release --filter "FullyQualifiedName~DosContextosCobrandoLaMismaCuotaSoloPersistenUnCobro" --logger "trx;LogFileName=concurrencia.trx"
+        run: dotnet test backend/Aseguradora.sln -c Release --filter "FullyQualifiedName~DosContextosCobrandoLaMismaCuotaSoloPersistenUnCobro|FullyQualifiedName~DosPedidosDeCajaParaLaMismaCuota_SoloUnoPersiste" --logger "trx;LogFileName=concurrencia.trx"
       - name: Publicar resultados
         if: always()
         uses: actions/upload-artifact@v4

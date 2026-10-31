@@ -55,6 +55,26 @@ public class ConcurrenciaCuotaTests(SqlServerContainerFixture fixture)
     }
 
     [SkippableFact]
+    public async Task DosPedidosDeCajaParaLaMismaCuota_SoloUnoPersiste()
+    {
+        Skip.IfNot(fixture.Disponible, SqlServerContainerFixture.MotivoOmision);
+        await using var primero = fixture.CrearContexto();
+        await using var segundo = fixture.CrearContexto();
+        var cuota = await primero.Cuotas.FirstAsync(c => c.Estado == EstadoCuota.Pendiente);
+        // Ambos pedidos leyeron la misma versión antes de que el ganador guardara.
+        await segundo.Cuotas.SingleAsync(c => c.Id == cuota.Id);
+        var pedido = new PagoCajaRequest { CuotaIds = [cuota.Id] };
+        var ganador = await ServiciosPagoDePrueba.Crear(primero).RegistrarCajaAsync(pedido);
+        var error = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            ServiciosPagoDePrueba.Crear(segundo).RegistrarCajaAsync(pedido));
+        Assert.IsType<DbUpdateConcurrencyException>(error.InnerException);
+        await using var lectura = fixture.CrearContexto();
+        Assert.Equal(1, await lectura.PagoCuotas.CountAsync(pc => pc.CuotaId == cuota.Id));
+        Assert.Equal(1, await lectura.Facturas.CountAsync(f => f.PagoId == ganador.Id));
+        Assert.Equal(EstadoCuota.Pagada, (await lectura.Cuotas.FindAsync(cuota.Id))!.Estado);
+    }
+
+    [SkippableFact]
     public async Task DosPedidosDePagoOnlineParaLaMismaCuota_SoloUnoCreaElPago()
     {
         Skip.IfNot(fixture.Disponible, SqlServerContainerFixture.MotivoOmision);

@@ -24,10 +24,16 @@ pagadas, anuladas o de clientes distintos producen 400; una cuota inexistente,
 pólizas e IVA se delegan al circuito de US-F4-02. Si ARCA no responde, el cobro
 queda aprobado y la factura queda pendiente para su posterior recuperación.
 
-Se conserva la reserva de cuotas de pagos online: caja rechaza cuotas con un pago
-pendiente dentro de `Pagos:ReservaMinutos` para evitar cobrar mientras hay un
-checkout vigente. Las modificaciones de cuotas del circuito compartido usan
-RowVersion para detectar cobros concurrentes en SQL Server.
+La reserva `Pagos:ReservaMinutos` aplica al inicio de pagos online. Caja permite
+cobrar cuotas impagas aunque tengan un checkout pendiente, según el alcance de
+US-F4-03. Si ese checkout se acredita después, aplica el tratamiento de duplicados
+de US-F4-02. La validación y el insert de caja no son atómicos: las modificaciones
+de cuotas del circuito compartido usan RowVersion para que dos contextos que
+leyeron la misma cuota impaga no persistan ambos cobros. Lo verifica
+`DosPedidosDeCajaParaLaMismaCuota_SoloUnoPersiste` con SQL Server real.
+
+`PagoResponse` expone `importe`, conforme al contrato de la tarea; internamente
+se obtiene de `Pago.ImporteTotal`.
 
 No requiere migración ni configuración adicional a US-F4-02 y US-F4-04.
 

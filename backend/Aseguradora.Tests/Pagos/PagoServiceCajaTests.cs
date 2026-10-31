@@ -32,7 +32,7 @@ public sealed class PagoServiceCajaTests : IDisposable
         Assert.Equal("APROBADO", respuesta.Estado);
         Assert.Equal("CAJA", respuesta.Medio);
         Assert.Matches("^PAG-[0-9a-fA-F]{6}$", respuesta.Numero);
-        Assert.Equal(esperado, respuesta.ImporteTotal);
+        Assert.Equal(esperado, respuesta.Importe);
         Assert.NotNull(respuesta.FechaAcreditacion);
         Assert.Equal("AUTORIZADA", respuesta.Factura?.Estado);
         await using var lectura = _fixture.CreateContext();
@@ -101,20 +101,21 @@ public sealed class PagoServiceCajaTests : IDisposable
         await _db.SaveChangesAsync();
         Assert.True(cuota.Recargo > 0);
         var respuesta = await ServiciosPagoDePrueba.Crear(_db).RegistrarCajaAsync(Pedido(2));
-        Assert.Equal(cuota.Importe + cuota.Recargo, respuesta.ImporteTotal);
+        Assert.Equal(cuota.Importe + cuota.Recargo, respuesta.Importe);
         Assert.Equal(EstadoCuota.Pagada, cuota.Estado);
     }
 
     [Fact]
-    public async Task Registrar_CuotaConCheckoutEnCurso_RechazaSinCobrar()
+    public async Task Registrar_CuotaConCheckoutEnCurso_CobraSegunAlcance()
     {
         var cuota = (await _db.Cuotas.FindAsync(SeedData.CuotaId(2)))!;
         _db.Pagos.Add(Aseguradora.Domain.Entities.Pago.CrearPendiente(SeedData.ClienteId, "PAG-abcdef",
             MedioPago.Pasarela, [cuota], DateTime.UtcNow, "pasarela1"));
         await _db.SaveChangesAsync();
-        await Assert.ThrowsAsync<BusinessRuleException>(() => ServiciosPagoDePrueba.Crear(_db).RegistrarCajaAsync(Pedido(2)));
-        Assert.Equal(EstadoCuota.Pendiente, cuota.Estado);
-        Assert.Equal(2, await _db.Pagos.CountAsync());
+        var respuesta = await ServiciosPagoDePrueba.Crear(_db).RegistrarCajaAsync(Pedido(2));
+        Assert.Equal("APROBADO", respuesta.Estado);
+        Assert.Equal(EstadoCuota.Pagada, cuota.Estado);
+        Assert.Equal(3, await _db.Pagos.CountAsync());
     }
 
     [Fact]

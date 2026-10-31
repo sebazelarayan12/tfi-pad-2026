@@ -48,6 +48,10 @@ public sealed class PagosControllerTests : IDisposable
         Assert.Equal(HttpStatusCode.Created, respuesta.StatusCode);
         var pago = await respuesta.Content.ReadFromJsonAsync<PagoResponse>();
         Assert.NotNull(pago);
+        var json = await respuesta.Content.ReadAsStringAsync();
+        using var documento = System.Text.Json.JsonDocument.Parse(json);
+        Assert.True(documento.RootElement.TryGetProperty("importe", out _));
+        Assert.False(documento.RootElement.TryGetProperty("importeTotal", out _));
         Assert.Equal("APROBADO", pago.Estado);
         Assert.Equal("CAJA", pago.Medio);
         Assert.NotNull(pago.Factura);

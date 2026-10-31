@@ -31,6 +31,23 @@ public sealed class PagoServiceFacturaPublicaTests : IDisposable
     }
 
     [Fact]
+    public async Task Consultar_VerificadorReal_ValidaTitularYErrorGenerico()
+    {
+        var servicio = ServiciosPagoDePrueba.Crear(_db);
+        var factura = await servicio.ObtenerFacturaPublicaAsync(new PublicoFacturaRequest
+        {
+            Dni = "30123456", NumeroPago = "PAG-000001"
+        });
+        Assert.Equal(SeedData.PagoId, factura.PagoId);
+        var dni = await Assert.ThrowsAsync<NotFoundException>(() => servicio.ObtenerFacturaPublicaAsync(
+            new PublicoFacturaRequest { Dni = "99999999", NumeroPago = "PAG-000001" }));
+        var numero = await Assert.ThrowsAsync<NotFoundException>(() => servicio.ObtenerFacturaPublicaAsync(
+            new PublicoFacturaRequest { Dni = "30123456", NumeroPago = "PAG-ffffff" }));
+        Assert.Equal(VerificadorPublico.MensajeNoEncontrado, dni.Message);
+        Assert.Equal(dni.Message, numero.Message);
+    }
+
+    [Fact]
     public async Task Consultar_DniONumeroIncorrectos_PropagaMismoErrorGenerico()
     {
         var verificador = new VerificadorFake((await _db.Pagos.FindAsync(SeedData.PagoId))!);

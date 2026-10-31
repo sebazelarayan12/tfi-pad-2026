@@ -50,7 +50,6 @@ public sealed class PagoService(
         if (clientesIds.Count != 1)
             throw new BusinessRuleException("Todas las cuotas deben pertenecer al mismo cliente.");
         var ahora = reloj.GetUtcNow().UtcDateTime;
-        await ExigirSinPagoEnCursoAsync(ids, ahora, ct);
         var pago = Pago.CrearPendiente(clientesIds[0], await GenerarNumeroAsync(ct), MedioPago.Caja, seleccion, ahora);
         await pagos.AddAsync(pago, ct);
         await aprobacion.AprobarAsync(pago, ahora, ct);
@@ -61,8 +60,19 @@ public sealed class PagoService(
     {
         var pago = await pagos.GetByIdAsync(id, ct) ?? throw new NotFoundException("El pago no existe.");
         var factura = (await facturas.FindAsync(f => f.PagoId == id, ct)).SingleOrDefault();
-        return new PagoResponse(pago.Id, pago.ClienteId, pago.Numero, pago.Estado.ToString().ToUpperInvariant(),
-            pago.Medio == MedioPago.PagoFacil ? "PAGO_FACIL" : pago.Medio.ToString().ToUpperInvariant(),
+        return new PagoResponse(pago.Id, pago.ClienteId, pago.Numero, pago.Estado switch
+            {
+                EstadoPago.Pendiente => ValoresPagoResponse.Pendiente,
+                EstadoPago.Aprobado => ValoresPagoResponse.Aprobado,
+                EstadoPago.Rechazado => ValoresPagoResponse.Rechazado,
+                _ => throw new InvalidOperationException("Estado de pago desconocido.")
+            }, pago.Medio switch
+            {
+                MedioPago.Caja => ValoresPagoResponse.Caja,
+                MedioPago.Pasarela => ValoresPagoResponse.Pasarela,
+                MedioPago.PagoFacil => ValoresPagoResponse.PagoFacil,
+                _ => throw new InvalidOperationException("Medio de pago desconocido.")
+            },
             pago.ImporteTotal, ComoUtc(pago.FechaCreacion),
             pago.FechaAcreditacion is { } fecha ? ComoUtc(fecha) : null,
             factura is null ? null : MapearFactura(factura));
@@ -86,7 +96,7 @@ public sealed class PagoService(
 
     private static FacturaResponse MapearFactura(Factura factura) => new(
         factura.Id, factura.PagoId, factura.Numero, factura.Tipo, factura.Importe,
-        factura.Estado == EstadoFactura.PendienteCae ? "PENDIENTE_CAE" : "AUTORIZADA",
+        factura.Estado == EstadoFactura.PendienteCae ? ValoresPagoResponse.PendienteCae : ValoresPagoResponse.Autorizada,
         factura.Cae, factura.VencimientoCae, ComoUtc(factura.FechaEmision));
 
     // SQL Server datetime2 conserva los ticks UTC pero materializa DateTimeKind.Unspecified.
