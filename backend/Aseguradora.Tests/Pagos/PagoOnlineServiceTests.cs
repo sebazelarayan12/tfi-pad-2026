@@ -41,7 +41,8 @@ public sealed class PagoOnlineServiceTests : IDisposable
             new EfRepository<Cliente>(_db), new EfRepository<Poliza>(_db), new EfRepository<Pago>(_db));
         _servicio = new PagoService(
             verificador, new EfRepository<Cuota>(_db), new EfRepository<Cliente>(_db),
-            new EfRepository<Pago>(_db), _pasarela, new UnitOfWork(_db), opciones, new RelojFalso(Ahora));
+            new EfRepository<Pago>(_db), _pasarela, new UnitOfWork(_db), opciones, new RelojFalso(Ahora),
+            new EfRepository<Poliza>(_db), new EfRepository<Factura>(_db), ServiciosPagoDePrueba.CrearAprobacion(_db));
     }
 
     public void Dispose()

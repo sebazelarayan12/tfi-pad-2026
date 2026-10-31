@@ -8,7 +8,7 @@ using Aseguradora.Domain.Interfaces;
 
 namespace Aseguradora.Application.Services;
 
-/// <summary>Inicia pagos online de cuotas con una pasarela (CU15, RN11, RN20).</summary>
+/// <summary>Cobro de cuotas en caja, inicio de pagos online y consultas de pagos y facturas.</summary>
 public sealed class PagoService(
     IVerificadorPublico verificador,
     IRepository<Cuota> cuotas,
@@ -17,13 +17,92 @@ public sealed class PagoService(
     IPasarelaResolver pasarelas,
     IUnitOfWork unitOfWork,
     PagoOnlineOpciones opciones,
-    TimeProvider reloj) : IPagoService
+    TimeProvider reloj,
+    IRepository<Poliza> polizas,
+    IRepository<Factura> facturas,
+    IAprobacionPagoService aprobacion) : IPagoService
 {
     /// <summary>Pasarelas habilitadas para el pago online.</summary>
     public static readonly IReadOnlyList<string> ProveedoresValidos = ["pasarela1", "pasarela2"];
 
     private const string Moneda = "ARS";
     private const int IntentosNumeroUnico = 5;
+
+    /// <summary>Cobra cuotas de un mismo cliente usando el circuito común de aprobación y facturación.</summary>
+    public async Task<PagoResponse> RegistrarCajaAsync(PagoCajaRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.CuotaIds is null || request.CuotaIds.Count == 0)
+            throw new BusinessRuleException("Debe indicar al menos una cuota.");
+        var ids = request.CuotaIds.ToList();
+        if (ids.Distinct().Count() != ids.Count)
+            throw new BusinessRuleException("Las cuotas no pueden repetirse.");
+        var seleccion = await cuotas.FindAsync(c => ids.Contains(c.Id), ct);
+        if (seleccion.Count != ids.Count)
+            throw new NotFoundException("Alguna de las cuotas indicadas no existe.");
+        if (seleccion.Any(c => c.Estado is EstadoCuota.Anulada or EstadoCuota.Pagada))
+            throw new BusinessRuleException("Solo se pueden pagar cuotas pendientes o vencidas (RN11).");
+        var polizaIds = seleccion.Select(c => c.PolizaId).Distinct().ToList();
+        var titulares = await polizas.FindAsync(p => polizaIds.Contains(p.Id), ct);
+        if (titulares.Count != polizaIds.Count)
+            throw new NotFoundException("Alguna de las pólizas indicadas no existe.");
+        var clientesIds = titulares.Select(p => p.ClienteId).Distinct().ToList();
+        if (clientesIds.Count != 1)
+            throw new BusinessRuleException("Todas las cuotas deben pertenecer al mismo cliente.");
+        var ahora = reloj.GetUtcNow().UtcDateTime;
+        var pago = Pago.CrearPendiente(clientesIds[0], await GenerarNumeroAsync(ct), MedioPago.Caja, seleccion, ahora);
+        await pagos.AddAsync(pago, ct);
+        await aprobacion.AprobarAsync(pago, ahora, ct);
+        return await ObtenerPagoAsync(pago.Id, ct);
+    }
+
+    public async Task<PagoResponse> ObtenerPagoAsync(Guid id, CancellationToken ct = default)
+    {
+        var pago = await pagos.GetByIdAsync(id, ct) ?? throw new NotFoundException("El pago no existe.");
+        var factura = (await facturas.FindAsync(f => f.PagoId == id, ct)).SingleOrDefault();
+        return new PagoResponse(pago.Id, pago.ClienteId, pago.Numero, pago.Estado switch
+            {
+                EstadoPago.Pendiente => ValoresPagoResponse.Pendiente,
+                EstadoPago.Aprobado => ValoresPagoResponse.Aprobado,
+                EstadoPago.Rechazado => ValoresPagoResponse.Rechazado,
+                _ => throw new InvalidOperationException("Estado de pago desconocido.")
+            }, pago.Medio switch
+            {
+                MedioPago.Caja => ValoresPagoResponse.Caja,
+                MedioPago.Pasarela => ValoresPagoResponse.Pasarela,
+                MedioPago.PagoFacil => ValoresPagoResponse.PagoFacil,
+                _ => throw new InvalidOperationException("Medio de pago desconocido.")
+            },
+            pago.ImporteTotal, ComoUtc(pago.FechaCreacion),
+            pago.FechaAcreditacion is { } fecha ? ComoUtc(fecha) : null,
+            factura is null ? null : MapearFactura(factura));
+    }
+
+    public async Task<FacturaResponse> ObtenerFacturaAsync(Guid id, CancellationToken ct = default)
+    {
+        var factura = (await facturas.FindAsync(f => f.PagoId == id, ct)).SingleOrDefault()
+            ?? throw new NotFoundException("No se encontró la factura del pago.");
+        return MapearFactura(factura);
+    }
+
+    public async Task<FacturaResponse> ObtenerFacturaPublicaAsync(PublicoFacturaRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var pago = await verificador.VerificarPagoAsync(request.Dni, request.NumeroPago, ct);
+        var factura = (await facturas.FindAsync(f => f.PagoId == pago.Id, ct)).SingleOrDefault()
+            ?? throw new NotFoundException(VerificadorPublico.MensajeNoEncontrado);
+        return MapearFactura(factura);
+    }
+
+    private static FacturaResponse MapearFactura(Factura factura) => new(
+        factura.Id, factura.PagoId, factura.Numero, factura.Tipo, factura.Importe,
+        factura.Estado == EstadoFactura.PendienteCae ? ValoresPagoResponse.PendienteCae : ValoresPagoResponse.Autorizada,
+        factura.Cae, factura.VencimientoCae, ComoUtc(factura.FechaEmision));
+
+    // SQL Server datetime2 conserva los ticks UTC pero materializa DateTimeKind.Unspecified.
+    private static DateTime ComoUtc(DateTime fecha) => fecha.Kind == DateTimeKind.Unspecified
+        ? DateTime.SpecifyKind(fecha, DateTimeKind.Utc)
+        : fecha.ToUniversalTime();
 
     /// <inheritdoc />
     public async Task<PagoPublicoResponse> IniciarPagoOnlineAsync(PagoPublicoRequest request, CancellationToken ct = default)
