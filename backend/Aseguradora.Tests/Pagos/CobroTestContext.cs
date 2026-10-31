@@ -26,7 +26,7 @@ internal sealed class CobroTestContext : IDisposable
     public RegistroLog<FacturacionService> Log { get; } = new();
     public FacturacionOpciones Opciones { get; } = new("30712345678", 1);
 
-    public CobroTestContext()
+    public CobroTestContext(IEmisorFacturaAislado? emisorAislado = null)
     {
         Db = fixture.CreateContext();
         var cuota = Db.Cuotas.First(c => c.Estado == EstadoCuota.Pendiente);
@@ -39,7 +39,7 @@ internal sealed class CobroTestContext : IDisposable
         var uow = new UnitOfWork(Db);
         Facturacion = new(new EfRepository<Pago>(Db), new EfRepository<Cuota>(Db),
             new EfRepository<Poliza>(Db), new EfRepository<Cliente>(Db), new EfRepository<Factura>(Db),
-            uow, Arca, Opciones, TimeProvider.System, Log);
+            uow, Arca, Opciones, TimeProvider.System, Log, emisorAislado);
         Arca.AntesDeEmitir = () => Assert.NotEmpty(Actualizador.Llamadas);
         Aprobacion = new(new EfRepository<Cuota>(Db), new EfRepository<Poliza>(Db), uow,
             Actualizador, Facturacion, NullLogger<AprobacionPagoService>.Instance, new EfRepository<Factura>(Db));
