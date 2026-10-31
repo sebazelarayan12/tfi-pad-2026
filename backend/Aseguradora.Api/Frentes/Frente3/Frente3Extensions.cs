@@ -38,6 +38,9 @@ public static class Frente3Extensions
         services.AddScoped(sp => sp.GetRequiredService<IOptions<PagoFacilOpciones>>().Value);
         services.AddScoped<ICuponPagoFacilService, CuponPagoFacilService>();
 
+        // CU21: Pago Fácil settlement file (US-F3-07). Payments are approved by F4's IAprobacionPagoService.
+        services.AddScoped<IRendicionService, RendicionService>();
+
         // CU19: insurance check for external systems (US-F3-04).
         services.AddScoped<ISeguroVigenteService, SeguroVigenteService>();
 
