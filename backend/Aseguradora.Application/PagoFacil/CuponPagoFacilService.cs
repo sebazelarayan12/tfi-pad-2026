@@ -32,6 +32,15 @@ public sealed class CuponPagoFacilService(
         var poliza = await polizas.GetByIdAsync(cuota.PolizaId, ct)
             ?? throw new NotFoundException("La póliza de la cuota no existe.");
 
+        return Armar(cuota, poliza.Numero, hoy, opciones.CodigoEmpresa);
+    }
+
+    /// <summary>
+    /// Coupon amounts, due dates and barcode of a Pendiente or Vencida installment. Shared with the
+    /// positive base (US-F3-08), so both files charge the same amount for the same day.
+    /// </summary>
+    internal static CuponPagoFacilResponse Armar(Cuota cuota, string numeroPoliza, DateOnly hoy, int codigoEmpresa)
+    {
         // A Pendiente installment already past due (the daily job has not run yet) pays the surcharge it
         // is about to get (RN08), so the coupon matches what US-F3-08 will expect once the job runs.
         var recargo = cuota.Estado == EstadoCuota.Pendiente && hoy > cuota.FechaVencimiento
@@ -43,8 +52,8 @@ public sealed class CuponPagoFacilService(
         var fecha2 = fecha1.AddDays(DiasAlSegundoVencimiento);
 
         var codigo = CodigoBarrasPagoFacil.Generar(new DatosCodigoPagoFacil(
-            opciones.CodigoEmpresa,
-            NumeroDePoliza(poliza.Numero),
+            codigoEmpresa,
+            NumeroDePoliza(numeroPoliza),
             cuota.Numero,
             importe1,
             fecha1,
@@ -52,7 +61,7 @@ public sealed class CuponPagoFacilService(
             DiasAlSegundoVencimiento));
 
         return new CuponPagoFacilResponse(
-            cuota.Id, poliza.Numero, cuota.Numero, importe1, fecha1, importe2, fecha2, codigo);
+            cuota.Id, numeroPoliza, cuota.Numero, importe1, fecha1, importe2, fecha2, codigo);
     }
 
     // POL-0000001 -> 1: the barcode carries only the digits of the policy number.
