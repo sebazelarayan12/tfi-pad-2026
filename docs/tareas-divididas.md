@@ -1227,6 +1227,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 **Decisiones pendientes:**
 - Sin planes compatibles: propuesta **400** con mensaje ("Ningún plan es compatible con el vehículo"). Alternativa: 201 con `opciones` vacío.
 - Año de referencia: propuesta `TimeProvider` y año UTC (RN16). La edad del conductor se calcula con la fecha UTC de hoy.
+- Vehículo dado de baja (`Activo = false`): `POST /api/cotizaciones` responde **400** (coherente con RN15; no se cotiza un vehículo inactivo). Test: `CotizarVehiculo_con_vehiculo_dado_de_baja_lanza_BusinessRuleException`.
 - Una `Cotizacion` por plan (la relación Plan → Cotización de la spec es 1 a N). Esto cambia la forma de la respuesta de la sección 9.5 C; ver US-F2-07.
 
 ---
