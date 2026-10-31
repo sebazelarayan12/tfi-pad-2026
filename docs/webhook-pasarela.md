@@ -17,7 +17,9 @@ existentes y del mismo cliente. El importe es la suma de importes y recargos gua
 
 APROBADO usa `IAprobacionPagoService`; RECHAZADO y CANCELADO rechazan sin cambiar
 cuotas. Un pago finalizado es idempotente, no vuelve a facturar. Importe distinto:
-200, pago pendiente y log `PAGO_IMPORTE_NO_COINCIDE`. La fecha de acreditación
+200, pago pendiente y log `PAGO_IMPORTE_NO_COINCIDE` solo para APROBADO.
+RECHAZADO/CANCELADO se aplican aunque el importe difiera, también al confirmar
+con la pasarela: se sigue verificando identidad, referencia y estado. La fecha de acreditación
 proviene del aviso y se convierte a UTC. La conciliación puede reutilizar
 `AplicarResultadoAsync` con una fecha explícita o, si no se proporciona, la hora UTC.
 
@@ -32,8 +34,17 @@ la pasarela podrá reintentar.
 SQL Server `sp_getapplock` serializa el mismo identificador externo entre procesos.
 Se usa una conexión independiente con lock de sesión y liberación explícita al
 terminar, sin transacción abierta durante la llamada a ARCA. Un error libera la
-sesión; la indisponibilidad del lock produce un error reintentable. RowVersion e
+sesión; la indisponibilidad del lock produce 503 con `Retry-After: 15`. RowVersion e
 índices únicos siguen protegiendo las escrituras. No requiere migración.
+La conciliación recarga el pago y RowVersion desde base después de adquirir el lock,
+incluso si la entidad ya estaba rastreada antes de esperar. Los avisos aceptan hasta
+50 IdCuotas (400 por DataAnnotations y por la validación del servicio).
+
+La reserva de US-F4-04 protege el inicio de checkout online, no un cobro 9.5 B ya
+realizado por una pasarela. Se mantiene el default C8 de US-F4-02: si otro pago
+acredita después sobre cuotas ya pagadas, se marca como excedente para revisión
+manual y no se factura ni se vuelven a pagar las cuotas. La decisión de negocio
+sigue abierta; este PR no cambia ese default.
 
 ## Validación
 

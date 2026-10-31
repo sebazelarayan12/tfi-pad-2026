@@ -18,6 +18,7 @@ public sealed class WebhooksController(WebhookPagoService servicio) : Controller
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Recibir(string proveedor, PasarelaWebhookRequest request, CancellationToken ct)
     {
         WebhookPagoService.ExigirProveedor(proveedor);

@@ -13,7 +13,7 @@ public sealed class WebhookPagoService(
     IRepository<Pago> pagos, IRepository<Cuota> cuotas, IRepository<Poliza> polizas,
     IUnitOfWork unitOfWork, IAprobacionPagoService aprobacion, IPasarelaResolver pasarelas,
     IExclusionWebhook exclusion, Func<string, bool> confirmarWebhook,
-    TimeProvider reloj, ILogger<WebhookPagoService> logger)
+    TimeProvider reloj, ILogger<WebhookPagoService> logger, IRecargadorPago recargador)
 {
     /// <summary>Valida el proveedor, resuelve el pago y procesa el resultado recibido.</summary>
     public async Task ProcesarAsync(string proveedor, PasarelaWebhookRequest request, CancellationToken ct = default)
@@ -21,6 +21,8 @@ public sealed class WebhookPagoService(
         ArgumentNullException.ThrowIfNull(request);
         ExigirProveedor(proveedor);
         ExigirResultado(request.Estado, request.Importe);
+        if (request.IdCuotas?.Count > PasarelaWebhookRequest.MaximoCuotas)
+            throw new BusinessRuleException("No se permiten más de 50 cuotas por aviso.");
         if (string.IsNullOrWhiteSpace(request.IdPago) || request.IdPago.Length > 100 || request.Fecha == default)
             throw new BusinessRuleException("El identificador y la fecha del pago son obligatorios.");
         await using var bloqueo = await exclusion.AdquirirAsync(request.IdPago, ct);
@@ -30,14 +32,16 @@ public sealed class WebhookPagoService(
         if (confirmarWebhook(proveedor))
         {
             var confirmado = await pasarelas.Obtener(proveedor).ConsultarPagoAsync(request.IdPago, ct);
-            if (confirmado.Importe != request.Importe)
-                logger.LogError("PAGO_IMPORTE_NO_COINCIDE IdPago={IdPago} Esperado={Esperado} Recibido={Recibido}",
-                    request.IdPago, confirmado.Importe, request.Importe);
+            var importeDistinto = request.Estado == ValoresPagoResponse.Aprobado && confirmado.Importe != request.Importe;
             if (confirmado.IdPago != request.IdPago || confirmado.Estado != request.Estado
-                || confirmado.Importe != request.Importe
+                || importeDistinto
                 || (request.ReferenciaExterna is not null && confirmado.ReferenciaExterna != request.ReferenciaExterna))
             {
-                logger.LogError("PAGO_CONFIRMACION_NO_COINCIDE Proveedor={Proveedor} IdPago={IdPago}", proveedor, request.IdPago);
+                if (importeDistinto)
+                    logger.LogError("PAGO_IMPORTE_NO_COINCIDE IdPago={IdPago} Esperado={Esperado} Recibido={Recibido}",
+                        request.IdPago, confirmado.Importe, request.Importe);
+                else
+                    logger.LogError("PAGO_CONFIRMACION_NO_COINCIDE Proveedor={Proveedor} IdPago={IdPago}", proveedor, request.IdPago);
                 return;
             }
         }
@@ -66,10 +70,10 @@ public sealed class WebhookPagoService(
         CancellationToken ct = default, DateTimeOffset? fechaAcreditacion = null)
     {
         ArgumentNullException.ThrowIfNull(pago);
+        await using var bloqueo = await exclusion.AdquirirAsync(pago.IdExterno ?? pago.Numero, ct);
+        await recargador.RecargarAsync(pago, ct);
         // La conciliación también consulta checkouts aún no resueltos (US-F4-06).
         if (estadoExterno == ValoresPagoResponse.Pendiente) return;
-        await using var bloqueo = await exclusion.AdquirirAsync(pago.IdExterno ?? pago.Numero, ct);
-        // Recargar en un scope nuevo es responsabilidad del consumidor de conciliación.
         await AplicarInternoAsync(pago, estadoExterno, importeExterno,
             fechaAcreditacion?.UtcDateTime ?? reloj.GetUtcNow().UtcDateTime, ct);
     }
@@ -78,6 +82,12 @@ public sealed class WebhookPagoService(
     {
         ExigirResultado(estado, importe);
         if (pago.Estado != EstadoPago.Pendiente) return;
+        if (estado is "RECHAZADO" or "CANCELADO")
+        {
+            pago.Rechazar();
+            await unitOfWork.SaveChangesAsync(ct);
+            return;
+        }
         if (pago.ImporteTotal != importe)
         {
             logger.LogError("PAGO_IMPORTE_NO_COINCIDE PagoId={PagoId} Esperado={Esperado} Recibido={Recibido}",
@@ -86,17 +96,9 @@ public sealed class WebhookPagoService(
             await unitOfWork.SaveChangesAsync(ct);
             return;
         }
-        if (estado == ValoresPagoResponse.Aprobado)
-        {
-            if (pago.PagoCuotas.Count == 0)
-                pago.PagoCuotas = pagos.Query().Where(p => p.Id == pago.Id).SelectMany(p => p.PagoCuotas).ToList();
-            await aprobacion.AprobarAsync(pago, fecha, ct);
-        }
-        else
-        {
-            pago.Rechazar();
-            await unitOfWork.SaveChangesAsync(ct);
-        }
+        if (pago.PagoCuotas.Count == 0)
+            pago.PagoCuotas = pagos.Query().Where(p => p.Id == pago.Id).SelectMany(p => p.PagoCuotas).ToList();
+        await aprobacion.AprobarAsync(pago, fecha, ct);
     }
 
     private async Task<Pago> CrearDesdeCuotasAsync(string proveedor, PasarelaWebhookRequest request, CancellationToken ct)

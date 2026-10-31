@@ -23,7 +23,8 @@ internal static class WebhookTestSupport
         ILogger<WebhookPagoService>? logger = null) => new(
         new EfRepository<Pago>(db), new EfRepository<Cuota>(db), new EfRepository<Poliza>(db),
         new UnitOfWork(db), ServiciosPagoDePrueba.CrearAprobacion(db), pasarela ?? new PasarelaNoEsperada(),
-        exclusion ?? new SinExclusion(), _ => confirmar, TimeProvider.System, logger ?? NullLogger<WebhookPagoService>.Instance);
+        exclusion ?? new SinExclusion(), _ => confirmar, TimeProvider.System, logger ?? NullLogger<WebhookPagoService>.Instance,
+        new RecargadorPago(db));
 
     internal sealed class SinExclusion : IExclusionWebhook
     {

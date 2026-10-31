@@ -2,6 +2,7 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using Aseguradora.Application.Services;
+using Aseguradora.Application.Exceptions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,8 @@ public sealed class ExclusionWebhookSql(AseguradoraDbContext db) : IExclusionWeb
             var recurso = "webhook:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(clave.ToUpperInvariant())));
             comando.Parameters.Add("@clave", SqlDbType.NVarChar, 255).Value = recurso;
             var resultado = Convert.ToInt32(await comando.ExecuteScalarAsync(ct));
-            if (resultado < 0) throw new TimeoutException("No se pudo adquirir la exclusión del webhook; reintente.");
+            ct.ThrowIfCancellationRequested();
+            if (resultado < 0) throw new ServicioNoDisponibleException("No se pudo adquirir la exclusión del webhook; reintente.");
             return new Bloqueo(conexion, recurso);
         }
         catch { await conexion.DisposeAsync(); throw; }

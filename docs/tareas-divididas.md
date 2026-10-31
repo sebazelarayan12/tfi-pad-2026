@@ -2013,16 +2013,22 @@ Este frente cubre CU15 (pago online con pasarela, `POST /api/publico/pagos`), CU
 **Entrega a otros (contratos que publica):** `WebhookPagoService.AplicarResultadoAsync` (la usa la tarea 06). Endpoint `POST /api/webhooks/pasarela/{proveedor}` con el contrato de 9.3.
 
 **Criterios de aceptación:**
-- [ ] `APROBADO` sobre pago `Pendiente` → 200 `{ "recibido": true }`; pago `Aprobado`, cuotas `Pagada`, factura emitida (RN12).
-- [ ] El mismo `idPago` dos veces → la segunda responde 200 sin cambios y sin factura nueva (RN12).
-- [ ] `RECHAZADO` o `CANCELADO` → pago `Rechazado`; cuotas sin cambios.
-- [ ] Sin `referenciaExterna` y con `idCuotas` (9.5 B) → crea el pago y lo aprueba si el importe coincide con la suma de (importe + recargo).
-- [ ] Importe distinto → no aprueba, no cambia cuotas, responde 200 y registra el error.
-- [ ] API key de otro proveedor (claim `proveedor` distinto de `{proveedor}`) → 401.
-- [ ] Sin API key → 401 (política `ApiKey`).
-- [ ] Proveedor desconocido → 404.
-- [ ] `idPago` desconocido sin `referenciaExterna` ni `idCuotas` → 404.
-- [ ] `dotnet build` sin errores y `dotnet test` en verde.
+- [x] `APROBADO` sobre pago `Pendiente` → 200 `{ "recibido": true }`; pago `Aprobado`, cuotas `Pagada`, factura emitida (RN12).
+- [x] El mismo `idPago` dos veces → la segunda responde 200 sin cambios y sin factura nueva (RN12).
+- [x] `RECHAZADO` o `CANCELADO` → pago `Rechazado`; cuotas sin cambios.
+- [x] Sin `referenciaExterna` y con `idCuotas` (9.5 B) → crea el pago y lo aprueba si el importe coincide con la suma de (importe + recargo).
+- [x] Importe distinto → no aprueba, no cambia cuotas, responde 200 y registra el error.
+- [x] API key de otro proveedor (claim `proveedor` distinto de `{proveedor}`) → 401.
+- [x] Sin API key → 401 (política `ApiKey`).
+- [x] Proveedor desconocido → 404.
+- [x] `idPago` desconocido sin `referenciaExterna` ni `idCuotas` → 404.
+- [x] `dotnet build` sin errores y `dotnet test` en verde.
+
+**Notas de implementación y revisión (PR #52):**
+- La comparación de importe impide aprobar, no rechazar: `RECHAZADO`/`CANCELADO` se resuelven antes del control de importe, incluso con confirmación habilitada.
+- Límite técnico del aviso: hasta 50 `IdCuotas`, validado tanto por DTO como por servicio (400).
+- Espera del lock agotada: 503 con `Retry-After: 15`. La conciliación recarga el pago y su RowVersion dentro del lock antes de decidir si aplica un resultado.
+- La reserva online de US-F4-04 no impide procesar un cobro 9.5 B ya realizado. Se conserva el default C8 de US-F4-02 para un segundo pago sobre cuotas pagadas: excedente con revisión manual, sin modificar cuotas ni facturar. La decisión de negocio sigue pendiente; no se cambia ese default.
 
 **Tests requeridos:**
 - `WebhookPagoServiceTests`: aprobado; rechazado; cancelado (mapea a `Rechazado`); duplicado; importe no coincide; 9.5 B crea pago; `idCuotas` con cuota no payable → 400.

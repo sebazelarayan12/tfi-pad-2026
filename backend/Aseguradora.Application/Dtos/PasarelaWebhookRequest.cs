@@ -17,5 +17,7 @@ public sealed record PasarelaWebhookRequest
     public DateTimeOffset Fecha { get; init; }
     [StringLength(50)]
     public string? MedioPago { get; init; }
+    public const int MaximoCuotas = 50;
+    [MaxLength(MaximoCuotas)]
     public IReadOnlyList<Guid>? IdCuotas { get; init; }
 }
