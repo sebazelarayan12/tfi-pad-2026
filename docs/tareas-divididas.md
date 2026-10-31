@@ -1149,7 +1149,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 
 **Alcance (incluye):**
 - `VehiculoService`: `ListarPorClienteAsync(Guid clienteId)` (solo `Activo = true`), `ObtenerAsync(Guid id)`, `ModificarUsoAsync(Guid id, UsoVehiculo uso)`, `DarDeBajaAsync(Guid id)`.
-- `backend/Aseguradora.Application/Dtos/ModificarUsoRequest.cs`: `record ModificarUsoRequest(UsoVehiculo Uso)`. Es el único campo editable (la spec dice "Modifica uso").
+- `backend/Aseguradora.Application/Dtos/ModificarUsoRequest.cs`: `sealed record ModificarUsoRequest` con `[Required] public UsoVehiculo? Uso { get; init; }` (propiedad `init`, no record posicional: con record posicional un body sin `uso` daba 500). Es nullable y `[Required]` para que un JSON sin `uso` responda 400 y no tome `Particular` (valor 0) por defecto. Es el único campo editable (la spec dice "Modifica uso").
 - `backend/Aseguradora.Api/Controllers/VehiculosController.cs` (creado en US-F2-04), todos con `[Authorize(Policy = Politicas.Empleado)]`:
   - `GET /api/vehiculos?clienteId=` (400 si falta el parámetro).
   - `GET /api/vehiculos/{id}`.
@@ -1166,7 +1166,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 **Criterios de aceptación:**
 - [ ] `GET /api/vehiculos?clienteId=<seed>` devuelve solo vehículos activos de ese cliente.
 - [ ] `GET /api/vehiculos` sin `clienteId` responde 400.
-- [ ] `PUT /api/vehiculos/{id}` con `uso = "COMERCIAL"` cambia el uso y no cambia la patente.
+- [ ] `PUT /api/vehiculos/{id}` con `uso = 1` (Comercial; la API serializa los enums como número, igual que el alta de US-F2-04) cambia el uso y no cambia la patente. Sin `uso` responde 400.
 - [ ] `DELETE /api/vehiculos/{id}` sobre `SeedData.VehiculoId` (póliza Vigente) responde 400 con mensaje de póliza activa.
 - [ ] `DELETE /api/vehiculos/{id}` sobre un vehículo sin póliza activa responde 204 y deja la fila con `Activo = false` (RN15).
 - [ ] `GET /api/vehiculos/{id}` con id inexistente responde 404.
@@ -1174,10 +1174,15 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 
 **Tests requeridos:**
 - `VehiculoServiceTests`: `ListarPorClienteAsync_no_devuelve_inactivos`; `DarDeBajaAsync_con_poliza_Vigente_lanza_BusinessRuleException`; `DarDeBajaAsync_con_poliza_Pendiente_o_Suspendida_lanza_BusinessRuleException` (Theory); `DarDeBajaAsync_con_polizas_Cancelada_o_Vencida_permite_la_baja` (Theory); `DarDeBajaAsync_no_borra_la_fila`; `ModificarUsoAsync_cambia_solo_el_uso`; `ObtenerAsync_inexistente_lanza_NotFoundException`.
-- `VehiculosControllerTests`: `GET_sin_clienteId_devuelve_400`; `GET_id_inexistente_devuelve_404`; `DELETE_con_poliza_activa_devuelve_400`; `DELETE_valido_devuelve_204`.
+- `VehiculosControllerTests`: `GET_sin_clienteId_devuelve_400`; `GET_id_inexistente_devuelve_404`; `DELETE_con_poliza_activa_devuelve_400`; `DELETE_valido_devuelve_204_y_deja_la_fila_inactiva`. Autorización: 401 sin token y 403 sin rol en `GET` (listado y por id), `PUT` y `DELETE`.
 
-**Decisiones pendientes:**
-- `GET /api/vehiculos/{id}` de un vehículo dado de baja: propuesta **200** con `activo = false` (trazabilidad). Alternativa: 404.
+**Decisiones cerradas:**
+- `GET /api/vehiculos/{id}` de un vehículo dado de baja responde **200** con `activo = false` (trazabilidad).
+- `DELETE /api/vehiculos/{id}` sobre un vehículo ya dado de baja es idempotente: responde 204 y no cambia nada. `PUT /api/vehiculos/{id}` sobre un vehículo dado de baja responde 400 (no se edita un vehículo inactivo). Tests: `DarDeBajaAsync_sobre_vehiculo_ya_inactivo_es_idempotente`, `ModificarUsoAsync_sobre_vehiculo_inactivo_lanza_BusinessRuleException`, `DELETE_repetido_sobre_vehiculo_inactivo_devuelve_204` y `PUT_sobre_vehiculo_inactivo_devuelve_400`.
+- Los enums se serializan como número en todo el API (no hay `JsonStringEnumConverter` global). Pasar a texto es un cambio global que va en otro PR.
+
+**Notas:**
+- La verificación de póliza activa y el `Activo = false` de `DarDeBajaAsync` no son atómicos: una póliza emitida entre ambos pasos no se detectaría. Poco probable en este flujo; se puede cubrir con F3 (emisión) o con un test de concurrencia.
 - Modificar `Uso` no cambia cotizaciones ni pólizas ya emitidas (la prima se copia al emitir, tabla Polizas). Se anota en la respuesta de la API; no requiere decisión.
 
 ---
