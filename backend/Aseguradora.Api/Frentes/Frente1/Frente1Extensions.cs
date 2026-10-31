@@ -1,4 +1,5 @@
 using Aseguradora.Api.Security;
+using Aseguradora.Application.Clientes;
 using Aseguradora.Application.External;
 using Aseguradora.Application.Publico;
 using Aseguradora.Application.Security;
@@ -39,6 +40,8 @@ public static class Frente1Extensions
 
         // CU04: Renaper behind IRenaperService, mock or real chosen by Integraciones:Renaper:UsarMock (C13).
         services.AgregarIntegracion<IRenaperService, RenaperMockService, RenaperHttpService>(config, "Renaper");
+        // CU04: client registration and Renaper validation (US-F1-05).
+        services.AddScoped<ClienteService>();
 
         return services;
     }
