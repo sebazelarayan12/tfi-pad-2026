@@ -5,6 +5,8 @@ namespace Aseguradora.Application.Services;
 /// <summary>Casos de uso de pagos en caja, pagos online y consultas de comprobantes.</summary>
 public interface IPagoService
 {
+    /// <summary>Consulta el estado en la pasarela y lo aplica mediante el núcleo del webhook (CU16).</summary>
+    Task<PagoResponse> ConciliarAsync(Guid pagoId, CancellationToken ct = default);
     /// <summary>Cobra cuotas de un mismo cliente, aprueba el pago y emite su factura (CU17).</summary>
     Task<PagoResponse> RegistrarCajaAsync(PagoCajaRequest request, CancellationToken ct = default);
     /// <summary>Consulta un pago con su factura, si existe (CU18).</summary>

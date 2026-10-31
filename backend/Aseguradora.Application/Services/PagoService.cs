@@ -20,13 +20,36 @@ public sealed class PagoService(
     TimeProvider reloj,
     IRepository<Poliza> polizas,
     IRepository<Factura> facturas,
-    IAprobacionPagoService aprobacion) : IPagoService
+    IAprobacionPagoService aprobacion,
+    WebhookPagoService webhook) : IPagoService
 {
     /// <summary>Pasarelas habilitadas para el pago online.</summary>
     public static readonly IReadOnlyList<string> ProveedoresValidos = ["pasarela1", "pasarela2"];
 
     private const string Moneda = "ARS";
     private const int IntentosNumeroUnico = 5;
+
+    /// <inheritdoc />
+    public async Task<PagoResponse> ConciliarAsync(Guid pagoId, CancellationToken ct = default)
+    {
+        var pago = await pagos.GetByIdAsync(pagoId, ct) ?? throw new NotFoundException("El pago no existe.");
+        if (pago.Medio != MedioPago.Pasarela)
+            throw new BusinessRuleException("Solo se pueden conciliar pagos de pasarela.");
+        if (pago.Estado != EstadoPago.Pendiente)
+            return await ObtenerPagoAsync(pagoId, ct);
+        if (string.IsNullOrWhiteSpace(pago.IdExterno) || string.IsNullOrWhiteSpace(pago.Proveedor))
+            throw new BusinessRuleException("El pago aún no tiene un identificador externo y proveedor para conciliar.");
+
+        var respuesta = await pasarelas.Obtener(pago.Proveedor).ConsultarPagoAsync(pago.IdExterno, ct);
+        if (respuesta.IdPago != pago.IdExterno
+            || (respuesta.ReferenciaExterna is not null && respuesta.ReferenciaExterna != pago.Numero))
+            throw new ExternalServiceException("La pasarela devolvió datos de otro pago.");
+        var fecha = respuesta.Fecha.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(respuesta.Fecha, DateTimeKind.Utc)
+            : respuesta.Fecha.ToUniversalTime();
+        await webhook.AplicarResultadoAsync(pago, respuesta.Estado, respuesta.Importe, ct, new DateTimeOffset(fecha));
+        return await ObtenerPagoAsync(pagoId, ct);
+    }
 
     /// <summary>Cobra cuotas de un mismo cliente usando el circuito común de aprobación y facturación.</summary>
     public async Task<PagoResponse> RegistrarCajaAsync(PagoCajaRequest request, CancellationToken ct = default)
