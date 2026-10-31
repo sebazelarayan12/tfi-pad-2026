@@ -144,12 +144,51 @@ public sealed class ConciliarPagoTests : IDisposable
         Assert.Equal(1, await db.Facturas.CountAsync(f => f.PagoId == pago.Id));
     }
 
+    [Theory]
+    [InlineData("DESCONOCIDO", 12000)]
+    [InlineData("APROBADO", 0)]
+    [InlineData("RECHAZADO", -1)]
+    [InlineData("PENDIENTE", 0)]
+    public async Task ContratoInvalidoDePasarela_ErrorExternoSinModificar(string estado, int importe)
+    {
+        var pago = await AgregarPagoAsync();
+        pasarela.Estado = estado;
+        pasarela.Importe = importe;
+        await Assert.ThrowsAsync<ExternalServiceException>(() => ServiciosPagoDePrueba.Crear(db, pasarela: pasarela).ConciliarAsync(pago.Id));
+        Assert.Equal(EstadoPago.Pendiente, pago.Estado);
+        Assert.Equal(EstadoCuota.Pendiente, (await db.Cuotas.FindAsync(SeedData.CuotaId(2)))!.Estado);
+        Assert.Empty(await db.Facturas.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ReferenciaDeOtroPago_ErrorExternoSinAplicar()
+    {
+        var pago = await AgregarPagoAsync();
+        pasarela.Referencia = "PAG-OTRO";
+        await Assert.ThrowsAsync<ExternalServiceException>(() => ServiciosPagoDePrueba.Crear(db, pasarela: pasarela).ConciliarAsync(pago.Id));
+        Assert.Equal(EstadoPago.Pendiente, pago.Estado);
+    }
+
+    [Fact]
+    public async Task ArcaCaido_ConservaAprobacionYFacturaPendiente()
+    {
+        var pago = await AgregarPagoAsync();
+        pasarela.Estado = "APROBADO";
+        var respuesta = await ServiciosPagoDePrueba.Crear(db, fallaArca: true, pasarela: pasarela).ConciliarAsync(pago.Id);
+        Assert.Equal("APROBADO", respuesta.Estado);
+        Assert.Equal("PENDIENTE_CAE", respuesta.Factura?.Estado);
+        Assert.Null(respuesta.Factura!.Cae);
+        Assert.Equal(EstadoCuota.Pagada, (await db.Cuotas.FindAsync(SeedData.CuotaId(2)))!.Estado);
+        Assert.Equal(1, await db.Facturas.CountAsync(f => f.PagoId == pago.Id));
+    }
+
     private sealed class PasarelaFalsa : IPasarelaResolver, IPasarelaService
     {
         public int Llamadas { get; private set; }
         public string Estado { get; set; } = "PENDIENTE";
         public decimal Importe { get; set; } = 12000;
         public string? IdRespuesta { get; set; }
+        public string Referencia { get; set; } = "PAG-abcdef";
         public Func<Task>? AntesDeResponder { get; set; }
         public DateTime Fecha { get; } = new(2026, 10, 31, 3, 0, 0, DateTimeKind.Utc);
         public IPasarelaService Obtener(string proveedor) => this;
@@ -157,7 +196,7 @@ public sealed class ConciliarPagoTests : IDisposable
         {
             Llamadas++;
             if (AntesDeResponder is not null) await AntesDeResponder();
-            return new PasarelaPagoResponse(IdRespuesta ?? idPago, "PAG-abcdef", Estado, Importe, Fecha, null);
+            return new PasarelaPagoResponse(IdRespuesta ?? idPago, Referencia, Estado, Importe, Fecha, null);
         }
         public Task<PasarelaCrearPagoResponse> CrearPagoAsync(PasarelaCrearPagoRequest request, CancellationToken ct) =>
             throw new NotSupportedException();

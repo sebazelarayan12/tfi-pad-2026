@@ -39,7 +39,7 @@ internal static class ServiciosPagoDePrueba
         new(verificador ?? new VerificadorPublico(new EfRepository<Cliente>(db), new EfRepository<Poliza>(db), new EfRepository<Pago>(db)),
             new EfRepository<Cuota>(db), new EfRepository<Cliente>(db), new EfRepository<Pago>(db),
             pasarela ?? new PasarelaNoUtilizada(), new UnitOfWork(db), new PagoOnlineOpciones { ReservaMinutos = 60 }, TimeProvider.System,
-            new EfRepository<Poliza>(db), new EfRepository<Factura>(db), CrearAprobacion(db, fallaArca), WebhookTestSupport.Crear(db));
+            new EfRepository<Poliza>(db), new EfRepository<Factura>(db), CrearAprobacion(db, fallaArca), WebhookTestSupport.Crear(db, fallaArca: fallaArca));
 
     private sealed class PasarelaNoUtilizada : IPasarelaResolver
     {

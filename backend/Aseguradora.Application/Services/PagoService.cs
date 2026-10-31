@@ -41,6 +41,8 @@ public sealed class PagoService(
             throw new BusinessRuleException("El pago aún no tiene un identificador externo y proveedor para conciliar.");
 
         var respuesta = await pasarelas.Obtener(pago.Proveedor).ConsultarPagoAsync(pago.IdExterno, ct);
+        if (respuesta.Estado is not ("PENDIENTE" or "APROBADO" or "RECHAZADO" or "CANCELADO") || respuesta.Importe <= 0)
+            throw new ExternalServiceException("La pasarela devolvió un estado o importe inválido.");
         if (respuesta.IdPago != pago.IdExterno
             || (respuesta.ReferenciaExterna is not null && respuesta.ReferenciaExterna != pago.Numero))
             throw new ExternalServiceException("La pasarela devolvió datos de otro pago.");

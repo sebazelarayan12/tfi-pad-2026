@@ -18,7 +18,10 @@ facturas pendientes de CAE conservan el comportamiento de US-F4-05/US-F4-02.
 El núcleo recarga el pago y RowVersion dentro del lock: si llegó el webhook mientras
 se consultaba a la pasarela, no vuelve a aprobar ni facturar.
 
-Pago inexistente: 404. Respuesta de otro pago: 502. Timeout de lock: 503 con
+Pago inexistente: 404. Respuesta de otro pago, estado desconocido o importe no
+positivo en la respuesta de la pasarela: 502, sin modificar el pago ni las cuotas.
+La validación del aviso webhook sigue devolviendo 400 para pedidos inválidos.
+Timeout de lock: 503 con
 Retry-After. No requiere migraciones ni configuración nueva.
 
 ## Validación
