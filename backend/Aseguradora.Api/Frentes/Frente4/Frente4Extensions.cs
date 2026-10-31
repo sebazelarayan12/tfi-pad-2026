@@ -21,6 +21,11 @@ public static class Frente4Extensions
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<PagoOnlineOpciones>>().Value);
         services.AddScoped<IPagoService, PagoService>();
+        services.AddScoped<IExclusionWebhook, Aseguradora.Data.Repositories.ExclusionWebhookSql>();
+        services.AddScoped<IRecargadorPago, Aseguradora.Data.Repositories.RecargadorPago>();
+        services.AddSingleton<Func<string, bool>>(_ => proveedor =>
+            configuration.GetValue<bool?>($"Integraciones:Pasarelas:{proveedor}:ConfirmarWebhook") ?? true);
+        services.AddScoped<WebhookPagoService>();
         return services;
     }
 }

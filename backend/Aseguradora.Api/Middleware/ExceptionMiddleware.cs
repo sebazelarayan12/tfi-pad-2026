@@ -45,6 +45,8 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
 
             context.Response.Clear();
             context.Response.StatusCode = status;
+            if (exception is ServicioNoDisponibleException)
+                context.Response.Headers.RetryAfter = ServicioNoDisponibleException.ReintentarEnSegundos.ToString(System.Globalization.CultureInfo.InvariantCulture);
             await context.Response.WriteAsJsonAsync(problem, options: null, contentType: ProblemJson);
         }
     }
@@ -57,6 +59,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         // Also covers TransicionInvalidaException, its subclass.
         ReglaDeDominioException => (StatusCodes.Status400BadRequest, exception.Message),
         ExternalServiceException => (StatusCodes.Status502BadGateway, exception.Message),
+        ServicioNoDisponibleException => (StatusCodes.Status503ServiceUnavailable, exception.Message),
         // Never leak internal details of unexpected failures.
         _ => (StatusCodes.Status500InternalServerError, UnexpectedErrorMessage)
     };

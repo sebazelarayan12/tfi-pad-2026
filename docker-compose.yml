@@ -35,6 +35,8 @@ services:
       Pagos__UrlRetornoExito: ${PAGOS_URL_RETORNO_EXITO:-http://localhost:5174/pago/exito}
       Pagos__UrlRetornoError: ${PAGOS_URL_RETORNO_ERROR:-http://localhost:5174/pago/error}
       Pagos__ReservaMinutos: ${PAGOS_RESERVA_MINUTOS:-60}
+      Integraciones__Pasarelas__pasarela1__ConfirmarWebhook: ${PASARELA1_CONFIRMAR_WEBHOOK:-true}
+      Integraciones__Pasarelas__pasarela2__ConfirmarWebhook: ${PASARELA2_CONFIRMAR_WEBHOOK:-true}
       # Networks allowed to send CF-Connecting-IP (RN20). Default is Docker's private range, where
       # cloudflared lives; without it every visitor would share one rate-limit counter.
       # `-` (not `:-`): the default applies only when REDES_CONFIABLES is unset, so setting it to an
