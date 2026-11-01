@@ -126,6 +126,29 @@ public sealed class RendicionControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task CuotaRepetidaEnElMismoArchivo_CobraUnaVezYReportaLaSegunda()
+    {
+        var poliza = await AgregarPolizaPendienteAsync();
+        await using var factory = CrearFactory();
+
+        var response = await factory.CrearCliente(Roles.Empleado).PostAsync(RutaRendiciones,
+            Formulario("rendicion-duplicada.txt", LineaDe(poliza, 1), LineaDe(poliza, 1)));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var resultado = await response.Content.ReadFromJsonAsync<RendicionResponse>();
+        Assert.NotNull(resultado);
+        Assert.Equal(1, resultado.Procesadas);
+        var error = Assert.Single(resultado.Errores);
+        Assert.Equal(2, error.Linea);
+        Assert.Contains("Pagada", error.Motivo, StringComparison.Ordinal);
+
+        await using var context = _sqlite.CreateContext();
+        var pagos = await context.Pagos.Where(p => p.Medio == MedioPago.PagoFacil).ToListAsync();
+        Assert.Equal(EstadoPago.Aprobado, Assert.Single(pagos).Estado);
+        Assert.Single(await context.Facturas.ToListAsync());
+    }
+
+    [Fact]
     public async Task Post_Repetido_400()
     {
         var poliza = await AgregarPolizaPendienteAsync();

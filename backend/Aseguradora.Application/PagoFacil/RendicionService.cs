@@ -43,6 +43,10 @@ public sealed partial class RendicionService(
     private static readonly TimeOnly HoraAcreditacion = TimeOnly.MinValue;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Each line commits on its own, because the F4 approval saves in several steps and calls ARCA.
+    /// docs/rendicion-pagofacil.md explains how to recover a file cut by an unexpected error.
+    /// </remarks>
     public async Task<RendicionResponse> ProcesarAsync(string nombreArchivo, Stream contenido, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(contenido);
