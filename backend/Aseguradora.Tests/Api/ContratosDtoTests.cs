@@ -8,7 +8,7 @@ namespace Aseguradora.Tests.Api;
 /// <summary>Responses are DTOs: no endpoint exposes a domain entity (C3).</summary>
 public sealed class ContratosDtoTests
 {
-    public static TheoryData<Type> Controladores => new() { typeof(PolizasController) };
+    public static TheoryData<Type> Controladores => new() { typeof(PolizasController), typeof(PagoFacilController) };
 
     [Theory]
     [MemberData(nameof(Controladores))]

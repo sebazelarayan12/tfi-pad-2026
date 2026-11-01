@@ -29,7 +29,8 @@ internal static class ServiciosPagoDePrueba
         var facturacion = new FacturacionService(new EfRepository<Pago>(db), cuotas, polizas,
             new EfRepository<Cliente>(db), facturas, uow, new CobroTestContext.ArcaFake { Fallar = fallaArca },
             new FacturacionOpciones("30712345678", 1), TimeProvider.System,
-            NullLogger<FacturacionService>.Instance);
+            NullLogger<FacturacionService>.Instance,
+            new CobroTestContext.EmisorDelegado((_, _) => throw new NotSupportedException("Esta prueba no ejecuta reintentos.")));
         return new AprobacionPagoService(cuotas, polizas, uow, new ActualizadorEstadoPoliza(polizas, cuotas),
             facturacion, NullLogger<AprobacionPagoService>.Instance, facturas);
     }

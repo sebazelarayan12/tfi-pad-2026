@@ -27,7 +27,6 @@ public sealed class PagoService(
     public static readonly IReadOnlyList<string> ProveedoresValidos = ["pasarela1", "pasarela2"];
 
     private const string Moneda = "ARS";
-    private const int IntentosNumeroUnico = 5;
 
     /// <inheritdoc />
     public async Task<PagoResponse> ConciliarAsync(Guid pagoId, CancellationToken ct = default)
@@ -223,15 +222,5 @@ public sealed class PagoService(
     }
 
     // PAG- plus six hex digits. The unique index on Numero is the last guard against a race.
-    private async Task<string> GenerarNumeroAsync(CancellationToken ct)
-    {
-        for (var intento = 0; intento < IntentosNumeroUnico; intento++)
-        {
-            var numero = $"PAG-{Guid.NewGuid():N}"[..10];
-            if (!await pagos.AnyAsync(p => p.Numero == numero, ct))
-                return numero;
-        }
-
-        throw new InvalidOperationException("No se pudo generar un número de pago único.");
-    }
+    private Task<string> GenerarNumeroAsync(CancellationToken ct) => NumeroPago.GenerarAsync(pagos, ct);
 }
