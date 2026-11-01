@@ -1,3 +1,4 @@
+using System.Text;
 using Aseguradora.Api.Security;
 using Aseguradora.Application.Dtos.PagoFacil;
 using Aseguradora.Application.PagoFacil;
@@ -8,14 +9,19 @@ using Microsoft.AspNetCore.Mvc;
 namespace Aseguradora.Api.Controllers;
 
 /// <summary>
-/// Pago Fácil for employees: coupon (CU20) and settlement files (CU21). US-F3-08 adds its action here.
+/// Pago Fácil for employees: coupon (CU20), settlement files (CU21) and positive base (CU22).
 /// </summary>
 [ApiController]
 [Route("api/pagofacil")]
 [Authorize(Policy = Politicas.Empleado)]
 public sealed class PagoFacilController(
-    ICuponPagoFacilService cupones, IRendicionService rendiciones, TimeProvider reloj) : ControllerBase
+    ICuponPagoFacilService cupones,
+    IRendicionService rendiciones,
+    IBasePositivaService basePositiva,
+    TimeProvider reloj) : ControllerBase
 {
+    private const string TipoTextoPlano = "text/plain";
+
     /// <summary>Builds the coupon of a Pendiente or Vencida installment, with its 42-digit barcode.</summary>
     [HttpGet("cuotas/{cuotaId:guid}/cupon")]
     [ProducesResponseType(typeof(CuponPagoFacilResponse), StatusCodes.Status200OK)]
@@ -51,6 +57,21 @@ public sealed class PagoFacilController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyList<HistorialRendicionResponse>>> HistorialRendiciones(CancellationToken ct) =>
         Ok(await rendiciones.ListarAsync(ct));
+
+
+    /// <summary>
+    /// Downloads the positive base (CU22): every debt still payable, as a fixed-width text file that is
+    /// handed to Pago Fácil by hand.
+    /// </summary>
+    [HttpGet("base-positiva")]
+    [Produces(TipoTextoPlano)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> BasePositiva(CancellationToken ct)
+    {
+        var archivo = await basePositiva.GenerarAsync(FechaArgentina.Hoy(reloj), ct);
+        return File(Encoding.ASCII.GetBytes(archivo.Contenido), TipoTextoPlano, archivo.NombreArchivo);
+    }
 
     // Room above the 5 MB file limit for the multipart envelope, so a larger file still reaches the
     // service and gets its 400 instead of the server's 413.

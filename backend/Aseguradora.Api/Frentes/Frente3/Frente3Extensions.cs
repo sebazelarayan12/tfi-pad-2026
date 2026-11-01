@@ -37,6 +37,7 @@ public static class Frente3Extensions
             .ValidateDataAnnotations();
         services.AddScoped(sp => sp.GetRequiredService<IOptions<PagoFacilOpciones>>().Value);
         services.AddScoped<ICuponPagoFacilService, CuponPagoFacilService>();
+        services.AddScoped<IBasePositivaService, BasePositivaService>();
 
         // CU21: Pago Fácil settlement file (US-F3-07). Payments are approved by F4's IAprobacionPagoService.
         services.AddScoped<IRendicionService, RendicionService>();
