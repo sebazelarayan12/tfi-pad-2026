@@ -14,6 +14,10 @@ public static class Frente4Extensions
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<FacturacionOpciones>>().Value);
         services.AddScoped<IFacturacionService, FacturacionService>();
+        services.AddSingleton<IEmisorFacturaAislado, Aseguradora.Api.BackgroundJobs.EmisorFacturaAislado>();
+        services.AddOptions<Aseguradora.Api.BackgroundJobs.ReintentoFacturasOpciones>()
+            .Bind(configuration.GetSection("Facturacion")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddHostedService<Aseguradora.Api.BackgroundJobs.ReintentoFacturasJob>();
         services.AddScoped<IAprobacionPagoService, AprobacionPagoService>();
         services.AddScoped<IDeudaExternaService, DeudaExternaService>();
         services.AddOptions<PagoOnlineOpciones>()
