@@ -94,7 +94,10 @@ public sealed class CotizacionExternaServiceTests : IDisposable
     public async Task CotizarExterno_sin_planes_compatibles_lanza_BusinessRuleException()
     {
         await using var contexto = _fixture.CreateContext();
-        foreach (var plan in await contexto.Planes.ToListAsync())
+        var planes = await contexto.Planes.ToListAsync();
+        Assert.NotEmpty(planes);
+        Assert.Contains(planes, plan => plan.Activo);
+        foreach (var plan in planes)
             plan.TiposPermitidos = "Auto";
         await contexto.SaveChangesAsync();
         var cantidad = await contexto.Cotizaciones.CountAsync();

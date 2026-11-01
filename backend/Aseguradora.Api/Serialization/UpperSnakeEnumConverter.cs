@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 namespace Aseguradora.Api.Serialization;
 
 /// <summary>Enforces uppercase enum names on the external contract without changing global JSON options.</summary>
+/// <remarks>The current contract uses single-word enum names; multiword snake-case conversion is not supported.</remarks>
 public sealed class UpperSnakeEnumConverter<TEnum> : JsonConverter<TEnum> where TEnum : struct, Enum
 {
     /// <inheritdoc />

@@ -2,9 +2,22 @@
 
 `POST /api/externo/cotizaciones` requiere `X-Api-Key` y devuelve 201 con una cotización por plan compatible (CU09, RN05 y RN06).
 
+## Estado del contrato
+
+La respuesta implementada es una propuesta pendiente de aceptación por Ventas de motos y la Municipalidad: cada opción tiene su propio idCotizacion, sin id superior. Adjuntar enlaces a ambas confirmaciones en el PR #57 antes de cerrar esta decisión.
+
 ## Prueba manual local antes del PR
 
-Pendiente de ejecución y confirmación por la persona responsable. Abrí Docker Desktop y, desde la raíz del repositorio, con el `.env` local configurado:
+Prueba manual local confirmada por la persona responsable el **2026-11-01**, mediante Swagger y autenticación `X-Api-Key`. Confirmó que los pasos de prueba funcionaron correctamente y adjuntó capturas de ambos casos válidos:
+
+| Uso | HTTP | RC | TC |
+| --- | --- | --- | --- |
+| PARTICULAR | 201 | 10.920,00 | 16.380,00 |
+| COMERCIAL | 201 | 15.288,00 | 22.932,00 |
+
+Las capturas muestran dos opciones (sin TR), un `idCotizacion` por opción, ausencia de datos de cliente/vehículo y vencimientos UTC el 2026-11-16 para solicitudes del 2026-11-01. Las primas comerciales equivalen a las particulares multiplicadas por 1,40. Los casos negativos quedaron confirmados por el usuario; las capturas aportadas corresponden a los dos casos 201.
+
+Para repetir la prueba, abrí Docker Desktop y, desde la raíz del repositorio, con el `.env` local configurado:
 
 ```powershell
 $env:SWAGGER_HABILITADO="true"
@@ -36,4 +49,4 @@ Verificá:
 
 La persistencia, el origen externo, las referencias null y el caso sin planes compatibles se verifican además con tests SQLite usando el modelo EF real. No desactives planes compartidos para la prueba manual.
 
-Al terminar, confirmá el resultado antes de abrir el PR y pedí review de Copilot.
+Prueba manual confirmada para el PR #57. Adjuntar evidencia con las credenciales del request ocultas y solicitar nuevamente review de Copilot y del revisor. El acuerdo del contrato con los consumidores continúa pendiente.
