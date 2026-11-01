@@ -114,7 +114,8 @@ public class FacturacionServiceTests
             new Aseguradora.Data.Repositories.EfRepository<Aseguradora.Domain.Entities.Poliza>(test.Db),
             new Aseguradora.Data.Repositories.EfRepository<Aseguradora.Domain.Entities.Cliente>(test.Db),
             new Aseguradora.Data.Repositories.EfRepository<Aseguradora.Domain.Entities.Factura>(test.Db),
-            uow, test.Arca, test.Opciones, TimeProvider.System, test.Log);
+            uow, test.Arca, test.Opciones, TimeProvider.System, test.Log,
+            new CobroTestContext.EmisorDelegado((_, _) => throw new NotSupportedException("Esta prueba no ejecuta reintentos.")));
         await Assert.ThrowsAsync<InvalidOperationException>(() => facturacion.EmitirAsync(test.Pago.Id));
         Assert.Contains(test.Log.Entradas, e => e.Texto.Contains("ARCA_AUTORIZACION_RECIBIDA")
             && e.Texto.Contains("74123456789012") && e.Texto.Contains("0001-00000001"));

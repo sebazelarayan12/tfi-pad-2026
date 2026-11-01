@@ -58,9 +58,15 @@ public sealed class FacturacionReintentosTests
     [Fact]
     public async Task Autorizada_NoSeEnviaOtraVez()
     {
-        using var ctx = new CobroTestContext();
+        var pagosEnviados = new List<Guid>();
+        using var ctx = new CobroTestContext(new CobroTestContext.EmisorDelegado((pagoId, _) =>
+        {
+            pagosEnviados.Add(pagoId);
+            return Task.CompletedTask;
+        }));
         await ctx.Aprobacion.AprobarAsync(ctx.Pago, DateTime.UtcNow, default);
         await ctx.Facturacion.ReintentarPendientesAsync();
+        Assert.Empty(pagosEnviados);
         Assert.Equal(1, ctx.Arca.Llamadas);
     }
 

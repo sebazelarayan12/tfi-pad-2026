@@ -3,6 +3,7 @@ using Aseguradora.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 
 namespace Aseguradora.Tests.BackgroundJobs;
 
@@ -29,11 +30,26 @@ public sealed class ReintentoFacturasJobTests
     [Fact]
     public async Task Deshabilitado_NoConsultaBase()
     {
-        await using var servicios = new ServiceCollection().BuildServiceProvider();
+        var fake = new FacturacionFalsa();
+        await using var servicios = new ServiceCollection().AddScoped<IFacturacionService>(_ => fake).BuildServiceProvider();
         using var job = new ReintentoFacturasJob(servicios.GetRequiredService<IServiceScopeFactory>(), TimeProvider.System,
             Options.Create(new ReintentoFacturasOpciones { ReintentosHabilitados = false }), NullLogger<ReintentoFacturasJob>.Instance);
         await job.StartAsync(default);
         await job.StopAsync(default);
+        Assert.Equal(0, fake.Llamadas);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1441)]
+    public async Task IntervaloFueraDeRango_ImpideArranque(int minutos)
+    {
+        using var host = new HostBuilder().ConfigureServices(servicios =>
+            servicios.AddOptions<ReintentoFacturasOpciones>()
+                .Configure(opciones => opciones.IntervaloReintentoMinutos = minutos)
+                .ValidateDataAnnotations().ValidateOnStart()).Build();
+        var error = await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
+        Assert.Contains(error.Failures, fallo => fallo.Contains(nameof(ReintentoFacturasOpciones.IntervaloReintentoMinutos)));
     }
 
     private sealed class FacturacionFalsa : IFacturacionService

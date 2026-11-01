@@ -13,7 +13,7 @@ public sealed class FacturacionService(
     IRepository<Pago> pagos, IRepository<Cuota> cuotas, IRepository<Poliza> polizas,
     IRepository<Cliente> clientes, IRepository<Factura> facturas, IUnitOfWork unitOfWork,
     IArcaService arca, FacturacionOpciones opciones, TimeProvider reloj, ILogger<FacturacionService> logger,
-    IEmisorFacturaAislado? emisorAislado = null) : IFacturacionService
+    IEmisorFacturaAislado emisorAislado) : IFacturacionService
 {
     private readonly IRepository<Pago> _pagos = pagos ?? throw new ArgumentNullException(nameof(pagos));
     private readonly IRepository<Cuota> _cuotas = cuotas ?? throw new ArgumentNullException(nameof(cuotas));
@@ -26,6 +26,7 @@ public sealed class FacturacionService(
     private readonly TimeProvider _reloj = reloj ?? throw new ArgumentNullException(nameof(reloj));
 
     private readonly ILogger<FacturacionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IEmisorFacturaAislado _emisorAislado = emisorAislado ?? throw new ArgumentNullException(nameof(emisorAislado));
 
     // IVA incluido del 21 %: decisión por defecto de C8 y ejemplo 9.2.
     private const decimal FactorIva = 1.21m;
@@ -42,16 +43,13 @@ public sealed class FacturacionService(
             {
                 numero = (await _pagos.GetByIdAsync(factura.PagoId, ct))?.Numero;
                 _logger.LogInformation("FACTURA_REINTENTO FacturaId={FacturaId} NumeroPago={NumeroPago}", factura.Id, numero);
-                if (emisorAislado is null) await EmitirAsync(factura.PagoId, ct);
-                else await emisorAislado.EmitirAsync(factura.PagoId, ct);
+                await _emisorAislado.EmitirAsync(factura.PagoId, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "FACTURA_REINTENTO_ERROR FacturaId={FacturaId} NumeroPago={NumeroPago}", factura.Id, numero);
-                // Abandonar este scope evita guardar cambios de una emisión fallida al procesar otra.
-                // El job crea otro scope en la siguiente corrida y vuelve a cargar las pendientes.
-                if (emisorAislado is null) throw;
+                // El emisor descarta el scope fallido antes de procesar otra factura.
             }
             if (await _facturas.AnyAsync(f => f.Id == factura.Id && f.Estado == EstadoFactura.PendienteCae, ct))
                 _logger.LogWarning("FACTURA_SIGUE_PENDIENTE FacturaId={FacturaId} NumeroPago={NumeroPago}", factura.Id, numero);
