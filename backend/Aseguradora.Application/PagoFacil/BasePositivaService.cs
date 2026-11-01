@@ -5,6 +5,7 @@ using Aseguradora.Application.Exceptions;
 using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Aseguradora.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 using static Aseguradora.Application.PagoFacil.LayoutBasePositivaPagoFacil;
 
 namespace Aseguradora.Application.PagoFacil;
@@ -14,7 +15,8 @@ namespace Aseguradora.Application.PagoFacil;
 /// Pago Fácil can charge the client with the DNI alone. Amounts, due dates and barcode are the same as
 /// the coupon of that day (US-F3-06), so the daily settlement (US-F3-07) accepts the payment.
 /// </summary>
-public sealed class BasePositivaService(IRepository<Cuota> cuotas, PagoFacilOpciones opciones) : IBasePositivaService
+public sealed class BasePositivaService(
+    IRepository<Cuota> cuotas, PagoFacilOpciones opciones, ILogger<BasePositivaService> logger) : IBasePositivaService
 {
     private static readonly EstadoCuota[] CuotasCobrables = [EstadoCuota.Pendiente, EstadoCuota.Vencida];
 
@@ -38,12 +40,24 @@ public sealed class BasePositivaService(IRepository<Cuota> cuotas, PagoFacilOpci
             + hoy.ToString(FormatoFecha, CultureInfo.InvariantCulture));
 
         var total = 0m;
+        var cantidad = 0;
         foreach (var deuda in deudas)
         {
+            // A malformed DNI leaves that debt out (it can still be paid with the coupon) instead of
+            // blocking the file for every other client.
+            if (DniDeAncho(deuda.Dni) is not { } dni)
+            {
+                logger.LogWarning(
+                    "BASE_POSITIVA_DNI_INVALIDO Poliza={NumeroPoliza} Cuota={NumeroCuota}: el DNI no tiene hasta {Ancho} dígitos; la cuota queda afuera del archivo.",
+                    deuda.NumeroPoliza, deuda.Cuota.Numero, AnchoDni);
+                continue;
+            }
+
             var cupon = CuponPagoFacilService.Armar(deuda.Cuota, deuda.NumeroPoliza, hoy, opciones.CodigoEmpresa);
             total += cupon.ImportePrimerVencimiento;
+            cantidad++;
             AgregarRegistro(contenido, TipoDetalle
-                + Dni(deuda.Dni)
+                + dni
                 + Numero(CodigoBarrasPagoFacil.Leer(cupon.CodigoBarras).NumeroPoliza, AnchoNumeroCliente)
                 + Numero(cupon.NumeroCuota, AnchoNumeroCuota)
                 + Importe(cupon.ImportePrimerVencimiento, AnchoImporte)
@@ -53,23 +67,23 @@ public sealed class BasePositivaService(IRepository<Cuota> cuotas, PagoFacilOpci
                 + cupon.CodigoBarras);
         }
 
-        AgregarRegistro(contenido, TipoFinal + Numero(deudas.Count, AnchoCantidad) + Importe(total, AnchoTotal));
+        AgregarRegistro(contenido, TipoFinal + Numero(cantidad, AnchoCantidad) + Importe(total, AnchoTotal));
 
         var nombre = PrefijoNombreArchivo
             + Numero(opciones.CodigoEmpresa, AnchoCodigoEmpresa) + "_"
             + hoy.ToString(FormatoFecha, CultureInfo.InvariantCulture) + Extension;
-        return Task.FromResult(new ArchivoBasePositiva(nombre, contenido.ToString(), deudas.Count, total));
+        return Task.FromResult(new ArchivoBasePositiva(nombre, contenido.ToString(), cantidad, total));
     }
 
     private static void AgregarRegistro(StringBuilder contenido, string registro) =>
         contenido.Append(registro.PadRight(LongitudRegistro)).Append(FinDeLinea);
 
-    private static string Dni(string dni)
+    private static string? DniDeAncho(string? dni)
     {
-        var limpio = dni.Trim();
-        if (limpio.Length is 0 or > AnchoDni || !limpio.All(char.IsAsciiDigit))
-            throw new BusinessRuleException($"El DNI {dni} no entra en la base positiva ({AnchoDni} dígitos).");
-        return limpio.PadLeft(AnchoDni, '0');
+        var limpio = dni?.Trim() ?? string.Empty;
+        return limpio.Length is 0 or > AnchoDni || !limpio.All(char.IsAsciiDigit)
+            ? null
+            : limpio.PadLeft(AnchoDni, '0');
     }
 
     private static string Numero(long valor, int ancho)

@@ -1,8 +1,8 @@
+using System.Text;
 using Aseguradora.Api.Security;
 using Aseguradora.Application.Dtos.PagoFacil;
 using Aseguradora.Application.PagoFacil;
 using Aseguradora.Application.Tiempo;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,5 +41,4 @@ public sealed class PagoFacilController(
         var archivo = await basePositiva.GenerarAsync(FechaArgentina.Hoy(reloj), ct);
         return File(Encoding.ASCII.GetBytes(archivo.Contenido), TipoTextoPlano, archivo.NombreArchivo);
     }
-
 }

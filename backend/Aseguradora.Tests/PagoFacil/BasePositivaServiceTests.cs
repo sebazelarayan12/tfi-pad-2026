@@ -8,6 +8,7 @@ using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Aseguradora.Tests.Data;
 using Aseguradora.Tests.Support;
+using Microsoft.Extensions.Logging.Abstractions;
 using static Aseguradora.Application.PagoFacil.LayoutBasePositivaPagoFacil;
 
 namespace Aseguradora.Tests.PagoFacil;
@@ -101,6 +102,27 @@ public sealed class BasePositivaServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DniMalFormado_DejaAfueraSoloEsaPoliza()
+    {
+        await using (var context = _fixture.CreateContext())
+        {
+            var otra = await PolizasDePrueba.AgregarPolizaAsync(context, EstadoPoliza.Vigente, DateTime.UtcNow);
+            var cliente = await context.Clientes.FindAsync(otra.ClienteId);
+            Assert.NotNull(cliente);
+            cliente.Dni = "12A45";
+            await context.SaveChangesAsync();
+        }
+
+        var archivo = await GenerarAsync();
+
+        // Only the 5 Pendiente installments of the seeded policy; the file is still generated.
+        Assert.Equal(5, archivo.CantidadRegistros);
+        Assert.All(Detalles(archivo), d => Assert.Equal(DniSeed, d.Substring(InicioDni, AnchoDni)));
+        // 5 x 12000, plus the 5% of installment 2, already past due on Hoy (RN08).
+        Assert.Equal(60600.00m, archivo.ImporteTotal);
+    }
+
+    [Fact]
     public async Task LineasDeAnchoFijo()
     {
         await using (var context = _fixture.CreateContext())
@@ -155,7 +177,8 @@ public sealed class BasePositivaServiceTests : IDisposable
     private async Task<ArchivoBasePositiva> GenerarAsync()
     {
         await using var context = _fixture.CreateContext();
-        return await new BasePositivaService(new EfRepository<Cuota>(context), Opciones()).GenerarAsync(Hoy);
+        return await new BasePositivaService(
+            new EfRepository<Cuota>(context), Opciones(), NullLogger<BasePositivaService>.Instance).GenerarAsync(Hoy);
     }
 
     /// <summary>Applies a change to installments 2 to 6 of the seeded policy and to the policy itself.</summary>
