@@ -1243,7 +1243,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 - `backend/Aseguradora.Application/Services/CotizacionExternaService.cs` que implementa `ICotizacionExternaService` y reutiliza `MotorCotizacion` de US-F2-06. No hay cliente ni vehículo: `ClienteId` y `VehiculoId` quedan null, `Origen = Externo`.
 - `backend/Aseguradora.Api/Controllers/ExternoCotizacionesController.cs`, con `[Route("api/externo/cotizaciones")]` y `[HttpPost]`, que expone `POST /api/externo/cotizaciones` (201). `[Authorize(Policy = Politicas.ApiKey)]`: autenticación por API key `X-Api-Key` de US-F1-01.
 - Body HTTP en Api: `backend/Aseguradora.Api/Externo/CotizacionExternaBody.cs`, con los enums en mayúsculas (`MOTO`, `PARTICULAR`) mediante `backend/Aseguradora.Api/Serialization/UpperSnakeEnumConverter.cs`. El converter se aplica solo a este body. El `CotizacionExternaRequest` de Application queda sin atributos de serialización (la capa Application no depende de la serialización) y el controller mapea body → request.
-- Respuesta según 9.5 C: `{ fechaVencimiento, opciones: [{ idCotizacion, codigoPlan, plan, primaMensual }] }` (ver decisiones).
+- Respuesta propuesta: `{ fechaVencimiento, opciones: [{ idCotizacion, codigoPlan, plan, primaMensual }] }`, que difiere de 9.5 C (un `idCotizacion` de nivel superior) y sigue pendiente de acuerdo con los consumidores (ver decisiones pendientes).
 - Registro: `ICotizacionExternaService` → `CotizacionExternaService` dentro de `AddFrente2`.
 
 **Fuera de alcance:** `GET /api/externo/vehiculos/{patente}/seguro-vigente` (F3, `ExternoSeguroController`) y `GET /api/externo/clientes/{dni}/deuda` (F4). Cada frente tiene su propio controller bajo `/api/externo` (C7).
@@ -1267,12 +1267,17 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 - `ExternoCotizacionesControllerTests`: `POST_sin_api_key_devuelve_401`; `POST_con_api_key_valida_devuelve_201_con_contrato_9_5_C`; `POST_con_enum_invalido_devuelve_400`.
 - `UpperSnakeEnumConverterTests`: lee `"MOTO"` y escribe `"MOTO"`; rechaza `"moto"` y valores desconocidos (ver decisiones).
 
+**Decisiones cerradas:**
+- **Primas base:** no se cambia el seed. Los fixtures fijan RC en 10.000 y TC en 18.000; TR acepta Auto/Camioneta con antigüedad máxima de 10 años. Ver `CotizarExterno_ejemplo_9_5_C_devuelve_9100_y_16380`.
+- **Enums:** `UpperSnakeEnumConverter` se aplica solo al body externo; acepta nombres exactos en mayúsculas, rechaza minúsculas, números y valores desconocidos. Application conserva su request sin atributos JSON. Ver `Lee_y_escribe_MOTO`, `Rechaza_valores_fuera_del_contrato`, `POST_con_enum_invalido_devuelve_400` y `POST_con_campo_omitido_o_null_devuelve_400`.
+- **Rangos técnicos:** edad entre 0 y 120 inclusive y año entre 1900 y año UTC actual + 1 inclusive, usando `TimeProvider`. Ver `CotizarExterno_datos_invalidos_no_persisten`, `CotizarExterno_acepta_limites_tecnicos` y `POST_con_rango_invalido_devuelve_400`.
+- **Sin planes compatibles:** 400 con `BusinessRuleException("Ningún plan es compatible con el vehículo.")`. Ver `CotizarExterno_sin_planes_compatibles_lanza_BusinessRuleException` y `POST_sin_planes_compatibles_devuelve_400`.
+- **Persistencia y factores:** `CotizarExterno_persiste_cotizaciones_sin_cliente_ni_vehiculo` verifica origen externo y vigencia UTC de 15 días; `CotizarExterno_uso_comercial_aplica_1_40` y `CotizarExterno_aplica_factor_por_edad` verifican RN06 con importes `decimal`.
+- **Swagger y prueba manual:** `Swagger_documenta_enums_externos_en_mayusculas` verifica el contrato OpenAPI y su seguridad. Pasos y resultados locales en `docs/cotizacion-externa.md`; prueba manual confirmada por la persona responsable el 2026-11-01, con capturas 201 para PARTICULAR y COMERCIAL.
+- **Autenticación real:** `POST_sin_api_key_devuelve_401` y `POST_con_api_key_invalida_devuelve_401` verifican el esquema API key real.
+
 **Decisiones pendientes:**
-- **Primas base:** el seed de RC (US-01) tiene `PrimaBase = 12000`, pero el ejemplo 9.5 C usa 10.000 ("primas base de prueba"). Propuesta: no tocar el seed; el test fija 10.000 y 18.000 explícitamente en sus planes del fixture.
-- **Forma de la respuesta:** la spec 9.5 C tiene un `idCotizacion` de nivel superior, pero con una cotización por plan no hay un único id. Propuesta: quitar el id superior y que cada opción lleve su `idCotizacion`. Es un cambio respecto de la spec que requiere acordarlo con Ventas de motos y la Municipalidad.
-- **Enums en mayúsculas:** propuesta aplicar el converter solo al body de `/api/externo/cotizaciones`, y dejar el resto de la API con el formato por defecto. Propuesta: rechazar minúsculas (`"moto"` → 400), porque el contrato de 9.5 C usa mayúsculas.
-- **Rango de `edadConductor` y `anio`:** la spec no los define. Propuesta: edad entre 0 y 120 (límites técnicos) y `anio <= año actual + 1`, con el año de `TimeProvider`. A confirmar.
-- **Sin planes compatibles:** igual que US-F2-06 (400).
+- **Acuerdo de respuesta con consumidores:** la implementación propone `fechaVencimiento` y `opciones`, con `idCotizacion` por opción y sin id superior. Difiere de la spec 9.5 C y requiere aceptación explícita de Ventas de motos y la Municipalidad, con enlaces a ambas confirmaciones en el PR #57. No hay evidencia de ese acuerdo; la forma actual queda como propuesta, aunque sus tests pasen (`POST_con_api_key_valida_devuelve_201_con_contrato_9_5_C`). No considerar cerrado el contrato ni lista la entrega hasta resolverlo.
 
 ---
 
