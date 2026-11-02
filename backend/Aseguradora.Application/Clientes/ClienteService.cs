@@ -26,6 +26,8 @@ public sealed class ClienteService(
     public const string CodigoDniNoEncontrado = "PERSONA_NO_ENCONTRADA";
 
     private const int EdadMinima = 18;
+    private const string MensajeFallecido = "RN02: La persona figura como fallecida en Renaper.";
+    private const string MensajeDniInvalido = "El DNI debe tener 8 dígitos.";
 
     private readonly IRepository<Cliente> _clientes = clientes ?? throw new ArgumentNullException(nameof(clientes));
     private readonly IRenaperService _renaper = renaper ?? throw new ArgumentNullException(nameof(renaper));
@@ -52,7 +54,7 @@ public sealed class ClienteService(
 
         var dni = request.Dni.Trim();
         if (!EsDniValido(dni))
-            throw new BusinessRuleException("El DNI debe tener 8 dígitos.");
+            throw new BusinessRuleException(MensajeDniInvalido);
 
         var email = request.Email.Trim();
         var sexo = char.ToUpperInvariant(request.Sexo ?? '\0');
@@ -70,15 +72,13 @@ public sealed class ClienteService(
 
         var (persona, renaperDisponible) = await ObtenerPersonaTolerandoCaidaAsync(dni, ct);
 
-        if (persona is { Estado: EstadoRenaper.Fallecido })
-            throw new BusinessRuleException("RN02: La persona figura como fallecida en Renaper.");
+        if (persona is not null)
+            ValidarPersonaVigente(persona);
 
         if (persona is null && renaperDisponible)
             throw new BusinessRuleException($"El DNI '{dni}' no figura en Renaper.");
 
-        var fechaNacimiento = persona?.FechaNacimiento ?? fechaNacimientoIngresada;
-        if (!EsMayorDeEdad(fechaNacimiento))
-            throw new BusinessRuleException($"RN01: El cliente debe tener {EdadMinima} años o más.");
+        ValidarMayorDeEdad(persona?.FechaNacimiento ?? fechaNacimientoIngresada);
 
         var cliente = new Cliente
         {
@@ -105,7 +105,17 @@ public sealed class ClienteService(
             AplicarDatosRenaper(cliente, persona);
 
         await _clientes.AddAsync(cliente, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (ViolacionUnicidadException exception)
+        {
+            // Two registrations with the same DNI or email passed the checks above at the same time;
+            // the unique indexes stop the second one (RN01).
+            throw new BusinessRuleException(
+                "RN01: Otro cliente con el mismo DNI o email se registró al mismo tiempo. Recargue los datos.", exception);
+        }
 
         return Mapear(cliente);
     }
@@ -130,11 +140,8 @@ public sealed class ClienteService(
         var persona = await _renaper.ObtenerPorDniAsync(cliente.Dni, ct)
             ?? throw new BusinessRuleException($"El DNI '{cliente.Dni}' no figura en Renaper.");
 
-        if (persona.Estado == EstadoRenaper.Fallecido)
-            throw new BusinessRuleException("RN02: La persona figura como fallecida en Renaper.");
-
-        if (!EsMayorDeEdad(persona.FechaNacimiento))
-            throw new BusinessRuleException($"RN01: El cliente debe tener {EdadMinima} años o más.");
+        ValidarPersonaVigente(persona);
+        ValidarMayorDeEdad(persona.FechaNacimiento);
 
         AplicarDatosRenaper(cliente, persona);
         cliente.ValidadoRenaper = true;
@@ -160,7 +167,7 @@ public sealed class ClienteService(
 
         var normalizado = dni.Trim();
         if (!EsDniValido(normalizado))
-            throw new BusinessRuleException("El DNI debe tener 8 dígitos.");
+            throw new BusinessRuleException(MensajeDniInvalido);
 
         var persona = await _renaper.ObtenerPorDniAsync(normalizado, ct)
             ?? throw new NotFoundException($"El DNI '{normalizado}' no figura en Renaper.", CodigoDniNoEncontrado);
@@ -182,6 +189,18 @@ public sealed class ClienteService(
             _logger.LogWarning(exception, "Renaper no respondió al dar de alta el DNI {Dni}; se guarda sin validar.", dni);
             return (null, false);
         }
+    }
+
+    private static void ValidarPersonaVigente(PersonaRenaper persona)
+    {
+        if (persona.Estado == EstadoRenaper.Fallecido)
+            throw new BusinessRuleException(MensajeFallecido);
+    }
+
+    private void ValidarMayorDeEdad(DateOnly fechaNacimiento)
+    {
+        if (!EsMayorDeEdad(fechaNacimiento))
+            throw new BusinessRuleException($"RN01: El cliente debe tener {EdadMinima} años o más.");
     }
 
     private bool EsMayorDeEdad(DateOnly fechaNacimiento)

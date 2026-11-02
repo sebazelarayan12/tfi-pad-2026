@@ -18,7 +18,7 @@ public class UnitOfWork(AseguradoraDbContext context) : IUnitOfWork
             throw new BusinessRuleException("El pago o sus cuotas fueron modificados por otro cobro. Recargue los datos.", exception);
         }
         catch (DbUpdateException exception) when (
-            exception.Entries.Any(e => e.Entity is Poliza or RendicionPagoFacil) && EsViolacionDeUnicidad(exception))
+            exception.Entries.Any(e => e.Entity is Cliente or Poliza or RendicionPagoFacil) && EsViolacionDeUnicidad(exception))
         {
             throw new ViolacionUnicidadException("Otro registro con los mismos datos únicos se guardó antes.", exception);
         }

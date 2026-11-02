@@ -12,10 +12,12 @@ namespace Aseguradora.Api.Controllers;
 /// Requires employee or administrator permissions (<see cref="Politicas.Empleado"/>).
 /// </summary>
 [ApiController]
-[Route("api/clientes")]
+[Route(RutaBase)]
 [Authorize(Policy = Politicas.Empleado)]
 public sealed class ClientesController(ClienteService clientes) : ControllerBase
 {
+    private const string RutaBase = "api/clientes";
+
     private readonly ClienteService _clientes = clientes ?? throw new ArgumentNullException(nameof(clientes));
 
     /// <summary>
@@ -30,7 +32,7 @@ public sealed class ClientesController(ClienteService clientes) : ControllerBase
     public async Task<ActionResult<ClienteResponse>> Alta(ClienteAltaRequest request, CancellationToken ct)
     {
         var creado = await _clientes.AltaAsync(request, ct);
-        return Created($"/api/clientes/{creado.Id}", creado);
+        return Created($"/{RutaBase}/{creado.Id}", creado);
     }
 
     /// <summary>

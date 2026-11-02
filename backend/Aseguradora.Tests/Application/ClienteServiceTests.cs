@@ -5,6 +5,7 @@ using Aseguradora.Application.External;
 using Aseguradora.Data;
 using Aseguradora.Data.Repositories;
 using Aseguradora.Domain.Entities;
+using Aseguradora.Domain.Interfaces;
 using Aseguradora.Integrations.Renaper;
 using Aseguradora.Tests.Data;
 using Aseguradora.Tests.Support;
@@ -252,6 +253,30 @@ public sealed class ClienteServiceTests : IDisposable
 
         await Assert.ThrowsAsync<ExternalServiceException>(() =>
             service.PreviewRenaperAsync("30123456", CancellationToken.None));
+    }
+
+    private sealed class UnitOfWorkConDuplicadoConcurrente : IUnitOfWork
+    {
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+            throw new ViolacionUnicidadException("Duplicado.", new InvalidOperationException("índice único"));
+    }
+
+    [Fact]
+    public async Task AltaAsync_con_duplicado_concurrente_lanza_BusinessRuleException()
+    {
+        await using var context = _fixture.CreateContext();
+        await ClienteDeSeed.LiberarAsync(context);
+        var service = new ClienteService(
+            new EfRepository<Cliente>(context),
+            new RenaperFalso(),
+            new UnitOfWorkConDuplicadoConcurrente(),
+            new RelojFalso(Ahora),
+            NullLogger<ClienteService>.Instance);
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.AltaAsync(Request(), CancellationToken.None));
+
+        Assert.IsType<ViolacionUnicidadException>(ex.InnerException);
     }
 
     private static Cliente CrearClienteSinValidar() => new()
