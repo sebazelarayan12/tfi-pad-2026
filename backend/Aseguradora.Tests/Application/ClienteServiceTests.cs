@@ -37,6 +37,7 @@ public sealed class ClienteServiceTests : IDisposable
     private static ClienteService CrearServicio(AseguradoraDbContext context, IRenaperService renaper) =>
         new(
             new EfRepository<Cliente>(context),
+            new EfRepository<Poliza>(context),
             renaper,
             new UnitOfWork(context),
             new RelojFalso(Ahora),
@@ -268,6 +269,7 @@ public sealed class ClienteServiceTests : IDisposable
         await ClienteDeSeed.LiberarAsync(context);
         var service = new ClienteService(
             new EfRepository<Cliente>(context),
+            new EfRepository<Poliza>(context),
             new RenaperFalso(),
             new UnitOfWorkConDuplicadoConcurrente(),
             new RelojFalso(Ahora),

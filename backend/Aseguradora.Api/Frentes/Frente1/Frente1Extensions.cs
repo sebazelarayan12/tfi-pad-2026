@@ -40,7 +40,7 @@ public static class Frente1Extensions
 
         // CU04: Renaper behind IRenaperService, mock or real chosen by Integraciones:Renaper:UsarMock (C13).
         services.AgregarIntegracion<IRenaperService, RenaperMockService, RenaperHttpService>(config, "Renaper");
-        // CU04: client registration and Renaper validation (US-F1-05).
+        // CU04 and CU05: client registration, Renaper validation, query, modification and soft deletion.
         services.AddScoped<ClienteService>();
 
         return services;
