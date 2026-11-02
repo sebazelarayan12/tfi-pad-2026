@@ -1,0 +1,5 @@
+// Stub de US-FE-T-17
+{
+  "extends": "../../packages/config/tsconfig.react.json",
+  "include": ["src"]
+}
