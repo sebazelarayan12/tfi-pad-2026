@@ -1,0 +1,16 @@
+{
+  "name": "@nexa/api",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./mocks/*": "./mocks/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@nexa/config": "*",
+    "msw": "^2.15.0"
+  }
+}
