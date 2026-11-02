@@ -175,7 +175,7 @@ Vitest, Testing Library y MSW (los tests de `401` usan `servidorMock` de US-FE-T
 
 Antes de que B-01 esté mergeada, la prueba se hace con DevTools:
 1. Abrir `http://localhost:5173/inicio` sin sesión: la app redirige a `/login`.
-2. En DevTools, Application, Session Storage, crear la clave `nexa.backoffice.sesion` con `{"token":"x.eyJlbWFpbCI6ImFAYi5jb20ifQ.x","rol":"Empleado","expiraEn":"<fecha futura ISO con +00:00>","email":"a@b.com"}` y recargar `/inicio`: debe quedar en la página.
+2. En DevTools, Application, Session Storage, crear la clave `nexa.backoffice.sesion` con `{"token":"<JWT de prueba con tres partes separadas por punto>","rol":"Empleado","expiraEn":"<fecha futura ISO con +00:00>","email":"a@b.com"}` y recargar `/inicio`: debe quedar en la página.
 3. Poner `expiraEn` en el pasado y recargar: vuelve a `/login` y la clave desaparece.
 
 ## 13. Decisiones pendientes
