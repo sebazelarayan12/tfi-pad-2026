@@ -10,6 +10,15 @@ namespace Aseguradora.Api.Controllers;
 /// </summary>
 public sealed class PublicoPagosController(IPagoService pagos) : PublicoController
 {
+    /// <summary>Consulta una factura con el DNI del titular y el número de pago (RN20).</summary>
+    [HttpPost("factura")]
+    [ProducesResponseType(typeof(FacturaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<FacturaResponse>> ObtenerFactura(PublicoFacturaRequest request, CancellationToken ct) =>
+        Ok(await pagos.ObtenerFacturaPublicaAsync(request, ct));
+
     /// <summary>Inicia un pago online con la pasarela elegida y devuelve el link de pago.</summary>
     [HttpPost("pagos")]
     [ProducesResponseType(typeof(PagoPublicoResponse), StatusCodes.Status201Created)]

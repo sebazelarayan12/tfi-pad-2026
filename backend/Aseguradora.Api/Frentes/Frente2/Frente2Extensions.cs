@@ -3,6 +3,7 @@ using Aseguradora.Application.Services;
 using Aseguradora.Data.Seed;
 using Aseguradora.Integrations;
 using Aseguradora.Integrations.Dnrpa;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Aseguradora.Api.Frentes.Frente2;
 
@@ -25,6 +26,9 @@ public static class Frente2Extensions
 
         services.AddScoped<IPlanService, PlanService>();
         services.AddScoped<IVehiculoService, VehiculoService>();
+        // Program.cs registers TimeProvider; TryAdd keeps this front working on its own.
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<ICotizacionService, CotizacionService>();
         services.AddScoped<ISeeder, PlanesSeeder>();
         services.AgregarIntegracion<IDnrpaService, DnrpaMockService, DnrpaHttpService>(config, "Dnrpa");
 

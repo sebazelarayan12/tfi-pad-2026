@@ -26,7 +26,7 @@ internal sealed class CobroTestContext : IDisposable
     public RegistroLog<FacturacionService> Log { get; } = new();
     public FacturacionOpciones Opciones { get; } = new("30712345678", 1);
 
-    public CobroTestContext()
+    public CobroTestContext(IEmisorFacturaAislado? emisorAislado = null)
     {
         Db = fixture.CreateContext();
         var cuota = Db.Cuotas.First(c => c.Estado == EstadoCuota.Pendiente);
@@ -39,13 +39,20 @@ internal sealed class CobroTestContext : IDisposable
         var uow = new UnitOfWork(Db);
         Facturacion = new(new EfRepository<Pago>(Db), new EfRepository<Cuota>(Db),
             new EfRepository<Poliza>(Db), new EfRepository<Cliente>(Db), new EfRepository<Factura>(Db),
-            uow, Arca, Opciones, TimeProvider.System, Log);
+            uow, Arca, Opciones, TimeProvider.System, Log,
+            emisorAislado ?? new EmisorDelegado((pagoId, ct) => Facturacion!.EmitirAsync(pagoId, ct)));
         Arca.AntesDeEmitir = () => Assert.NotEmpty(Actualizador.Llamadas);
         Aprobacion = new(new EfRepository<Cuota>(Db), new EfRepository<Poliza>(Db), uow,
             Actualizador, Facturacion, NullLogger<AprobacionPagoService>.Instance, new EfRepository<Factura>(Db));
     }
 
     public void Dispose() { Db.Dispose(); fixture.Dispose(); }
+
+    // Solo para fixtures de una base SQLite: producción crea un scope por emisión.
+    internal sealed class EmisorDelegado(Func<Guid, CancellationToken, Task> emitir) : IEmisorFacturaAislado
+    {
+        public Task EmitirAsync(Guid pagoId, CancellationToken ct) => emitir(pagoId, ct);
+    }
 
     internal sealed class ActualizadorFake(AseguradoraDbContext db) : IActualizadorEstadoPoliza
     {
