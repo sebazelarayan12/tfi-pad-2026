@@ -12,7 +12,7 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 6. Commits en formato Conventional Commits: `feat(backend): US-XX descripcion`, `fix(front): ...`, `docs: ...`.
 7. **Prueba manual local antes del PR.** Si el cambio tiene algo que se pueda probar a mano (un endpoint, una pantalla, un comando, el stack de Docker), la persona responsable lo prueba en su máquina y confirma que funciona antes de abrir el PR. Un asistente de IA no abre el PR sin esa confirmación, aunque esté ejecutando el flujo completo: le pasa al usuario los pasos concretos para probar y espera. Si no hay nada que probar a mano (solo docs, tests o refactor interno), se dice explícitamente y se sigue.
 8. **Atender los comentarios de los compañeros en tus PRs.** Antes de abrir un PR nuevo, revisar los comentarios en tus propios PRs (abiertos y ya mergeados): fixes sugeridos, preguntas, observaciones, sean bloqueantes o no. Cada comentario se resuelve: se aplica el cambio (en la misma rama si el PR sigue abierto, o en una rama `fix/` nueva si ya se mergeó) o se responde explicando por qué no. Ningún comentario queda sin respuesta.
-9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. Los asistentes de IA recomiendan las que falten, una sola vez y solo cuando la tarea las necesita.
+9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. **Instalar las skills de la tabla es obligatorio** para quien trabaja en esa área, y los asistentes de IA las usan siempre que la tarea toca su área. Si falta una, el asistente pide instalarla antes de seguir.
 
 ## Nombres de rama
 
@@ -110,13 +110,13 @@ El front (React + TypeScript, arquitectura screaming, dos apps) tiene su propia 
 
 ## Skills del equipo
 
-Regla 9: cuando alguien usa una skill específica de un lenguaje, framework o herramienta del proyecto (ej. .NET, React), la agrega a esta tabla en el mismo PR. Así el resto del equipo puede instalarla.
+Regla 9: cuando alguien usa una skill específica de un lenguaje, framework o herramienta del proyecto (ej. .NET, React), la agrega a esta tabla en el mismo PR. Así el resto del equipo puede instalarla. **Las skills de esta tabla son obligatorias**: cada persona las instala antes de tomar una tarjeta de su área (back: .NET; front: React, diseño y e2e) y el asistente las carga y aplica al escribir o revisar código de esa área.
 
 Cómo se usa la tabla (para asistentes de IA):
 
 - Solo se mira cuando la tarea toca el área de una skill de la tabla. No se revisa al arrancar la sesión.
 - Se compara contra la lista de skills disponibles que ya está en el contexto de la sesión; no hace falta buscar en disco.
-- Si la skill falta: recomendarla una sola vez en esa conversación, con el comando de instalación y el motivo. Si el usuario la rechaza, no insistir.
+- Si la skill falta: pedir su instalación antes de seguir con la tarea, con el comando y el motivo, y no avanzar con esa parte hasta que esté instalada (salvo que el usuario diga explícitamente que sigas sin ella). Si ya está instalada, usarla sin avisar.
 - Si ya está instalada: no decir nada.
 
 Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente después para que la cargue). Catálogo para buscar skills y copiar su comando: https://skills.sh/
@@ -124,6 +124,11 @@ Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente despu�
 | Skill | Para qué | Instalar |
 |-------|----------|----------|
 | `dotnet-best-practices` | Buenas prácticas de C#/.NET al escribir o revisar el back | `npx skills add github/awesome-copilot --skill dotnet-best-practices -g` |
+| `vercel-react-best-practices` | Rendimiento y buenas prácticas de React al escribir o revisar el front | `npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices -g` |
+| `web-design-guidelines` | Revisar accesibilidad y UX de interfaces contra guías de diseño web | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines -g` |
+| `frontend-design` | Construir componentes y pantallas con calidad de diseño (siempre contra el Figma y los tokens) | `npx skills add anthropics/skills --skill frontend-design -g` |
+| `ui-ux-pro-max` | Criterios de UI/UX: estados, tamaños táctiles, accesibilidad y responsive | `npx skills add nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max -g` |
+| `playwright-cli` | Tests e2e y pruebas de navegador del front (US-FE-T-21) | `npx skills add microsoft/playwright-cli --skill playwright-cli -g` |
 
 ## Contexto técnico
 
