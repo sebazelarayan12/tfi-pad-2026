@@ -6,9 +6,11 @@ using Aseguradora.Data;
 using Aseguradora.Data.Repositories;
 using Aseguradora.Data.Seed;
 using Aseguradora.Domain.Entities;
+using Aseguradora.Integrations.Renaper;
 using Aseguradora.Tests.Builders;
 using Aseguradora.Tests.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aseguradora.Tests.Application;
 
@@ -23,7 +25,10 @@ public sealed class ClienteServiceConsultaTests : IDisposable
         new(
             new EfRepository<Cliente>(context),
             new EfRepository<Poliza>(context),
-            new UnitOfWork(context));
+            new RenaperMockService(),
+            new UnitOfWork(context),
+            TimeProvider.System,
+            NullLogger<ClienteService>.Instance);
 
     private static async Task<Cliente> AgregarClienteAsync(
         AseguradoraDbContext context,
