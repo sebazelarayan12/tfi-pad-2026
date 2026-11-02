@@ -1,0 +1,202 @@
+### US-T-04: flujo completo de la API con los mocks (secciones 7 y 8 de la spec)
+###
+### Se ejecuta con la extension REST Client de VS Code o con Rider, de arriba hacia abajo.
+### Solo hay que cambiar dos variables: @apiKey y @jwt.
+###
+### Antes de empezar:
+###   1. API local con todos los mocks (Integraciones:*:UsarMock=true, que es el valor por defecto).
+###   2. La base con el seed (cliente 30123456, vehiculo AB123CD, poliza Vigente).
+###   3. Para que el webhook de la pasarela mock se acepte hay que desactivar su confirmacion, porque
+###      el mock deja el pago en PENDIENTE: PASARELA1_CONFIRMAR_WEBHOOK=false en el .env (docker compose lo pasa a la API)
+###      (ver docs/webhook-pasarela.md).
+###   4. @apiKey: el valor de APIKEY_PASARELA1 de tu .env. Sirve para el webhook de pasarela1 y para
+###      los endpoints /api/externo/*.
+###   5. @jwt: el token que devuelve el paso 0 (login) con el administrador inicial del .env
+###      (SEED_ADMINISTRADOR_EMAIL y SEED_ADMINISTRADOR_PASSWORD).
+###
+### Datos de la prueba (iguales al seed y a los ejemplos 9.1 y 9.4 de la spec):
+###   - Cliente: DNI 30123456 (el seed ya lo tiene: el alta responde 400 por RN01, y se sigue con el
+###     cliente del seed).
+###   - Vehiculo nuevo: patente AE789FG (DNRPA mock; titular DNI 30123456). AB123CD ya esta en el seed.
+
+@baseUrl = http://localhost:8080
+@apiKey = PEGAR_APIKEY_PASARELA1
+@jwt = PEGAR_TOKEN_DEL_PASO_0
+
+@dni = 30123456
+@clienteSeedId = c1000000-0000-0000-0000-000000000001
+@patente = AE789FG
+
+### 0. Login de empleado/administrador (CU01). Copiar "token" de la respuesta a @jwt.
+# Esperado: 200 { token, rol, expiraEn }. Con credenciales incorrectas: 401.
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "ChangeMe_Admin1!"
+}
+
+### 1. Alta de cliente con validacion Renaper (CU04, RN01, RN02).
+# Esperado con el seed cargado: 400 "RN01: Ya existe un cliente con el DNI '30123456'".
+# En una base sin el seed del cliente: 201 con nombre "Juan Carlos" y validadoRenaper=true.
+POST {{baseUrl}}/api/clientes
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "dni": "{{dni}}",
+  "email": "flujo.completo@example.com",
+  "telefono": "3815551234",
+  "nombre": "Nombre manual",
+  "apellido": "Apellido manual",
+  "cuil": "20301234565",
+  "fechaNacimiento": "1985-03-21",
+  "sexo": "M",
+  "calle": "Calle manual",
+  "numero": "1",
+  "localidad": "Localidad manual",
+  "provincia": "Provincia manual",
+  "codigoPostal": "4000"
+}
+
+### 2. Alta de vehiculo con validacion DNRPA (CU06, RN03).
+# Esperado: 201 con validadoDnrpa=true. Copia "id" a @vehiculoId (el cliente es el del seed).
+# Patente repetida: 400. Patente de otro titular: 400.
+# @name altaVehiculo
+POST {{baseUrl}}/api/vehiculos
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteSeedId}}",
+  "patente": "{{patente}}",
+  "uso": 0
+}
+
+###
+@vehiculoId = {{altaVehiculo.response.body.id}}
+
+### 3. Cotizar el vehiculo en los planes compatibles (CU09 interno, RN05, RN06).
+# Esperado: 201 con "opciones" (RC, TC, TR segun el vehiculo) y la fecha de vencimiento.
+# @name cotizar
+POST {{baseUrl}}/api/cotizaciones
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "vehiculoId": "{{vehiculoId}}"
+}
+
+###
+@cotizacionId = {{cotizar.response.body.opciones[0].idCotizacion}}
+
+### 4. Emitir la poliza desde la cotizacion (CU10, RN07).
+# Esperado: 201 con la poliza Pendiente y su numero. Reemitir con la misma cotizacion: 400.
+# @name emitir
+POST {{baseUrl}}/api/polizas
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{
+  "cotizacionId": "{{cotizacionId}}",
+  "vigenciaMeses": 6
+}
+
+###
+@polizaId = {{emitir.response.body.id}}
+@numeroPoliza = {{emitir.response.body.numero}}
+
+### 5. Cuotas de la poliza (CU12). Copia el "id" de la cuota 1.
+# Esperado: 200 con 6 cuotas Pendiente.
+# @name cuotas
+GET {{baseUrl}}/api/polizas/{{polizaId}}/cuotas
+Authorization: Bearer {{jwt}}
+
+###
+@cuotaId = {{cuotas.response.body.$[0].id}}
+@importeCuota = {{cuotas.response.body.$[0].importe}}
+
+### 6. Iniciar el pago online de la cuota 1 (CU15, RN11). Endpoint publico, sin token.
+# Esperado: 201 con numeroPago y urlPago ".../checkout/PSR-<referencia>". Copia el id de la pasarela
+# (lo que sigue a "/checkout/") a @idPagoPasarela.
+# @name pagar
+POST {{baseUrl}}/api/publico/pagos
+Content-Type: application/json
+
+{
+  "dni": "{{dni}}",
+  "numeroPoliza": "{{numeroPoliza}}",
+  "cuotaIds": ["{{cuotaId}}"],
+  "proveedor": "pasarela1"
+}
+
+###
+@numeroPago = {{pagar.response.body.numeroPago}}
+@idPagoPasarela = PEGAR_ID_DE_LA_URL_DE_PAGO
+
+### 7. Webhook de la pasarela: pago aprobado (CU16, RN07, RN09). Auth: X-Api-Key de pasarela1.
+# Esperado: 200 { "recibido": true }. La poliza pasa a Vigente. Sin clave: 401.
+POST {{baseUrl}}/api/webhooks/pasarela/pasarela1
+X-Api-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "idPago": "{{idPagoPasarela}}",
+  "estado": "APROBADO",
+  "importe": {{importeCuota}},
+  "fecha": "2026-11-02T12:00:00Z",
+  "idCuotas": ["{{cuotaId}}"]
+}
+
+### 7b. Reenviar el mismo webhook (RN12).
+# Esperado: 200 otra vez, sin crear un segundo pago ni una segunda factura.
+POST {{baseUrl}}/api/webhooks/pasarela/pasarela1
+X-Api-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "idPago": "{{idPagoPasarela}}",
+  "estado": "APROBADO",
+  "importe": {{importeCuota}},
+  "fecha": "2026-11-02T12:00:00Z",
+  "idCuotas": ["{{cuotaId}}"]
+}
+
+### 8. La poliza quedo Vigente (CU11).
+# Esperado: 200 con "estado" = 1 (Vigente).
+GET {{baseUrl}}/api/polizas/{{polizaId}}
+Authorization: Bearer {{jwt}}
+
+### 9. Factura con CAE del mock de ARCA (CU18). Endpoint publico.
+# Esperado: 200 con "cae" informado. DNI que no es del pago: 404.
+POST {{baseUrl}}/api/publico/factura
+Content-Type: application/json
+
+{
+  "dni": "{{dni}}",
+  "numeroPago": "{{numeroPago}}"
+}
+
+### 10. Seguro vigente para un sistema externo (CU19, RN10). Auth: X-Api-Key.
+# Esperado: 200 { tieneSeguro: true, vigenteHasta = fechaFin de la poliza }.
+GET {{baseUrl}}/api/externo/vehiculos/{{patente}}/seguro-vigente
+X-Api-Key: {{apiKey}}
+
+### 10b. Un vehiculo sin poliza vigente (RN10). Nunca responde 404.
+# Esperado: 200 { tieneSeguro: false }.
+GET {{baseUrl}}/api/externo/vehiculos/ZZ999ZZ/seguro-vigente
+X-Api-Key: {{apiKey}}
+
+### 11. Cotizacion externa sin cliente (CU09, 9.5 C). Auth: X-Api-Key.
+# Esperado: 200 o 201 con "opciones". Sin clave o con clave incorrecta: 401. Enum invalido: 400.
+POST {{baseUrl}}/api/externo/cotizaciones
+X-Api-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "tipoVehiculo": "AUTO",
+  "anio": 2021,
+  "uso": "PARTICULAR",
+  "edadConductor": 35
+}
