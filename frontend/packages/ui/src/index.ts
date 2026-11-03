@@ -31,3 +31,9 @@ export { Dialogo } from './components/Dialogo/Dialogo';
 export type { DialogoProps } from './components/Dialogo/Dialogo';
 export { Shell } from './components/Shell/Shell';
 export type { ShellProps } from './components/Shell/Shell';
+
+// US-FE-T-06: Table y Tabs.
+export { Table } from './components/Table/Table';
+export type { TableColumn, TableProps } from './components/Table/Table';
+export { TabPanel, Tabs } from './components/Tabs/Tabs';
+export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs/Tabs';
