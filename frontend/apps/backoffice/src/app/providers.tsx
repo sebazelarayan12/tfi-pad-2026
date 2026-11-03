@@ -1,10 +1,13 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 
+import { alCerrarSesion } from '../features/auth';
 import { queryClient } from './queryClient';
 import { router } from './router';
 
-// bloque de sesión: US-FE-T-13 (cableado del 401 global)
+// bloque de sesión: US-FE-T-13. Al cerrar sesión se vacía la caché para que el siguiente usuario
+// no vea datos del anterior (DP-5). El 401 global está en `apiClient.ts`.
+alCerrarSesion(() => queryClient.clear());
 
 /** `RouterProvider` va dentro de `QueryClientProvider` para poder usar TanStack Query en el layout. */
 export function ProveedoresApp() {
