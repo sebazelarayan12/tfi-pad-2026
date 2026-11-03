@@ -1,5 +1,36 @@
 import { expect, it } from 'vitest';
 import { badgeEnum, etiquetaEnum, obtenerEnum } from '@nexa/api';
+import { tablas } from '../../src/enums/dominios';
+
+// Cantidad de valores por dominio según la ficha T-10 §7. Si se agrega o quita una entrada
+// en `dominios.ts`, este test obliga a actualizar la ficha y la tabla de abajo.
+const CANTIDAD_POR_DOMINIO = {
+  EstadoPoliza: 5,
+  EstadoPolizaPublico: 5,
+  EstadoCuota: 4,
+  EstadoCuotaPublico: 4,
+  EstadoPago: 3,
+  MedioPago: 3,
+  EstadoFactura: 2,
+  TipoVehiculo: 3,
+  UsoVehiculo: 2,
+  OrigenCotizacion: 3,
+  Sexo: 3,
+  Rol: 2,
+} as const;
+
+it('hay exactamente los doce dominios de la ficha', () => {
+  expect(Object.keys(tablas).sort()).toEqual(Object.keys(CANTIDAD_POR_DOMINIO).sort());
+});
+
+it.each(Object.entries(CANTIDAD_POR_DOMINIO))(
+  '%s tiene %i valores, sin repetidos',
+  (dominio, cantidad) => {
+    const valores = tablas[dominio as keyof typeof tablas].map((entrada) => entrada.valor);
+    expect(valores).toHaveLength(cantidad);
+    expect(new Set(valores).size).toBe(cantidad);
+  },
+);
 
 it.each([
   ['EstadoPoliza', 0, 'Pendiente', 'Pendiente', 'Pendiente'],
