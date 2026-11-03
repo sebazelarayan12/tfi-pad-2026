@@ -3,3 +3,5 @@ export * from './dto/comunes';
 export * from './dto/auth';
 export * from './client/index';
 export * from './format';
+export * from './enums';
+export * from './messages';
