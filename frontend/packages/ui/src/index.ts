@@ -15,3 +15,19 @@ export { EstadoBadge } from './components/EstadoBadge/EstadoBadge';
 export type { EstadoBadgeProps } from './components/EstadoBadge/EstadoBadge';
 export { BADGE_ESTADOS } from './components/EstadoBadge/estados';
 export type { BadgeEstado } from './components/EstadoBadge/estados';
+
+// US-FE-T-07: Card/Widget, Dato, AlertaError, Backdrop, Logo, Dialogo y Shell.
+export { CardWidget } from './components/CardWidget/CardWidget';
+export type { CardWidgetAction, CardWidgetProps } from './components/CardWidget/CardWidget';
+export { Dato } from './components/Dato/Dato';
+export type { DatoProps } from './components/Dato/Dato';
+export { AlertaError } from './components/AlertaError/AlertaError';
+export type { AlertaErrorProps } from './components/AlertaError/AlertaError';
+export { Backdrop } from './components/Backdrop/Backdrop';
+export type { BackdropProps } from './components/Backdrop/Backdrop';
+export { LogoNexa } from './components/LogoNexa/LogoNexa';
+export type { LogoNexaProps } from './components/LogoNexa/LogoNexa';
+export { Dialogo } from './components/Dialogo/Dialogo';
+export type { DialogoProps } from './components/Dialogo/Dialogo';
+export { Shell } from './components/Shell/Shell';
+export type { ShellProps } from './components/Shell/Shell';
