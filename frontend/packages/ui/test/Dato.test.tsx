@@ -20,6 +20,11 @@ describe('Dato', () => {
     expect(screen.getByText('No disponible').tagName).toBe('DD');
   });
 
+  it('valor undefined muestra No disponible', () => {
+    render(<Dato label="Estado" value={undefined} />);
+    expect(screen.getByText('No disponible').tagName).toBe('DD');
+  });
+
   it('mono usa font-mono', () => {
     render(<Dato label="DNI" value="30111222" mono />);
     expect(screen.getByText('30111222')).toHaveClass('font-mono');
