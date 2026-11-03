@@ -7,4 +7,5 @@ export type {
   RequestOptions,
   ResponseType,
 } from './createApiClient';
+export type { ApiErrorKind } from './errores';
 export { ApiError, isApiError } from './errores';

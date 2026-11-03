@@ -55,10 +55,11 @@ const ACCEPT: Record<ResponseType, string> = {
   raw: '*/*',
 };
 
-async function readNetwork<T>(read: () => Promise<T>): Promise<T> {
+async function readNetwork<T>(read: () => Promise<T>, signal?: AbortSignal): Promise<T> {
   try {
     return await read();
   } catch (error) {
+    if (signal?.aborted) throw signal.reason;
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -107,17 +108,17 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       init.body = JSON.stringify(body);
     }
 
-    const response = await readNetwork(() => fetch(url, init));
+    const response = await readNetwork(() => fetch(url, init), signal);
     const { status, ok } = response;
     if (status === 401 && path.split('?', 1)[0] !== LOGIN_PATH) options.onUnauthorized?.();
 
     const contentType = response.headers.get('content-type');
     if (responseType === 'blob' && ok) {
-      const blob = await readNetwork(() => response.blob());
+      const blob = await readNetwork(() => response.blob(), signal);
       return { blob, contentType } satisfies ApiBlob as T;
     }
 
-    const texto = status === 204 ? '' : await readNetwork(() => response.text());
+    const texto = status === 204 ? '' : await readNetwork(() => response.text(), signal);
     if (responseType === 'raw')
       return { status, ok, contentType, texto } satisfies ApiRespuestaCruda as T;
     if (!ok) throw parseHttpError(status, contentType, texto);

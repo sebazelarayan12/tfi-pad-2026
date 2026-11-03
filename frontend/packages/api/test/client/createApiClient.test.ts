@@ -165,4 +165,14 @@ describe('createApiClient', () => {
     expect(error).toMatchObject({ name: 'AbortError' });
     expect(isApiError(error)).toBe(false);
   });
+  it('abort con motivo propio relanza ese motivo sin envolver', async () => {
+    const motivo = new Error('navegación cancelada');
+    const controller = new AbortController();
+    controller.abort(motivo);
+    const error: unknown = await client()
+      .get('/api/clientes', { signal: controller.signal })
+      .catch((error: unknown) => error);
+    expect(error).toBe(motivo);
+    expect(isApiError(error)).toBe(false);
+  });
 });

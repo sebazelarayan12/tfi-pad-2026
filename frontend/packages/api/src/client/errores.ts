@@ -1,4 +1,4 @@
-type ApiErrorKind = 'http' | 'red' | 'respuesta-invalida';
+export type ApiErrorKind = 'http' | 'red' | 'respuesta-invalida';
 
 interface ApiErrorOptions {
   status: number;
