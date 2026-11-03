@@ -9,6 +9,22 @@ import {
   problemaValidacion,
 } from '../../mocks/fixtures/comunes';
 
+it('todos los problemas traen traceId W3C e instance como path sin query', () => {
+  const problemas = [
+    problemaNegocio('Inválido'),
+    problemaNoEncontrado('No existe'),
+    problemaValidacion({ Email: ['Obligatorio.'] }),
+    problemaSinSesion(),
+    problemaSinPermiso(),
+    problemaRateLimit(),
+    problemaErrorInesperado(),
+  ];
+  for (const problema of problemas) {
+    expect(problema.traceId).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+    expect(problema.instance).toMatch(/^\/api\/[^?]+$/);
+  }
+});
+
 it('representa 401 y 403 sin detail', () => {
   for (const [problema, status] of [
     [problemaSinSesion(), 401],
