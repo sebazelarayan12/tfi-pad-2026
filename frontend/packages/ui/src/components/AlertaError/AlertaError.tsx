@@ -1,4 +1,4 @@
-import { WarningCircleIcon } from '@phosphor-icons/react';
+import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import type { ReactNode } from 'react';
 
 export interface AlertaErrorProps {

@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon } from '@phosphor-icons/react';
+import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowUpRight';
 import type { ReactNode } from 'react';
 
 export interface CardWidgetAction {
