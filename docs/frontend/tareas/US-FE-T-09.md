@@ -167,3 +167,49 @@ Sin prueba manual: el módulo no tiene UI. Se verifica con los tests de §10 y c
 
 - Resuelto (triage final, default de la ficha): `packages/api/src/index.ts` pertenece a US-FE-T-12. T-09 agrega su bloque, así que se mergea después de T-12 o rebasa sobre él (regla de barrels de INDEX, Ownership). No cambia la ola. (No figura en REVISION ni en FB8: RV-14 solo cubre a T-08 y a las API cards.)
 - Resuelto (RV-59): el formateo de DNI lo hace `@nexa/api` (FC9 y fila de T-09 del INDEX). La corrección de B3 D-10 va en el PR de documentación aparte.
+
+## 17. Evidencia de implementación y verificación (2026-11-03)
+
+Se aplican los defaults de DP-1 a DP-4 sin declararlos acuerdos nuevos del equipo: `—` para dato faltante, símbolo `$` de ARS, DNI en `@nexa/api` y conservación del DNI inválido sin cambios.
+
+`parseImporteEsAR` (RV-26) se exporta desde el barrel con firma `(valor: string | null | undefined): number | null`. Acepta dígitos con agrupación de miles es-AR opcional, coma con uno o dos decimales y signo negativo. También acepta la salida monetaria del formateador (`$` y U+00A0). Devuelve `null` para entrada vacía, formato incorrecto o resultado no finito; no convierte el vacío en cero ni calcula totales. La validación de prima positiva corresponde al schema de la feature.
+
+### Criterios verificados
+
+| Criterio de §11 | Evidencia observada |
+| --- | --- |
+| 1 | `importe.test.ts`: igualdad exacta y códigos de caracteres para `$\u00a025.000,00`. |
+| 2 | Tests de importes para null, undefined, NaN e infinitos. |
+| 3 | DateOnly `2026-11-10` devuelve `10/11/2026` en las dos corridas de TZ. |
+| 4 | Revisión de `fecha.ts`: `Date.UTC` con componentes numéricos y round-trip; sin constructor Date desde string. Tests de fechas inexistentes, bisiestos y límites de año. |
+| 5 | DateTime sin Z `2026-11-01T02:30:00` devuelve `31/10/2026 23:30` en ambas TZ. |
+| 6 | Tests de siete dígitos de fracción, con y sin Z, y verificación de milisegundos conservados. |
+| 7 | `dni.test.ts`: `30512468` ↔ `30.512.468`, ceros iniciales y entradas inválidas. |
+| 8 | Los tres archivos de tests importan las funciones y constantes desde `@nexa/api`. |
+| 9 | Búsqueda con `rg` en código de apps y packages, excluyendo format, node_modules y dist: sin `toLocaleString` ni `Intl.DateTimeFormat` fuera del módulo. |
+| 10 | Lint, typecheck y test en verde; comandos y resultados debajo. |
+
+### Comandos ejecutados desde frontend/
+
+- `npm run lint`: correcto.
+- `npm run typecheck`: correcto en todos los workspaces.
+- `npm run test`: 179 tests aprobados (api: 92; config: 17; ui: 70). Las apps aún no tienen tests. El entorno jsdom de los tests existentes de UI informa su limitación de canvas, sin fallos.
+- `npm run build`: ambas apps compiladas correctamente.
+- `npx --no-install prettier --check packages/api/src/format packages/api/test/format packages/api/src/index.ts`: correcto.
+- `npx -y react-doctor@latest . --yes --verbose`: **100/100**, 23 archivos escaneados y ningún problema.
+
+Corridas adicionales del paquete en procesos separados de PowerShell:
+
+```powershell
+$env:TZ='UTC'
+npm run test --workspace=@nexa/api
+# 3 archivos, 92 tests aprobados.
+
+$env:TZ='America/Argentina/Buenos_Aires'
+npm run test --workspace=@nexa/api
+# 3 archivos, 92 tests aprobados; mismas salidas literales.
+```
+
+Entorno local observado: Node v26.5.0 y npm 11.17.0. Los tests y build se ejecutaron fuera del sandbox porque este impide renombrar archivos temporales de Vite. No se modifican manifiestos ni lockfile.
+
+Sin prueba manual: módulo sin UI, según §12. Verificación con tests, revisión de código y búsqueda de formatos duplicados. CI y revisiones del PR quedan pendientes hasta su publicación por la persona responsable.
