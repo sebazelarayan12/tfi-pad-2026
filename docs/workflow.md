@@ -13,6 +13,7 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 7. **Prueba manual local antes del PR.** Si el cambio tiene algo que se pueda probar a mano (un endpoint, una pantalla, un comando, el stack de Docker), la persona responsable lo prueba en su máquina y confirma que funciona antes de abrir el PR. Un asistente de IA no abre el PR sin esa confirmación, aunque esté ejecutando el flujo completo: le pasa al usuario los pasos concretos para probar y espera. Si no hay nada que probar a mano (solo docs, tests o refactor interno), se dice explícitamente y se sigue.
 8. **Atender los comentarios de los compañeros en tus PRs.** Antes de abrir un PR nuevo, revisar los comentarios en tus propios PRs (abiertos y ya mergeados): fixes sugeridos, preguntas, observaciones, sean bloqueantes o no. Cada comentario se resuelve: se aplica el cambio (en la misma rama si el PR sigue abierto, o en una rama `fix/` nueva si ya se mergeó) o se responde explicando por qué no. Ningún comentario queda sin respuesta.
 9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. **Instalar las skills de la tabla es obligatorio** para quien trabaja en esa área, y los asistentes de IA las usan siempre que la tarea toca su área. Si falta una, el asistente pide instalarla antes de seguir.
+10. **React Doctor en 100/100 antes de abrir un PR del front.** Si el PR toca código de `frontend/`, se corre desde `frontend/`: `npx -y react-doctor@latest . --yes --verbose`. El score tiene que ser **100/100**. Se corrigen los hallazgos y se vuelve a correr; no se desactivan reglas ni se baja la vara para llegar al 100. Si un hallazgo parece un falso positivo, se avisa al usuario y se decide con él. El asistente de IA no abre el PR sin ese 100/100 y pone el resultado en el cuerpo del PR. Si el cambio es solo de docs o del back, no aplica y se dice explícitamente.
 
 ## Nombres de rama
 
@@ -48,7 +49,7 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 7. Analizar código existente, la spec y la sección de la tarea
 8. Plan de implementación (usar la checklist "Criterios de aceptación" de la tarjeta)
 9. Implementar
-10. Verificar build y tests, y cada criterio de aceptación de la tarea (en `docs/tareas-divididas.md` o en su ficha `US-FE-*`)
+10. Verificar build y tests, y cada criterio de aceptación de la tarea (en `docs/tareas-divididas.md` o en su ficha `US-FE-*`); si toca `frontend/`, React Doctor en 100/100 (regla 10)
 11. Review propio contra los criterios de calidad
 12. Si falla: corregir y volver al 9 (máx. 3 iteraciones)
 13. Revisar los comentarios de los compañeros en tus PRs propios (abiertos y mergeados) y resolver cada uno, bloqueante o no (regla 8)
@@ -83,7 +84,7 @@ gh pr create --base development --head feature/US-XX-nombre-descriptivo \
   --title "feat(backend): US-XX descripcion" --body "..."
 ```
 
-El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó (tests y prueba manual local, o "sin prueba manual" con el motivo).
+El cuerpo del PR incluye: tarjeta de Trello, resumen de cambios, cómo se probó (tests y prueba manual local, o "sin prueba manual" con el motivo) y, en PRs del front, el resultado de React Doctor (`100/100`).
 
 ## Tareas divididas y tarjetas
 
@@ -150,6 +151,7 @@ Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente despu�
 
 ### Frontend (React + TypeScript)
 - [ ] `npm run lint`, `npm run typecheck`, `npm test` y `npm run build` sin errores (desde `frontend/`)
+- [ ] React Doctor en 100/100: `npx -y react-doctor@latest . --yes --verbose` desde `frontend/` (regla 10)
 - [ ] Arquitectura screaming respetada: un feature solo importa de otro por su `index.ts`; sin imports que `eslint-plugin-boundaries` prohíba
 - [ ] Sin `any` explícito; DTOs y enums del back tipados en `@nexa/api` (los enums viajan como número y se mapean, nunca se usan crudos en la UI)
 - [ ] Sin `fetch` suelto en componentes: todo por el cliente de `@nexa/api` y TanStack Query; `retry: 0` en mutaciones

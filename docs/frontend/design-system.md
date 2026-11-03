@@ -86,7 +86,7 @@ Ratios sobre `surface/panel` (#FFFFFF), para los textos de estado usados sin fon
 
 ### 1.2 CSS de variables (base del preset)
 
-Ubicación propuesta: `frontend/packages/ui/src/styles/tokens.css`. Los valores son exactos de Figma.
+Ubicación: `frontend/packages/ui/src/tokens.css` (la fija el INDEX; cada app lo importa como `@nexa/ui/tokens.css`). Los valores son exactos de Figma.
 
 ```css
 :root {
@@ -150,20 +150,20 @@ Figma no define un modo oscuro. No se propone uno en este documento.
 
 | Familia | Uso | Pesos usados en Figma | Licencia y carga |
 |---|---|---|---|
-| **Plus Jakarta Sans** | Toda la UI de texto | 400 Regular, 500 Medium, 600 SemiBold, 700 Bold | Google Fonts, licencia SIL OFL (gratuita). |
-| **JetBrains Mono** | Identificadores (DNI, póliza, patente) e importes | 400 Regular, 500 Medium | Google Fonts, licencia SIL OFL (gratuita). |
+| **Plus Jakarta Sans** | Toda la UI de texto | 400 Regular, 500 Medium, 600 SemiBold, 700 Bold | `@fontsource` local (FB7.2), licencia SIL OFL (gratuita). |
+| **JetBrains Mono** | Identificadores (DNI, póliza, patente) e importes | 400 Regular, 500 Medium | `@fontsource` local (FB7.2), licencia SIL OFL (gratuita). |
 
 Confirmado por `get_variable_defs` (`Nexa/H1: Font(family: "Plus Jakarta Sans", ...)`, `Nexa/Mono: Font(family: "JetBrains Mono", ...)`).
 
-Carga (Google Fonts, en `index.html` de cada app o en `tokens.css` con `@import`):
+Carga (FB7.2: `@fontsource` local, sin CDN ni `<link>` a Google Fonts). Los `@import` van al inicio de `tokens.css`, antes de `:root`:
 
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-  rel="stylesheet"
-/>
+```css
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
 ```
 
 Todos los estilos usan `letter-spacing: 0`.
