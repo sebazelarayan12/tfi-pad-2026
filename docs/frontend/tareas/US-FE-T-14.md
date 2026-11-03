@@ -72,7 +72,7 @@ La app `apps/backoffice` arranca con Vite en `http://localhost:5173` (`strictPor
    - `errorElement` con un mensaje propio (§8).
 8. Stubs: `RequireSesion` y `RequireRol` devuelven `<Outlet />` (y `RequireRol` el hijo sin chequeo). `LayoutBackoffice` devuelve `<Outlet />`. Cada stub tiene un comentario con el ID de la tarea que lo reemplaza.
 9. Stubs `routes.tsx` de las once features: `export const rutas: RouteObject[] = [];`.
-10. `main.tsx`: importar `./index.css`, los tokens de T-03 (`@nexa/ui/styles/tokens.css`) y ejecutar
+10. `main.tsx`: importar `./index.css`, los tokens de T-03 (`@nexa/ui/tokens.css`) y ejecutar
     ```ts
     void iniciarMocksSiCorresponde().then(() => {
       createRoot(document.getElementById('root')!).render(<ProveedoresApp />);
