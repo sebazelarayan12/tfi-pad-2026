@@ -3,6 +3,7 @@ import { handlers } from '../../mocks/handlers';
 import { handlers as auth } from '../../mocks/handlers/auth';
 import { handlers as clientes } from '../../mocks/handlers/clientes';
 import { handlers as cotizaciones } from '../../mocks/handlers/cotizaciones';
+import { handlers as cuotas } from '../../mocks/handlers/cuotas';
 import { handlers as inicio } from '../../mocks/handlers/inicio';
 import { handlers as pagofacil } from '../../mocks/handlers/pagofacil';
 import { handlers as pagos } from '../../mocks/handlers/pagos';
@@ -16,6 +17,7 @@ const dominios = {
   auth,
   clientes,
   cotizaciones,
+  cuotas,
   inicio,
   pagofacil,
   pagos,
@@ -26,10 +28,24 @@ const dominios = {
   vehiculos,
 };
 
-it('agrega los handlers de los once dominios', () => {
+// T-28 llenó `polizas` y agregó `cuotas`; los demás siguen siendo placeholders.
+const dominiosVacios = {
+  auth,
+  clientes,
+  cotizaciones,
+  inicio,
+  pagofacil,
+  pagos,
+  planes,
+  publico,
+  usuarios,
+  vehiculos,
+};
+
+it('agrega los handlers de los doce dominios', () => {
   expect(handlers).toEqual(Object.values(dominios).flat());
 });
 
-it.each(Object.entries(dominios))('exporta un arreglo vacío para %s', (_dominio, lista) => {
+it.each(Object.entries(dominiosVacios))('exporta un arreglo vacío para %s', (_dominio, lista) => {
   expect(lista).toEqual([]);
 });
