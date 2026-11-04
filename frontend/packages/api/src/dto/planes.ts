@@ -8,8 +8,14 @@ export interface PlanRequest {
   antiguedadMaxima?: number | null;
 }
 
-export interface PlanResponse extends PlanRequest {
+export interface PlanResponse {
   id: string;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  primaBase: number;
+  /** Mismo formato que la request: nombres separados por coma. */
+  tiposPermitidos: string;
   antiguedadMaxima: number | null;
   activo: boolean;
 }

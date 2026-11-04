@@ -54,26 +54,48 @@ function responderProblema(request: Request, problema: ProblemDetails) {
   );
 }
 
+const problemaPlanNoExiste = (id: string) => problemaNoEncontrado(`El plan ${id} no existe.`);
+const problemaPlanNoActivo = (id: string) =>
+  problemaNoEncontrado(`El plan ${id} no existe o no está activo.`);
+const problemaCodigoDuplicado = (codigo: string) =>
+  problemaNegocio(`Ya existe un plan con el código '${codigo}'.`);
+const problemaCodigoDeOtroPlan = (codigo: string) =>
+  problemaNegocio(`Ya existe otro plan con el código '${codigo}'.`);
+const soloInactivos = (planes: PlanResponse[]) => planes.filter((plan) => !plan.activo);
+
+// Variantes con nombre: cada una responde un error del contrato (vehiculos-planes-cotizaciones.md §4.2 a §4.5).
 export const planesError500 = http.get(ruta, ({ request }) =>
   responderProblema(request, problemaErrorInesperado()),
 );
-
-// Variantes de negocio para simular respuestas del servicio tras la validación del DTO.
+export const planNoActivo = http.get(rutaDetalle, ({ request, params }) =>
+  responderProblema(request, problemaPlanNoActivo(String(params.id))),
+);
+export const planNoExiste = http.put(rutaDetalle, ({ request, params }) =>
+  responderProblema(request, problemaPlanNoExiste(String(params.id))),
+);
+export const planNoExisteAlDesactivar = http.delete(rutaDetalle, ({ request, params }) =>
+  responderProblema(request, problemaPlanNoExiste(String(params.id))),
+);
+export const planCodigoDuplicado = http.post(ruta, async ({ request }) => {
+  const body = (await request.json()) as PlanRequest;
+  return responderProblema(request, problemaCodigoDuplicado(body.codigo.trim().toUpperCase()));
+});
+export const planCodigoDeOtroPlan = http.put(rutaDetalle, async ({ request }) => {
+  const body = (await request.json()) as PlanRequest;
+  return responderProblema(request, problemaCodigoDeOtroPlan(body.codigo.trim().toUpperCase()));
+});
+export const planValidacionErrores = http.post(ruta, ({ request }) =>
+  responderProblema(request, problemaValidacion({ Codigo: ['The Codigo field is required.'] })),
+);
 export const planNombreObligatorio = http.post(ruta, ({ request }) =>
   responderProblema(request, problemaNegocio('El nombre del plan es obligatorio.')),
 );
 export const planDescripcionObligatoria = http.post(ruta, ({ request }) =>
   responderProblema(request, problemaNegocio('La descripción del plan es obligatoria.')),
 );
-
-const planNoExiste = (id: string) => problemaNoEncontrado(`El plan ${id} no existe.`);
-const planNoActivo = (id: string) =>
-  problemaNoEncontrado(`El plan ${id} no existe o no está activo.`);
-const codigoDuplicado = (codigo: string) =>
-  problemaNegocio(`Ya existe un plan con el código '${codigo}'.`);
-const codigoDeOtroPlan = (codigo: string) =>
-  problemaNegocio(`Ya existe otro plan con el código '${codigo}'.`);
-const planesInactivos = (planes: PlanResponse[]) => planes.filter((plan) => !plan.activo);
+export const planesInactivos = http.get(ruta, () =>
+  HttpResponse.json([{ ...semillas[0], activo: false }]),
+);
 
 // Los tests usan credenciales ficticias para simular ambos roles.
 export const tokensMockPlanes = {
@@ -91,15 +113,16 @@ function verificarAdmin(request: Request) {
 }
 
 function planValidacion(body: PlanRequest) {
+  // Nombre y Descripcion vacíos tras recortar son error de negocio (normalizarPlan), no de validación.
   const campos = [
-    ['Codigo', body.codigo, 10],
-    ['Nombre', body.nombre, 80],
-    ['Descripcion', body.descripcion, 500],
-    ['TiposPermitidos', body.tiposPermitidos, 50],
+    ['Codigo', body.codigo, 10, true],
+    ['Nombre', body.nombre, 80, false],
+    ['Descripcion', body.descripcion, 500, false],
+    ['TiposPermitidos', body.tiposPermitidos, 50, true],
   ] as const;
   const errors: Record<string, string[]> = {};
-  for (const [campo, valor, limite] of campos) {
-    if (typeof valor !== 'string' || !valor.trim()) {
+  for (const [campo, valor, limite, requerido] of campos) {
+    if (typeof valor !== 'string' || (requerido && !valor.trim())) {
       errors[campo] = [`The ${campo} field is required.`];
     } else if (valor.length > limite) {
       errors[campo] = [`The field ${campo} must be a string with a maximum length of '${limite}'.`];
@@ -109,6 +132,8 @@ function planValidacion(body: PlanRequest) {
 }
 
 function normalizarPlan(body: PlanRequest) {
+  if (!body.nombre.trim()) return problemaNegocio('El nombre del plan es obligatorio.');
+  if (!body.descripcion.trim()) return problemaNegocio('La descripción del plan es obligatoria.');
   if (body.primaBase <= 0 || !Number.isFinite(body.primaBase)) {
     return problemaNegocio('La prima base debe ser mayor que cero.');
   }
@@ -149,7 +174,7 @@ export function crearHandlersPlanes() {
     if (planes.some((plan) => plan.codigo === datos.codigo && plan.id !== anterior?.id)) {
       return responderProblema(
         request,
-        anterior ? codigoDeOtroPlan(datos.codigo) : codigoDuplicado(datos.codigo),
+        anterior ? problemaCodigoDeOtroPlan(datos.codigo) : problemaCodigoDuplicado(datos.codigo),
       );
     }
     if (anterior) {
@@ -172,14 +197,16 @@ export function crearHandlersPlanes() {
       if (incluirInactivos) {
         const error = verificarAdmin(request);
         if (error) return error;
-        activos.push(...planesInactivos(planes));
+        activos.push(...soloInactivos(planes));
       }
       return HttpResponse.json(activos.sort((a, b) => a.codigo.localeCompare(b.codigo)));
     }),
     http.get(rutaDetalle, ({ request, params }) => {
       const id = String(params.id);
       const plan = buscar(id);
-      return plan?.activo ? HttpResponse.json(plan) : responderProblema(request, planNoActivo(id));
+      return plan?.activo
+        ? HttpResponse.json(plan)
+        : responderProblema(request, problemaPlanNoActivo(id));
     }),
     http.post(ruta, async ({ request }) => verificarAdmin(request) ?? guardar(request)),
     http.put(rutaDetalle, async ({ request, params }) => {
@@ -187,14 +214,14 @@ export function crearHandlersPlanes() {
       if (error) return error;
       const id = String(params.id);
       const plan = buscar(id);
-      return plan ? guardar(request, plan) : responderProblema(request, planNoExiste(id));
+      return plan ? guardar(request, plan) : responderProblema(request, problemaPlanNoExiste(id));
     }),
     http.delete(rutaDetalle, ({ request, params }) => {
       const error = verificarAdmin(request);
       if (error) return error;
       const id = String(params.id);
       const plan = buscar(id);
-      if (!plan) return responderProblema(request, planNoExiste(id));
+      if (!plan) return responderProblema(request, problemaPlanNoExiste(id));
       plan.activo = false;
       return new HttpResponse(null, { status: 204 });
     }),
@@ -203,11 +230,8 @@ export function crearHandlersPlanes() {
       if (error) return error;
       const id = String(params.id);
       const plan = buscar(id);
-      if (!plan) return responderProblema(request, planNoExiste(id));
+      if (!plan) return responderProblema(request, problemaPlanNoExiste(id));
       const body = (await request.json()) as ActivoPlanRequest;
-      if (typeof body.activo !== 'boolean') {
-        return responderProblema(request, problemaValidacion({ Activo: ['Debe ser booleano.'] }));
-      }
       plan.activo = body.activo;
       return HttpResponse.json(plan);
     }),

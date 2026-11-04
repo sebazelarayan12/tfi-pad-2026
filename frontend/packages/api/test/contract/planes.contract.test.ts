@@ -29,6 +29,10 @@ const empleado = createApiClient({ baseUrl, getToken: () => tokensMockPlanes.emp
 const idRc = 'a1000000-0000-0000-0000-000000000001';
 const idTr = 'a1000000-0000-0000-0000-000000000003';
 const idInexistente = 'a1000000-0000-0000-0000-000000000099';
+const error500 = (contar: () => void) => () => {
+  contar();
+  return new HttpResponse(null, { status: 500 });
+};
 const plan: PlanRequest = {
   codigo: 'nuevo',
   nombre: 'Nuevo plan',
@@ -132,6 +136,8 @@ describe('escritura de planes', () => {
     [{ tiposPermitidos: ', ,' }, 'Debe indicar al menos un tipo de vehículo permitido.'],
     [{ tiposPermitidos: 'Avión' }, "El tipo de vehículo 'Avión' no es válido."],
     [{ codigo: 'rc' }, "Ya existe un plan con el código 'RC'."],
+    [{ nombre: '   ' }, 'El nombre del plan es obligatorio.'],
+    [{ descripcion: '   ' }, 'La descripción del plan es obligatoria.'],
   ] as const)('devuelve el error de negocio para %j', async (datos, detail) => {
     await expect(crearPlan(admin, { ...plan, ...datos })).rejects.toMatchObject({
       status: 400,
@@ -181,15 +187,26 @@ describe('escritura de planes', () => {
     await expect(operacion(empleado)).rejects.toMatchObject({ status: 403 });
   });
 
-  it('no reintenta una mutación ante un 500', async () => {
+  it.each([
+    {
+      metodo: 'POST',
+      handler: (contar: () => void) => http.post('*/api/planes', error500(contar)),
+      operacion: (api: typeof cliente) => crearPlan(api, plan),
+    },
+    {
+      metodo: 'PUT',
+      handler: (contar: () => void) => http.put('*/api/planes/:id', error500(contar)),
+      operacion: (api: typeof cliente) => actualizarPlan(api, idRc, plan),
+    },
+    {
+      metodo: 'DELETE',
+      handler: (contar: () => void) => http.delete('*/api/planes/:id', error500(contar)),
+      operacion: (api: typeof cliente) => desactivarPlan(api, idRc),
+    },
+  ])('no reintenta $metodo ante un 500', async ({ handler, operacion }) => {
     let llamadas = 0;
-    servidorMock.use(
-      http.post('*/api/planes', () => {
-        llamadas++;
-        return new HttpResponse(null, { status: 500 });
-      }),
-    );
-    await expect(crearPlan(admin, plan)).rejects.toMatchObject({ status: 500 });
+    servidorMock.use(handler(() => llamadas++));
+    await expect(operacion(admin)).rejects.toMatchObject({ status: 500 });
     expect(llamadas).toBe(1);
   });
 });
