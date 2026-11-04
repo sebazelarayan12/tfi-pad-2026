@@ -28,13 +28,12 @@ const dominios = {
   vehiculos,
 };
 
-// Con T-27, T-28, T-30 y T-32 llenos, solo quedan placeholders estos dominios.
+// Con T-27, T-28, T-29, T-30 y T-32 llenos, solo quedan placeholders estos dominios.
 const dominiosVacios = {
   auth,
   clientes,
   cotizaciones,
   inicio,
-  pagos,
   publico,
   vehiculos,
 };
