@@ -448,14 +448,14 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 
 ## Afirmaciones que NO se confirmaron
 
-Las siguientes afirmaciones de `docs/frontend/` no coinciden con el código, o no pude verificarlas en esta sesión:
+Las siguientes afirmaciones de `docs/frontend/` requieren contraste con el código; cada entrada indica su verificación o pendiente:
 
 1. **`contratos-api/convenciones-transversales.md` §3.2 y `pagos-facturas.md` §2.2**: afirman que el 503 emite `Retry-After: 15` con valor fijo. El código sí escribe el header (`ExceptionMiddleware.cs:49`), pero el valor sale de `ServicioNoDisponibleException.ReintentarEnSegundos`; el valor "15" no fue releído. **Confirmado parcialmente.**
 2. **`convenciones-transversales.md` §1.4**: afirma que el 429 "no trae `Retry-After`". **Confirmado** (`PublicoRateLimitExtensions.cs:74-89` no escribe el header).
 3. **`convenciones-transversales.md` §1.4 / `seguridad-clientes-publico.md` §1.4**: afirman ventana fija de 60 s y límite de 10. **Confirmado** (`PublicoRateLimitExtensions.cs:18-19`, `:59-62`, `FixedWindowRateLimiterOptions`).
 4. **`pagos-facturas.md` §4.2 y `B1`/`W4`**: afirman que "Pago Fácil no es una opción online". Coherente con el código (`PagoService.cs:27` solo acepta `pasarela1`/`pasarela2`). **Confirmado.**
 5. **`convenciones-transversales.md` §5.1 y `polizas-cuotas-pagofacil.md` §1.3**: afirman que `EstadoPoliza` y `EstadoCuota` viajan como número. **Confirmado** por la ausencia de converter en `Program.cs:19`.
-6. **`convenciones-transversales.md` §2.2 / `seguridad-clientes-publico.md` §3.1**: dicen que `ProblemDetails` tiene `codigo` en 404 de clientes (PR #50, `ExceptionMiddleware.cs:43-44`). **Confirmado** para `NotFoundException` con `Codigo` en `development`; el uso `CLIENTE_NO_ENCONTRADO` queda en PR #50 y no lo pude verificar.
+6. **404 de cliente con código estable:** confirmado en `backend/Aseguradora.Application/Clientes/ClienteService.cs`: `CodigoClienteNoEncontrado = "CLIENTE_NO_ENCONTRADO"` se pasa a `NotFoundException` en `BuscarActivoAsync` y al reintentar Renaper sobre un cliente inexistente. `ExceptionMiddleware.cs` escribe ese código en `ProblemDetails`. Ya no depende de PR #50 ni queda como uso sin verificar.
 7. **`polizas-cuotas-pagofacil.md` §4.2 y §5.4** (mensajes de `PolizaService.cs` por línea, `motivo` con `[Required(AllowEmptyStrings=false)]`): no releí `PolizaService.cs` ni `CancelarPolizaRequest.cs` en esta sesión. **No verificado.**
 8. **`pantallas/B8-emitir-poliza.md` D3** (`FechaInicio` = hoy, `PolizaService.cs:38, 61`): no releí el servicio. **No verificado**, aunque es coherente con `CalculadorCuotas`.
 9. **`convenciones-transversales.md` §5.3 y `polizas-cuotas-pagofacil.md` §1.5** (`DateTime` sin `Z` al leer de SQL Server): no hay `ValueConverter` (confirmado por búsqueda), pero el comportamiento de serialización no se verificó en ejecución. **Inferencia, no confirmada.** PB-16 lo marca así.
