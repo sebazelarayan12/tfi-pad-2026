@@ -113,12 +113,12 @@ function verificarAdmin(request: Request) {
 }
 
 function planValidacion(body: PlanRequest) {
-  // Nombre y Descripcion vacíos tras recortar son error de negocio (normalizarPlan), no de validación.
+  // Nombre, Descripcion y TiposPermitidos vacíos son error de negocio (normalizarPlan), no de validación.
   const campos = [
     ['Codigo', body.codigo, 10, true],
     ['Nombre', body.nombre, 80, false],
     ['Descripcion', body.descripcion, 500, false],
-    ['TiposPermitidos', body.tiposPermitidos, 50, true],
+    ['TiposPermitidos', body.tiposPermitidos, 50, false],
   ] as const;
   const errors: Record<string, string[]> = {};
   for (const [campo, valor, limite, requerido] of campos) {

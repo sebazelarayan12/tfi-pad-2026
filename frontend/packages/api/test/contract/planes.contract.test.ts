@@ -133,6 +133,7 @@ describe('escritura de planes', () => {
   it.each([
     [{ primaBase: 0 }, 'La prima base debe ser mayor que cero.'],
     [{ antiguedadMaxima: -1 }, 'La antigüedad máxima debe ser mayor o igual a cero.'],
+    [{ tiposPermitidos: '' }, 'Debe indicar al menos un tipo de vehículo permitido.'],
     [{ tiposPermitidos: ', ,' }, 'Debe indicar al menos un tipo de vehículo permitido.'],
     [{ tiposPermitidos: 'Avión' }, "El tipo de vehículo 'Avión' no es válido."],
     [{ codigo: 'rc' }, "Ya existe un plan con el código 'RC'."],
