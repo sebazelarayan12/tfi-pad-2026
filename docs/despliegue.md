@@ -1,6 +1,6 @@
-# Despliegue — API en Azure con Cloudflare Tunnel
+# Despliegue — API en Azure con Cloudflare Tunnel y fronts en Cloudflare Pages
 
-Procedimiento para publicar la API de Nexa Seguros en una VM de Azure, accesible por HTTPS desde Internet a través de un Cloudflare Tunnel con dominio propio. Implementa US-T-05 y cubre los puntos 11.1 a 11.5 de la spec.
+Procedimiento para publicar la API de Nexa Seguros en una VM de Azure, accesible por HTTPS desde Internet a través de un Cloudflare Tunnel con dominio propio. Implementa US-T-05 y cubre los puntos 11.1 a 11.5 de la spec. Los dos fronts (backoffice y web pública) se publican aparte en Cloudflare Pages: ver la sección 10.
 
 ## Arquitectura
 
@@ -224,3 +224,101 @@ Resultado esperado: la API responde (por ejemplo 400 o 422 por el cuerpo vacío)
 - **Ahorrar crédito:** apagar la VM desde el portal ("Detener" deja la VM desasignada y no cobra cómputo). El autoapagado no está disponible en la región Chile Central. Al encenderla de nuevo, los tres servicios arrancan solos (`restart: unless-stopped` en el compose), siempre que no se hayan detenido a mano con `docker compose stop`; en ese caso, `docker compose --profile tunnel up -d`.
 - **Datos de SQL Server:** viven en el volumen `sqlserver-data`. Los backups no están definidos en la spec: pendiente de decisión del equipo.
 - **Costos:** controlar el crédito de Azure for Students en Cost Management. La IP pública estática se cobra aunque la VM esté apagada.
+
+## 10. Front en Cloudflare Pages
+
+Los dos fronts son SPAs estáticas (React + Vite) y se publican en **Cloudflare Pages**, no en la VM. Pages compila en sus servidores (la VM de 4 GB ya la usa SQL Server), sirve desde su CDN con HTTPS automático y redespliega cuando se actualiza la rama de producción. La API sigue en la VM y los fronts la llaman desde el navegador.
+
+```
+Navegador ──> app.nexaseguros.me  (Pages: backoffice)  ──fetch──> api.nexaseguros.me ──> túnel ──> VM
+          └─> nexaseguros.me      (Pages: web pública) ──fetch──┘
+```
+
+| Front | Proyecto de Pages | Dominio | Directorio de salida |
+| --- | --- | --- | --- |
+| Backoffice | `nexa-backoffice` | `app.nexaseguros.me` | `apps/backoffice/dist` |
+| Web pública | `nexa-web-publica` | `nexaseguros.me` | `apps/web-publica/dist` |
+
+Las imágenes Docker de `frontend/` (US-FE-T-20) **no se usan en producción**: sirven para correr el front en local o en otro host.
+
+### 10.1 Crear los dos proyectos
+
+Se hace una vez por front, en Cloudflare → Workers & Pages → Create → Pages → Connect to Git.
+
+1. Autorizar la aplicación de GitHub de Cloudflare sobre el repositorio y elegirlo.
+2. **Production branch:** `main`. Producción se actualiza solo con los releases (merge de `development` a `main`, `docs/workflow.md`, regla 3).
+3. Configuración de build:
+
+   | Campo | Backoffice | Web pública |
+   | --- | --- | --- |
+   | Framework preset | None | None |
+   | Root directory (advanced) | `frontend` | `frontend` |
+   | Build command | `npm run build --workspace=apps/backoffice && rm -f apps/backoffice/dist/mockServiceWorker.js` | `npm run build --workspace=apps/web-publica && rm -f apps/web-publica/dist/mockServiceWorker.js` |
+   | Build output directory | `apps/backoffice/dist` | `apps/web-publica/dist` |
+
+   El `rm` saca el worker de MSW que Vite copia desde `public/`: un despliegue nunca lleva mocks. Pages instala las dependencias solo; si el primer build falla por módulos faltantes, anteponer `npm ci &&` al comando.
+4. **Variables de entorno** (sección Production, las dos son de build):
+
+   | Variable | Valor |
+   | --- | --- |
+   | `VITE_API_BASE_URL` | `https://api.nexaseguros.me` (solo el origen, sin `/api`) |
+   | `VITE_USE_MOCKS` | `false` |
+   | `NODE_VERSION` | `20` |
+
+   Las variables `VITE_*` quedan dentro del JavaScript público: nunca poner claves ni tokens.
+5. Desactivar los previews: Settings → Builds → Branch control → preview deployments en **None**. Un preview vive en una URL `*.pages.dev`, que el CORS de la API rechaza (el origen debe coincidir exacto), así que no podría llamar a la API.
+
+El proyecto no debe tener un `404.html` en su salida: sin él, Pages sirve `index.html` en cualquier ruta que no sea un archivo, que es lo que necesita el router de la SPA (por ejemplo, recargar `/clientes/123`).
+
+### 10.2 Dominios propios
+
+El DNS de `nexaseguros.me` ya está en Cloudflare, así que Pages crea los registros solo.
+
+1. Proyecto `nexa-backoffice` → Custom domains → Set up a domain → `app.nexaseguros.me`.
+2. Proyecto `nexa-web-publica` → Custom domains → Set up a domain → `nexaseguros.me` (el dominio raíz).
+3. Esperar a que ambos pasen a "Active" (el certificado se emite solo). Si la zona tiene registros CAA propios, deben permitir la emisión de Cloudflare.
+
+### 10.3 Ajustar el `.env` de la VM
+
+La API tiene que aceptar los dos orígenes y devolver al cliente a la web pública tras pagar. En el `.env` de la VM:
+
+```
+CORS_ORIGIN_BACKOFFICE=https://app.nexaseguros.me
+CORS_ORIGIN_PUBLIC=https://nexaseguros.me
+PAGOS_URL_RETORNO_EXITO=https://nexaseguros.me/pago/exito
+PAGOS_URL_RETORNO_ERROR=https://nexaseguros.me/pago/error
+```
+
+Los orígenes van exactos: sin barra final, sin `www` ni `http`. Para que la API tome los valores nuevos hay que recrear el contenedor (un `restart` no relee el `.env`):
+
+```bash
+cd ~/tfi
+docker compose --profile tunnel up -d api
+```
+
+### 10.4 Verificación
+
+Desde cualquier máquina con Internet:
+
+```bash
+curl -sI https://app.nexaseguros.me/                 # 200
+curl -sI https://app.nexaseguros.me/clientes/1       # 200 (fallback de SPA)
+curl -sI https://nexaseguros.me/                     # 200
+curl -s  https://nexaseguros.me/mockServiceWorker.js | head -c 15   # <!doctype html>, no el worker
+
+# CORS: el origen permitido recibe el header; uno ajeno, no
+curl -s -i -X OPTIONS https://api.nexaseguros.me/api/planes \
+  -H "Origin: https://app.nexaseguros.me" -H "Access-Control-Request-Method: GET" | grep -i "access-control-allow-origin"
+curl -s -i -X OPTIONS https://api.nexaseguros.me/api/planes \
+  -H "Origin: https://otro.example" -H "Access-Control-Request-Method: GET" | grep -i "access-control-allow-origin"   # sin salida
+```
+
+En el navegador, abrir `https://app.nexaseguros.me` y `https://nexaseguros.me` con la consola abierta: no debe haber errores de CORS ni de red.
+
+### 10.5 Operación
+
+- **Publicar una versión:** merge de `development` a `main` por Pull Request. Pages compila y publica solo; el avance se ve en la pestaña Deployments de cada proyecto.
+- **Cambiar `VITE_API_BASE_URL` u otra variable:** las variables entran al compilar, así que hay que reintentar el despliegue (Deployments → Retry deployment) después de editarlas.
+- **Volver atrás:** Deployments → elegir un despliegue anterior → Rollback.
+- **Límites del plan Free:** 500 builds por mes. Con releases por `main` sobra.
+- **URL `*.pages.dev`:** sigue activa para cada proyecto. La API la rechaza por CORS; no hay que usarla.
