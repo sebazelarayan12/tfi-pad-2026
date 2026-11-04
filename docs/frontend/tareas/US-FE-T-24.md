@@ -31,7 +31,7 @@ Esta tarea no crea hooks de TanStack Query: cada feature los escribe en su `api/
 - **Puede empezar sin esperar a:** US-FE-B-04. T-28 también está mergeada y se reutiliza su tipo de cuota (RV-55).
 - **PB-03, parcialmente resuelto:** US-F1-06 (PR #58) implementó listado, detalle, PUT y DELETE. Queda pendiente ampliar el resumen con `validadoRenaper`, `cantidadVehiculos` y `cantidadPolizasActivas`. El DTO del listado y su mock no incluyen esos campos. Los consumidores muestran el dato como no disponible (FB7.11), sin inventar cero, false ni consultas adicionales por fila.
 - **PB-28:** `/api/clientes/{id}/cuenta` no existe. Se mantiene solo como contrato propuesto y mock; el rail continúa oculto (D-33).
-- **T-23:** el harness `contratoEndpoint` y los scripts `test:contract` no están disponibles en la base verificada el 2026-11-04. Según FC5/RV-D31 se puede desarrollar T-24 sin agregarlos como dependencia de inicio, pero se debe rebasar e integrar sus tests antes de declarar cumplido el criterio 11. No crear otro harness ni modificar scripts o manifiestos desde esta tarea (FC17).
+- **T-23:** integrada en la base de esta implementación. Se usa su harness `contratoEndpoint` sin modificarlo; el criterio 11 se verifica con `npm run test:contract` en modo MSW.
 - **MSW:** réplica del backend para los cuatro endpoints publicados; simulación identificada como propuesta para `/cuenta`. No modificar el flag global de mocks ni habilitar datos o pantallas pendientes por estar en modo mock.
 
 ## 4. Documentos a leer
@@ -271,6 +271,43 @@ Cobertura mínima por API card (FC5): un caso por endpoint y por código de erro
 2. Repetir con `apellido=pér` y comprobar que devuelve Pérez.
 3. Llamar `DELETE` de un id y luego `GET` del listado. Esperado: el cliente no aparece.
 
+### Pasos reproducibles en el navegador (sin backend)
+
+Desde `frontend/`, iniciar el backoffice:
+
+```powershell
+$env:VITE_USE_MOCKS='true'
+npm run dev --workspace=@nexa/backoffice -- --host 127.0.0.1
+```
+
+Abrir la URL que informa Vite. No hace falta login real para esta prueba: el cliente MSW usa una etiqueta ficticia de sesión. Recargar la página antes de repetir la secuencia, para restaurar los fixtures.
+
+En la consola del navegador (F12), ejecutar este bloque. Ajustar `rutaRepo` si el checkout está en otra carpeta; las URLs `/@fs/` son exclusivas del servidor de desarrollo Vite:
+
+```js
+const rutaRepo = 'D:/pad/tfi-pad-2026';
+const rutaApi = `/@fs/${rutaRepo}/frontend/packages/api`;
+const { worker } = await import(`${rutaApi}/mocks/browser.ts`);
+await worker.start({ onUnhandledRequest: 'bypass' });
+const clientesApi = await import(`${rutaApi}/src/index.ts`);
+const datosMock = await import(`${rutaApi}/mocks/fixtures/clientes.ts`);
+const clienteDemo = clientesApi.createApiClient({
+  baseUrl: location.origin,
+  getToken: () => datosMock.tokensMockClientes.empleado,
+});
+
+console.table((await clientesApi.listarClientes(clienteDemo, { dni: '30123456' })).items);
+// Un resultado: Juan Carlos Pérez; siete campos, sin conteos ni Renaper.
+console.table((await clientesApi.listarClientes(clienteDemo, { apellido: 'pér' })).items);
+// Un resultado: Pérez.
+console.log(await clientesApi.darDeBajaCliente(clienteDemo, datosMock.CLIENTE_LUCIA_ID));
+// undefined; en Network el DELETE responde 204 sin cuerpo.
+console.table((await clientesApi.listarClientes(clienteDemo)).items);
+// Lucía ya no aparece; queda Juan Carlos Pérez.
+```
+
+**Estado de prueba manual:** pendiente de ejecución y confirmación por la persona responsable. Registrar el resultado antes de abrir el PR; los tests automáticos no sustituyen esta confirmación.
+
 Confirmar con la persona responsable antes del PR (`docs/workflow.md`, regla 7). Esta tarea no tiene pantalla propia, así que la prueba visible llega con B-04.
 
 ## 13. Contrato confirmado y decisiones pendientes
@@ -287,7 +324,7 @@ Confirmar con la persona responsable antes del PR (`docs/workflow.md`, regla 7).
 2. **PB-03, pendiente parcial:** agregar `validadoRenaper`, `cantidadVehiculos` y `cantidadPolizasActivas` al resumen requiere un cambio posterior del backend. Por ahora no están en el tipo ni en el mock; las celdas de B3 muestran `—` como dato no disponible (FB7.11), sin interpretar Renaper como false/Pendiente. El detalle sí devuelve el estado Renaper.
 3. **PB-28:** forma de cuenta propuesta de §7.1, solo mock; el rail sigue oculto (D-33), sin acuerdo nuevo de producto.
 4. **PB-16:** `fechaValidacionRenaper` sigue siendo `string | null`; T-09 interpreta como UTC si no trae Z.
-5. **T-23:** pendiente integrar el harness y ejecutar su script al estar disponibles; conservar el criterio 11 abierto hasta tener evidencia.
+5. **T-23:** harness integrado; la evidencia de ejecución está en §18. No implica que los casos se hayan ejecutado contra el backend real.
 
 No se requiere completar los tres campos adicionales ni publicar `/cuenta` para consumir los cuatro endpoints reales de esta tarea.
 
@@ -319,4 +356,34 @@ No se requiere completar los tres campos adicionales ni publicar `/cuenta` para 
 
 Fuente revisada: `development` en `8e7df6f`, con US-F1-06 mergeada por PR #58 (`6356111`). Evidencia: `ClientesController.cs`, `ClienteFiltro.cs`, `ClienteResumenResponse.cs`, `ClienteResponse.cs`, `ClienteModificacionRequest.cs` y `ClienteService.cs` en `backend/`.
 
-Esta corrección actualiza documentación; no implementa T-24 ni cambia el contrato del backend. Se mantienen pendientes PB-03 (solo los tres campos adicionales), PB-28 y la integración T-23. No constituye evidencia de pruebas de la futura implementación.
+Esta corrección actualiza documentación; no implementa T-24 ni cambia el contrato del backend. PB-03 (solo los tres campos adicionales) y PB-28 permanecen pendientes. La implementación y la integración T-23 se verifican por separado en §18.
+
+
+## 18. Evidencia de implementación
+
+- `npm run lint` y `npm run typecheck`: correctos. `clientes.test-d.ts` prueba que DNI, nombre y estado Renaper no son campos editables y que el resumen tiene exactamente los siete campos reales.
+- `npm run test`: 688 tests aprobados en los workspaces (backoffice 70, web pública 15, api 462, config 17 y ui 124).
+- `npm run test:contract`: 193 tests aprobados en modo MSW. Los cinco endpoints de clientes se registran con `contratoEndpoint`; `/cuenta` lleva `soloMock: true` y PUT/DELETE son destructivos para el harness. De los 74 casos nuevos de clientes, 23 usan el harness.
+- `npm run build`: ambas apps compiladas correctamente.
+- React Doctor: **100/100**, 103 archivos revisados, sin problemas.
+- No se modificaron manifiestos, lockfile, cliente HTTP ni código de otras features. Se actualizó el test existente del agregador MSW para quitar clientes de la lista de placeholders vacíos.
+
+| Criterio de §11 | Evidencia |
+| --- | --- |
+| 1 | DTO del resumen de siete campos; el detalle sí tiene Renaper. Alias `CuotaCuentaCliente` reutiliza `CuotaResponse`. |
+| 2 | Las cinco funciones y `clientesKeys` se importan desde el barrel en los tests. |
+| 3 | Pruebas TypeScript con `@ts-expect-error` para DNI, nombre y Renaper en PUT. |
+| 4–6 | Tests de segunda página/total, filtro parcial sin distinguir mayúsculas y paginación inválida con `errors.TamanoPagina`. |
+| 7–9 | Tests de inexistente/inactivo, email duplicado también contra inactivos, edición sin alterar identidad, 204 vacío, exclusión del listado y 404 en repetición. |
+| 10 | Tests sin sesión, clave ficticia inválida y rol no admitido en cada endpoint; también se admite administrador. |
+| 11 | Cinco definiciones del harness T-23 con esquemas de éxito y casos de error; ejecución MSW en verde. |
+| 12 | Lint, typecheck, test, test:contract, build y React Doctor completados. |
+| 13 | Requests delegadas a `ApiClient`; sin fetch directo ni hooks de TanStack Query. |
+
+### Alcance de los mocks y del modo real
+
+El estado de clientes es local a cada fábrica `crearHandlersClientes`; los escenarios de póliza activa/cuenta se fijan en el fixture y no sincronizan mutaciones con otros dominios MSW. Las pruebas instalan una fábrica nueva por caso y verifican que las semillas no se modifican. MSW acepta etiquetas opacas de sesión; `tokensMockClientes` distingue explícitamente un token inválido y un rol sin permiso. No valida JWT de producción.
+
+No se ejecutaron contratos reales. Si se usa ese modo, además de las variables de T-23, el detalle necesita `CONTRACT_CLIENTE_ID`. PUT/DELETE permanecen omitidos salvo `CONTRACT_ALLOW_WRITES=true`; para DELETE se requieren un cliente de prueba eliminable en `CONTRACT_CLIENTE_BAJA_ID` y otro con póliza activa en `CONTRACT_CLIENTE_CON_POLIZA_ID`. PUT conserva los valores actuales del cliente elegido. Nunca se elige automáticamente un cliente arbitrario para eliminarlo. Los casos de rol no admitido y email duplicado usan escenarios MSW; no se falsifica un JWT para forzar un 403 real.
+
+PB-03 y PB-28 conservan el estado del alcance corregido. La prueba manual de §12 y las revisiones/CI del PR siguen pendientes; no mover la tarjeta a QA hasta completar los pasos correspondientes del workflow.
