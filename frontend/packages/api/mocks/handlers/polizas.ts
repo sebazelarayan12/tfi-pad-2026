@@ -230,14 +230,13 @@ function leerFiltro(url: URL): FiltroLeido {
 function filtrarPolizas(filtro: FiltroLeido): PolizaListItemResponse[] {
   const estadoNumero =
     filtro.estado === undefined ? undefined : ESTADO_POLIZA_NUMERO[filtro.estado];
-  const patente = filtro.patente?.trim().toUpperCase();
   const planCodigo = filtro.planCodigo?.trim().toUpperCase();
   const digitosNumero = filtro.numero?.replace(/\D/g, '');
 
   return POLIZAS.filter((poliza) => {
     if (estadoNumero !== undefined && poliza.estado !== estadoNumero) return false;
     if (filtro.clienteId && poliza.clienteId !== filtro.clienteId) return false;
-    if (patente && poliza.patente.toUpperCase() !== patente) return false;
+    if (filtro.patente && poliza.patente !== filtro.patente) return false;
     if (planCodigo && poliza.codigoPlan.toUpperCase() !== planCodigo) return false;
     if (filtro.dni && DNI_POR_CLIENTE[poliza.clienteId] !== filtro.dni) return false;
     if (digitosNumero && !poliza.numero.replace(/\D/g, '').includes(digitosNumero)) return false;

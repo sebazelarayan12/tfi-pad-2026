@@ -36,7 +36,7 @@ export type EstadoCuotaNumero = (typeof ESTADO_CUOTA_NUMERO)[keyof typeof ESTADO
 
 /** Query de `GET /api/polizas` (contrato §5.2). */
 export interface PolizaFiltroQuery {
-  /** Nombre del enum en la query (el back también acepta número; el front usa nombre). */
+  /** Nombre del enum en la query. */
   estado?: EstadoPolizaNombre;
   clienteId?: string;
   /** Coincidencia exacta en el back (PB-06 / D18); el mock ignora mayúsculas y espacios. */
