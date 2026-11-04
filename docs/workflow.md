@@ -15,6 +15,16 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. **Instalar las skills de la tabla es obligatorio** para quien trabaja en esa área, y los asistentes de IA las usan siempre que la tarea toca su área. Si falta una, el asistente pide instalarla antes de seguir.
 10. **React Doctor en 100/100 antes de abrir un PR del front.** Si el PR toca código de `frontend/`, se corre desde `frontend/`: `npx -y react-doctor@latest . --yes --verbose`. El score tiene que ser **100/100**. Se corrigen los hallazgos y se vuelve a correr; no se desactivan reglas ni se baja la vara para llegar al 100. Si un hallazgo parece un falso positivo, se avisa al usuario y se decide con él. El asistente de IA no abre el PR sin ese 100/100 y pone el resultado en el cuerpo del PR. Si el cambio es solo de docs o del back, no aplica y se dice explícitamente.
 
+## Releases a `main`
+
+`main` es producción: Cloudflare Pages publica el backoffice y el workflow `deploy-web-publica` publica la web pública cuando `main` cambia (`docs/despliegue.md`, sección 10). Cada merge de PR a `main` crea un merge commit que `development` no tiene, y el siguiente PR queda con "This branch is out-of-date with the base branch". Para no arrastrarlo:
+
+1. **Antes del release, sincronizar:** rama `chore/sync-main-<fecha>` desde `development`, `git merge --no-ff origin/main`, PR hacia `development` y merge.
+2. **Release:** PR de `development` a `main`. Si `main` tiene commits que `development` no (`git log origin/development..origin/main`), hacer el release desde una rama `chore/release-<tema>` creada desde `development` con `origin/main` ya mergeado, para que el PR no quede desactualizado.
+3. **Mergear siempre con "Create a merge commit"**, nunca squash ni rebase: reescriben los commits y `main` y `development` vuelven a divergir.
+4. **Después del release:** `git log origin/development..origin/main` debe mostrar solo merge commits. Si los hay, repetir el paso 1.
+5. En `main` no se commitea nada que no haya pasado por `development`.
+
 ## Nombres de rama
 
 ```
