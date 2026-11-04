@@ -18,16 +18,16 @@ expectTypeOf<CuotaCuentaCliente>().toEqualTypeOf<CuotaResponse>();
 
 modificarCliente(api, 'id', {
   ...cuerpo,
-  // @ts-expect-error CU05 never changes a client's DNI.
+  // @ts-expect-error CU05 no permite modificar el DNI del cliente.
   dni: '30123456',
 });
 modificarCliente(api, 'id', {
   ...cuerpo,
-  // @ts-expect-error Renaper identity fields are not writable in CU05.
+  // @ts-expect-error Los campos de identidad de Renaper no son editables mediante CU05.
   nombre: 'Juan Carlos',
 });
 modificarCliente(api, 'id', {
   ...cuerpo,
-  // @ts-expect-error Validation status belongs to Renaper, not contact editing.
+  // @ts-expect-error El estado de validación depende de Renaper, no de la edición de contacto.
   validadoRenaper: true,
 });

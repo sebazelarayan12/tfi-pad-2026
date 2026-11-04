@@ -4,7 +4,7 @@ export const CLIENTE_JUAN_ID = 'c1000000-0000-0000-0000-000000000001';
 export const CLIENTE_LUCIA_ID = 'c1000000-0000-0000-0000-000000000002';
 export const CLIENTE_INACTIVO_ID = 'c1000000-0000-0000-0000-000000000003';
 
-/** These are fixture labels, not JWTs or credentials of a real environment. */
+/** Etiquetas de prueba: no son JWT ni credenciales de un entorno real. */
 export const tokensMockClientes = {
   empleado: 'mock-clientes-empleado',
   administrador: 'mock-clientes-administrador',
@@ -14,7 +14,7 @@ export const tokensMockClientes = {
 
 export interface ClienteFixture {
   cliente: ClienteResponse;
-  /** Local scenario for the client's Pendiente/Vigente/Suspendida policy guard. */
+  /** Escenario local para bloquear la baja con póliza Pendiente, Vigente o Suspendida. */
   tienePolizaActiva: boolean;
   cuenta: CuentaClienteResponse;
 }
@@ -46,7 +46,7 @@ const lucia: ClienteResponse = {
   cuil: '27451234564',
   nombre: 'Lucía',
   apellido: 'Fernández',
-  // The documented underage registration example is not a valid persisted client.
+  // El ejemplo documentado de alta de una menor no representa un cliente persistido válido.
   fechaNacimiento: '1985-03-21',
   sexo: 'F',
   email: 'lucia.fernandez@ejemplo.com',
@@ -65,12 +65,12 @@ const cuentaVacia: CuentaClienteResponse = {
   proximaCuota: null,
 };
 
-/** FC4: Juan Carlos Pérez and Lucía Fernández from the client contract examples. */
+/** FC4: Juan Carlos Pérez y Lucía Fernández provienen de los ejemplos del contrato de clientes. */
 export const clientesFixture: readonly ClienteFixture[] = [
   {
     cliente: juan,
     tienePolizaActiva: true,
-    // Proposed account DTO, not a reconstruction of another domain's policy fixtures.
+    // DTO propuesto de cuenta; no reconstruye los fixtures de pólizas de otros dominios.
     cuenta: {
       deudaVencida: 12600,
       cuotaVencidaConRecargo: {
@@ -95,7 +95,7 @@ export const clientesFixture: readonly ClienteFixture[] = [
   },
   { cliente: lucia, tienePolizaActiva: false, cuenta: cuentaVacia },
   {
-    // Separate inactive record for 404 and unique-email regression scenarios.
+    // Registro inactivo independiente para comprobar 404 y la unicidad del email.
     cliente: {
       ...juan,
       id: CLIENTE_INACTIVO_ID,

@@ -36,7 +36,7 @@ function autorizar(request: Request) {
   if (auth === `Bearer ${tokensMockClientes.sinPermiso}`) {
     return responderProblema(request, problemaSinPermiso());
   }
-  // MSW accepts opaque fixture/harness tokens; it does not validate production JWTs.
+  // MSW acepta tokens opacos del fixture o harness; no valida JWT de producción.
   return null;
 }
 
@@ -70,7 +70,7 @@ function leerEntero(valor: string | null, defecto: number, maximo: number): numb
   return Number.isInteger(numero) && numero >= 1 && numero <= maximo ? numero : null;
 }
 
-/** A fresh closure per test keeps soft deletions and edits from leaking between scenarios. */
+/** Cada fábrica aísla el estado para que las bajas y ediciones no se filtren entre pruebas. */
 export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clientesFixture) {
   const registros = structuredClone(semillas);
   const buscar = (id: string) => registros.find(({ cliente }) => cliente.id === id.toLowerCase());
@@ -169,7 +169,7 @@ export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clie
           problemaNegocio(`RN01: Ya existe un cliente con el email '${email}'.`),
         );
       }
-      // Only these fields are writable; unknown identity/Renaper properties are ignored like the API.
+      // Solo se editan estos campos; las propiedades de identidad o Renaper se ignoran como en la API.
       Object.assign(registro.cliente, {
         email,
         telefono: datos.telefono?.trim() || null,

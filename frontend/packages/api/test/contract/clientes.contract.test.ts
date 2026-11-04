@@ -22,7 +22,7 @@ beforeEach(() => {
   if (esMock) servidorMock.use(...crearHandlersClientes());
 });
 
-// .NET Guid permits the fixed seed values without RFC UUID version/variant bits.
+// Guid de .NET admite los valores fijos del seed sin exigir bits de versión o variante RFC UUID.
 const esquemaGuid = z.string().regex(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i);
 const esquemaResumen = z.strictObject({
   id: esquemaGuid,
@@ -78,7 +78,7 @@ const contacto = {
   codigoPostal: '4107',
 };
 
-/** Real-mode fixtures must be explicitly selected; never delete an arbitrary production client. */
+/** El modo real exige seleccionar clientes de prueba; nunca elimina un cliente arbitrario. */
 function idFixture(
   variable: 'CONTRACT_CLIENTE_ID' | 'CONTRACT_CLIENTE_BAJA_ID' | 'CONTRACT_CLIENTE_CON_POLIZA_ID',
 ): string {
@@ -178,7 +178,7 @@ contratoEndpoint({
     esquema: esquemaCliente,
     request: async () => {
       const ruta = rutaCliente(esMock ? CLIENTE_LUCIA_ID : idFixture('CONTRACT_CLIENTE_ID'));
-      // In real mode preserve the selected client's current contact values.
+      // En modo real se conservan los datos de contacto actuales del cliente seleccionado.
       const actual = esMock
         ? null
         : esquemaCliente.parse(await (await fetchContrato(ruta, { conSesion: true })).json());

@@ -2,7 +2,7 @@ import type { CuotaResponse } from './polizas';
 
 export type SexoCliente = 'M' | 'F' | 'X';
 
-/** Detail returned by CU05. Renaper fields belong to the detail, not the list summary. */
+/** Detalle de CU05. Los campos de Renaper pertenecen al detalle, no al resumen del listado. */
 export interface ClienteResponse {
   id: string;
   dni: string;
@@ -19,12 +19,12 @@ export interface ClienteResponse {
   provincia: string;
   codigoPostal: string;
   validadoRenaper: boolean;
-  /** UTC, potentially without Z when read from SQL Server (PB-16). */
+  /** UTC; puede llegar sin Z al leer desde SQL Server (PB-16). */
   fechaValidacionRenaper: string | null;
   activo: boolean;
 }
 
-/** Exact seven-field backend summary; the extra list fields of PB-03 remain unavailable. */
+/** Resumen de siete campos del backend; los campos adicionales de PB-03 siguen pendientes. */
 export interface ClienteResumenResponse {
   id: string;
   dni: string;
@@ -42,7 +42,7 @@ export interface ClienteFiltro {
   tamanoPagina?: number;
 }
 
-/** CU05 only changes contact details and address, never identity or Renaper data. */
+/** CU05 permite editar solo contacto y domicilio; excluye identidad y datos de Renaper. */
 export interface ClienteModificacionRequest {
   email: string;
   telefono?: string | null;
@@ -55,7 +55,7 @@ export interface ClienteModificacionRequest {
 
 export type CuotaCuentaCliente = CuotaResponse;
 
-/** Proposed contract, exclusively MSW (PB-28). Does not enable the account rail. */
+/** Contrato propuesto, exclusivo de MSW (PB-28). No habilita el panel Cuenta. */
 export interface CuentaClienteResponse {
   deudaVencida: number;
   cuotaVencidaConRecargo: CuotaCuentaCliente | null;

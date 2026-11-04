@@ -11,7 +11,7 @@ import type { PaginaResponse } from '../dto/comunes';
 const ruta = '/api/clientes';
 const rutaCliente = (id: string) => `${ruta}/${encodeURIComponent(id)}`;
 
-/** Features invalidate list prefixes, detail and account after a mutation (FC2). */
+/** Las features invalidan listas, detalle y cuenta después de una mutación (FC2). */
 export const clientesKeys = {
   todos: ['clientes'] as const,
   listas: () => [...clientesKeys.todos, 'lista'] as const,
@@ -51,7 +51,7 @@ export function darDeBajaCliente(api: ApiClient, id: string): Promise<void> {
   return api.delete<void>(rutaCliente(id));
 }
 
-/** MOCK ONLY: no account endpoint exists on the backend (PB-28); the rail stays hidden. */
+/** SOLO MOCK: el backend no publica el endpoint de cuenta (PB-28); el panel permanece oculto. */
 export function obtenerCuentaCliente(api: ApiClient, id: string): Promise<CuentaClienteResponse> {
   return api.get<CuentaClienteResponse>(`${rutaCliente(id)}/cuenta`);
 }
