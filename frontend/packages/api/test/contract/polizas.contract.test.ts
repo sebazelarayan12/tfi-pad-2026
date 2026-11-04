@@ -22,7 +22,7 @@ import {
   cuotasPolizaNoExiste,
   emitirCotizacionNoExiste,
   emitirErrorNegocio,
-  emitirValidacion,
+  emitirErrorRed,
   polizaNoExiste,
 } from '../../mocks/handlers/polizas';
 import { servidorMock } from '../../mocks/server';
@@ -75,8 +75,10 @@ afterAll(() => servidorMock.close());
 
 describe('POST /api/polizas', () => {
   it('devuelve 201 con PolizaDetalleResponse', async () => {
-    const poliza = await emitirPoliza(api(), SOLICITUD);
+    const crudo = await api().post('/api/polizas', SOLICITUD, { responseType: 'raw' });
+    const poliza = JSON.parse(crudo.texto) as PolizaDetalleResponse;
 
+    expect(crudo.status).toBe(201);
     expect(poliza.numero).toBe('POL-0000001');
     expect(poliza.estado).toBe(1);
     expect(poliza.codigoPlan).toBe('RC');
@@ -102,28 +104,33 @@ describe('POST /api/polizas', () => {
   });
 
   it('devuelve 400 de validación cuando el body no deserializa', async () => {
-    servidorMock.use(emitirValidacion);
-
-    await expect(emitirPoliza(api(), SOLICITUD)).rejects.toMatchObject({
-      status: 400,
-      errors: { CotizacionId: expect.any(Array) },
+    const respuesta = await fetch(`${API_URL}/api/polizas`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: '{',
     });
+    const cuerpo = (await respuesta.json()) as { errors?: Record<string, string[]> };
+
+    expect(respuesta.status).toBe(400);
+    expect(cuerpo.errors).toEqual({ $: expect.any(Array) });
   });
 
   it('no reintenta ante 502', async () => {
     let peticiones = 0;
-    servidorMock.use(
-      http.post('*/api/polizas', () => {
+    const alIniciarPeticion = ({ request }: { request: Request }) => {
+      if (request.method === 'POST' && new URL(request.url).pathname === '/api/polizas') {
         peticiones += 1;
-        return HttpResponse.json(
-          { status: 502, title: 'Bad Gateway', detail: 'El servicio externo no está disponible.' },
-          { status: 502 },
-        );
-      }),
-    );
+      }
+    };
+    servidorMock.events.on('request:start', alIniciarPeticion);
+    servidorMock.use(emitirErrorRed);
 
-    await expect(emitirPoliza(api(), SOLICITUD)).rejects.toMatchObject({ status: 502 });
-    expect(peticiones).toBe(1);
+    try {
+      await expect(emitirPoliza(api(), SOLICITUD)).rejects.toMatchObject({ status: 502 });
+      expect(peticiones).toBe(1);
+    } finally {
+      servidorMock.events.removeListener('request:start', alIniciarPeticion);
+    }
   });
 });
 
@@ -262,7 +269,7 @@ describe('POST /api/polizas/{id}/cancelar', () => {
 });
 
 describe('Mocks de PB-06 y PB-24', () => {
-  it('la búsqueda mock (PB-06) se marca MOCK y devuelve PaginaResponse', async () => {
+  it('la búsqueda mock (PB-06) tiene nombre de función mock y devuelve PaginaResponse', async () => {
     expect(buscarPolizasMock.name).toBe('buscarPolizasMock');
 
     const pagina = await buscarPolizasMock(api(), { numero: 'POL-0000001' });

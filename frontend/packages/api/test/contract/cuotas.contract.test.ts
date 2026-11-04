@@ -20,7 +20,7 @@ afterEach(() => servidorMock.resetHandlers());
 afterAll(() => servidorMock.close());
 
 describe('MOCK PB-24: GET /api/cuotas', () => {
-  it('la cuota vencida mock se marca MOCK y devuelve estado "Vencida"', async () => {
+  it('la cuota vencida mock tiene nombre de función mock y devuelve estado "Vencida"', async () => {
     expect(listarCuotasVencidasMock.name).toBe('listarCuotasVencidasMock');
 
     const pagina = await listarCuotasVencidasMock(api(), {});
