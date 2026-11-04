@@ -17,6 +17,7 @@ Un empleado o un administrador ingresa con email y contraseña en `/login`, el b
 - `LoginPage` (formulario con react-hook-form + zod), `LayoutAcceso` (layout de acceso sin sidebar) y el hook de mutación.
 - Validaciones de campo con los textos de B1 §5 (sección 8 de esta tarea).
 - Bootstrap de mocks en `main.tsx`: bloque que llama a `iniciarMocksSiCorresponde` de T-11 antes del render (RV-D03). El archivo `main.tsx` es de T-14.
+- `ApiClientProvider` y `useApiClient` en `packages/api/src/client/ApiClientProvider.tsx` (FC18), exportados por bloque en el barrel, y su montaje en `app/providers.tsx` con el cliente de `app/apiClient.ts` (archivo de T-14; solo se monta el provider).
 - Manejo de 200, 400 por campo, 401 de credenciales, 5xx, timeout y sin conexión.
 - Redirección a `/inicio` tras login y redirección desde `/login` si la sesión es válida.
 - Accesibilidad de la pantalla (FC16) y test de axe con el helper de US-FE-T-19.
@@ -49,7 +50,7 @@ Un empleado o un administrador ingresa con email y contraseña en `/login`, el b
 
 ## 5. Archivos a crear o modificar
 
-Todos bajo `frontend/apps/backoffice/src/`.
+Todos bajo `frontend/apps/backoffice/src/`, salvo `frontend/packages/api/src/client/ApiClientProvider.tsx` (nuevo, FC18) y su bloque en `packages/api/src/index.ts`.
 
 | Archivo | Dueño | Notas |
 |---|---|---|
@@ -70,7 +71,7 @@ Ninguna tarea de este archivo edita `package.json`, lockfile ni `app/layouts/*` 
 
 1. Confirmar que T-04, T-05, T-07, T-11, T-12, T-13, T-14, T-19 y T-32 están mergeadas. Leer sus exports reales antes de escribir código (los nombres de la sección 7 son sugeridos).
 2. Crear `loginSchema.ts`: `email` con `trim()`, requerido y formato email; `password` requerido. El tipo sale de `z.infer`.
-3. Crear `useLogin.ts`: `useMutation({ mutationFn: loginRequest, retry: 0 })`. Al éxito llama a la acción de sesión del store de T-13 con `token`, `rol` y `expiraEn`, y navega a `/inicio` (o al `from` de la sección 8).
+3. Crear `useLogin.ts`: `const cliente = useApiClient();` y `useMutation({ mutationFn: (body) => loginRequest(cliente, body), retry: 0 })` (FC18). Al éxito llama a la acción de sesión del store de T-13 con `token`, `rol` y `expiraEn`, y navega a `/inicio` (o al `from` de la sección 8).
 4. Crear `LayoutAcceso.tsx`: columna del formulario (680 px, centrada) y columna del panel de marca (oculta por debajo de 1024 px). Sin imagen (D-6 en sección 13).
 5. Crear `LoginPage.tsx` con `useForm` y `zodResolver(loginSchema)`. Valores iniciales vacíos (nunca los valores de muestra de B1 §5).
 6. Campos: dos `Input` de `@nexa/ui` con `label` visible. Email con `type="email"`, `autoComplete="username"`. Contraseña con `type="password"` y `autoComplete="current-password"`. El botón de mostrar/ocultar va junto al campo (no dentro del primitivo; ver sección 16).

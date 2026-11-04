@@ -68,7 +68,7 @@ Dueños de archivos compartidos que W-02 **usa** y no modifica: `frontend/packag
 ## 6. Pasos de implementación
 
 1. Crear `api/usePlanesPublicos.ts`:
-   - `useQuery({ queryKey: planesKeys.lista(), queryFn: listarPlanes, retry: false })`. `retry: false` porque `GET /api/planes` no está bajo el rate limit de `/api/publico`, pero el reintento lo decide el usuario con el botón (FC13: no reintentar en silencio).
+   - `useQuery({ queryKey: planesKeys.lista(), queryFn: () => listarPlanes(cliente), retry: false })`, con `const cliente = useApiClient()` (FC18). Esta tarea monta `ApiClientProvider` en `app/providers.tsx` de la web (archivo de T-17; solo se monta el provider). `retry: false` porque `GET /api/planes` no está bajo el rate limit de `/api/publico`, pero el reintento lo decide el usuario con el botón (FC13: no reintentar en silencio).
    - `planesKeys` y `listarPlanes` vienen de `@nexa/api` (T-27). No llamar a `fetch` aquí.
 2. Crear `components/TablaPlanes.tsx`:
    - Lee el hook. Renderiza según el estado: carga (skeleton), error (`AlertaError` de T-07 con el texto de la sección 8 y un `Button` "Reintentar" que llama a `refetch()`), vacío (texto de la sección 8), éxito (tabla).
