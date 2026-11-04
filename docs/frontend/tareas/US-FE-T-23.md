@@ -15,7 +15,7 @@ Lo usan: US-FE-T-24 a T-32 (API cards) y el equipo cuando el back publique un en
 - `packages/api/test/contract/setup.ts`: arranca MSW (`mocks/server.ts` de T-11) en modo mock, o valida la configuración en modo real.
 - `packages/api/test/contract/harness.test.ts`: tests del propio harness (sección 10).
 - `packages/api/test/contract/esquemas-comunes.ts`: zod de `ProblemDetails` y `ValidationProblemDetails`, espejo de los tipos de T-12 (`dto/comunes.ts`).
-- Scripts `test:contract` y `test:contract:real` vía pedido a T-01 (sección 13).
+- Scripts `test:contract` y `test:contract:real`, y las devDependencies `zod` y `cross-env` de `@nexa/api`: T-01 se mergeó sin declararlos (sección 13, decisión 6).
 
 **NO entra**
 - Los archivos `<dominio>.contract.test.ts` con endpoints reales: los agrega cada API card (T-24 a T-32).
@@ -52,14 +52,14 @@ Bajo `frontend/packages/api/`:
 | `test/contract/harness.test.ts` | T-23 | |
 | `test/contract/<dominio>.contract.test.ts` | Cada API card (T-24 a T-32) | Agregan su archivo al rebasar sobre T-23 (RV-D31, RV-21). Sección 16. |
 
-No se edita `packages/api/package.json` (FC17, RV-21). Los scripts y las devDependencies `zod` y `cross-env` los declara T-01 (RV-24).
+T-01 se mergeó sin `zod`, `cross-env` ni scripts de contrato, así que esta tarea agrega: en `packages/api/package.json`, `zod` y `cross-env` como devDependencies y los scripts `test:contract` y `test:contract:real`; en el `package.json` raíz, los scripts que delegan en el workspace; y el `package-lock.json`. Es una excepción acordada de FC17 (sección 13, decisión 6).
 
 ## 6. Pasos de implementación
 
-1. Confirmar que `zod` y `cross-env` están en los `package.json` de T-01. Si no, pedirlo a T-01.
+1. Agregar `zod` (mayor `^4`) y `cross-env` como devDependencies de `@nexa/api`: `npm install --save-dev zod@^4 cross-env --workspace=@nexa/api`.
 2. Crear `esquemas-comunes.ts`:
-   - `esquemaProblemDetails`: `z.object({ type: z.string().nullable().optional(), title: z.string().optional(), status: z.number().int(), detail: z.string().optional(), instance: z.string().optional(), traceId: z.string().optional() })`. Usar `.passthrough()` para no rechazar campos extra del back (`codigo`, `extensions`).
-   - `esquemaValidationProblemDetails`: igual, con `status: z.literal(400)` y `errors: z.record(z.array(z.string()))`.
+   - `esquemaProblemDetails`: `z.object({ type: z.string().nullable().optional(), title: z.string().optional(), status: z.number().int(), detail: z.string().optional(), instance: z.string().optional(), traceId: z.string().optional() })`. Con zod 4 usar `z.looseObject({...})` (equivale a `.passthrough()`) para no rechazar campos extra del back (`codigo`, `extensions`).
+   - `esquemaValidationProblemDetails`: igual, con `status: z.literal(400)` y `errors: z.record(z.string(), z.array(z.string()))` (zod 4 exige el esquema de la clave).
    - Ambos mirror de los tipos de `contratos-api/convenciones-transversales.md §3.4`.
 3. Crear `setup.ts`:
    - Leer `process.env.CONTRACT_TARGET` (`'mock'` por defecto; `'real'`).
@@ -74,7 +74,7 @@ No se edita `packages/api/package.json` (FC17, RV-21). Los scripts y las devDepe
    - Si `def.soloMock` y `CONTRACT_TARGET === 'real'`: igual, `it.skip` con motivo.
    - Funciones puras exportadas: `validarRespuesta(esquema, cuerpo)` (lanza un error con la ruta del fallo de zod) y `validarProblemDetails(cuerpo)`.
 5. Crear `harness.test.ts` (sección 10).
-6. Agregar a `package.json` (vía T-01): `"test:contract": "vitest run packages/api/test/contract"` y `"test:contract:real": "cross-env CONTRACT_TARGET=real vitest run packages/api/test/contract"`.
+6. Agregar los scripts en `packages/api/package.json` (`"test:contract": "vitest run test/contract"` y `"test:contract:real": "cross-env CONTRACT_TARGET=real vitest run test/contract"`) y en el `package.json` raíz (`npm run test:contract --workspace=@nexa/api` y la variante `:real`). La raíz no tiene configuración de Vitest, por eso delega en el workspace.
 7. Verificar que el harness corre sin endpoints registrados (solo sus tests) y en verde.
 8. Dejar una plantilla comentada de uso al inicio de `harness.ts` (un ejemplo de `contratoEndpoint` con un `GET`), sin endpoints reales.
 
@@ -140,7 +140,7 @@ Los tests de las API cards (no de esta tarea) siguen el patrón: un `contratoEnd
 8. Endpoints `destructivo` y `soloMock` aparecen como `skipped` con motivo en modo real.
 9. No hay `any` explícito en el harness.
 10. Ningún dato de fixture real ni credencial está en el código; las credenciales llegan por variables de entorno.
-11. Sin cambios fuera de `packages/api/test/contract/` y el pedido a T-01 para `package.json`.
+11. Sin cambios fuera de `packages/api/test/contract/`, salvo `zod` y `cross-env` y los scripts en `packages/api/package.json`, los scripts del `package.json` raíz y el `package-lock.json`.
 
 ## 12. Verificación manual
 
@@ -153,11 +153,12 @@ Confirmar el resultado con el equipo antes del PR (`docs/workflow.md`, regla 7).
 
 ## 13. Decisiones pendientes (con default)
 
-1. **Nombre y firma de `createApiClient` (US-FE-T-08):** default: el harness usa el cliente con `baseUrl` inyectable que expone T-08 (dependencia declarada, RV-21). Si T-08 expone otro nombre, se usa ese y se anota aquí.
+1. **Nombre y firma de `createApiClient` (US-FE-T-08):** resuelta: los `request` usan `fetch` crudo (`fetchContrato` de `setup.ts`) y no `createApiClient`, porque la sección 9 pide validar la respuesta sin `ApiError`. T-08 sigue como dependencia por los tipos de error (RV-21).
 2. **Escritura en el back real:** default: bloqueada por `CONTRACT_ALLOW_WRITES=true`.
 3. **Credenciales de modo real:** NO DEFINIDO en la documentación. Default (RV-D28): variables `CONTRACT_EMAIL` y `CONTRACT_PASSWORD` locales, sin valores en el repo. Quién crea el usuario de prueba en el back local: NO DEFINIDO (el seed de `docker-compose.yml` usa `SEED_ADMINISTRADOR_EMAIL` y `SEED_ADMINISTRADOR_PASSWORD`, que es el candidato).
 4. **Cross-env:** default: `cross-env` como devDependency para que el script funcione en Windows (la máquina del equipo es Windows).
-5. **Ejecución en CI:** default: `test:contract` (mock) se incluye en el job `frontend` solo si T-01 lo agrega; `test:contract:real` nunca corre en CI.
+5. **Ejecución en CI:** default: `test:contract` (mock) se incluye en el job `frontend` solo si T-01 lo agrega; `test:contract:real` nunca corre en CI. Los `*.contract.test.ts` ya corren dentro de `npm test` de `@nexa/api`.
+6. **Dependencias y scripts (excepción de FC17):** T-01 se mergeó sin `zod`, `cross-env` ni scripts de contrato. Default: los agrega T-23 (`zod@^4`, la misma versión que ya usan los apps con `@hookform/resolvers`, y `cross-env`) en `packages/api/package.json`, más los scripts en ese archivo y en la raíz, y el lockfile.
 
 ## 14. Riesgos y errores comunes
 
@@ -180,5 +181,5 @@ Confirmar el resultado con el equipo antes del PR (`docs/workflow.md`, regla 7).
 ## 16. Observaciones al índice
 
 - Resuelto (RV-21 / RV-D31): T-23 es dueña del harness en `test/contract/`; cada API card agrega su `<dominio>.contract.test.ts` al rebasar sobre T-23, sin dependencia declarada.
-- Resuelto (RV-24): `zod` (devDep de `packages/api`) y `cross-env` los declara T-01; FB1 se amplía en el PR de docs.
+- Corregido: `zod` y `cross-env` no llegaron con T-01; los declara T-23 (secciones 5 y 13, decisión 6).
 - Resuelto (RV-21): T-08 ya figura en la fila del INDEX de T-23 y fija `createApiClient` con `baseUrl` inyectable (sección 13, decisión 1).
