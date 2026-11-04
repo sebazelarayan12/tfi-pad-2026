@@ -1,6 +1,6 @@
 # Pedidos al back (huecos detectados por el frontend)
 
-Consolidado de huecos, bugs e inconsistencias que el front encontró en las pantallas (`pantallas/*.md`) y los contratos (`contratos-api/*.md`). Cada ítem fue verificado contra `backend/Aseguradora.Api/Controllers` y `backend/Aseguradora.Application` antes de listarlo. Rutas relativas a la raíz del repo. Verificación hecha sobre `development` en el estado de `HEAD` `4ba3d4b`.
+Consolidado de huecos, bugs e inconsistencias que el front encontró en las pantallas (`pantallas/*.md`) y los contratos (`contratos-api/*.md`). Cada ítem fue verificado contra `backend/Aseguradora.Api/Controllers` y `backend/Aseguradora.Application` antes de listarlo. Rutas relativas a la raíz del repo. Verificación original sobre `development` en `4ba3d4b`. PB-03 se revisó nuevamente el 2026-11-04 contra `8e7df6f`; los demás pedidos conservan su fecha/base original salvo indicación propia.
 
 Leyenda de severidad: **Bloquea** = la pantalla no se puede construir de forma confiable; **Degrada** = se construye con un workaround visible; **Mejora** = no bloquea.
 
@@ -16,7 +16,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 |----|--------|------|-----------|---------------------|--------|
 | PB-01 | Estado público del pago y recuperación por número de pago | Falta endpoint | Bloquea | W4, W6 | Falta endpoint |
 | PB-02 | Cupón público de Pago Fácil `POST /api/publico/cupon` | Falta endpoint | Bloquea | W3, W4, W5 | Falta endpoint |
-| PB-03 | Clientes: detalle, listado y edición (`GET/PUT/DELETE /api/clientes`) | Falta endpoint | Bloquea | B3, B5, B6, B7, B8, B9, B10, B11 | Falta endpoint |
+| PB-03 | Resumen de clientes: faltan Renaper y conteos | Inconsistencia de contrato | Degrada | B3 (B-04) | Parcialmente resuelto: GET/PUT/DELETE implementados; ampliación del resumen pendiente |
 | PB-04 | Usuarios: listado, edición, activar/desactivar, último ingreso, nombre | Falta endpoint | Bloquea | B14, B1, B2 | Falta endpoint |
 | PB-05 | Búsqueda y listados de pagos (por póliza, por cuota, por número de póliza) | Falta endpoint | Bloquea | B10, B11, B9, B8 | Falta endpoint |
 | PB-06 | Filtros de `GET /api/polizas`: plan, número de póliza, DNI | Falta endpoint | Bloquea | B9 | Falta endpoint |
@@ -89,26 +89,14 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Severidad.** Bloquea.
 - **Workaround front.** MSW con el contrato de arriba. No usar el `GET` de empleado.
 
-### PB-03. Clientes: detalle, listado y edición
+### PB-03. Clientes: endpoints publicados; ampliación del resumen pendiente
 
-- **Qué pasa hoy.** `Controllers/` no tiene `ClientesController.cs`. Ni `development` ni la PR #50 tienen `GET /api/clientes`, `GET /api/clientes/{id}`, `PUT` ni `DELETE` (US-F1-06, "Especificado"). La PR #50 (abierta, no mergeada) solo trae `POST /api/clientes`, `POST /{id}/validar-renaper` y `GET /renaper/{dni}` (según `contratos-api/seguridad-clientes-publico.md` §3). Las pantallas B3, B5, B6, B7, B8, B9, B10 y B11 necesitan el nombre/DNI del cliente a partir de `clienteId`, que los DTOs de póliza, vehículo y cotización sí traen.
-- **Qué necesita el front.** Un detalle de cliente para cabecera y contexto; un listado paginado con filtros `dni` y `apellido` para B3; `PUT` de contacto/domicilio y `DELETE` (baja lógica) para B5; y un resumen con conteos (vehículos, pólizas activas, `validadoRenaper`) para la tabla de B3.
-- **Contrato mínimo propuesto.**
-  ```ts
-  // GET /api/clientes/{id}  -> ClienteResponse (contratos-api/seguridad-clientes-publico.md §3.1) + activo
-  // GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=  -> PaginaResponse<ClienteResumenResponse>
-  interface ClienteResumenResponse {
-    id: string; dni: string; nombre: string; apellido: string; email: string; telefono: string | null;
-    validadoRenaper: boolean; activo: boolean;
-    cantidadVehiculos: number; cantidadPolizasActivas: number;   // pedido explícito de B3
-  }
-  // PUT /api/clientes/{id}  body: { email, telefono, calle, numero, localidad, provincia, codigoPostal } -> 200 ClienteResponse
-  // DELETE /api/clientes/{id} -> 204
-  ```
-  Decisión de back: la baja con pólizas activas (B5, D-B5-08) no está definida en la spec.
-- **Pantallas que desbloquea.** B3, B5 (bloqueante), B6/B7/B8/B10/B11 (nombre del cliente), B4 (edición si se reutiliza).
-- **Severidad.** Bloquea.
-- **Workaround front.** MSW. No arrancar B5 contra el endpoint sin mock (FB4).
+- **Revisión 2026-11-04:** US-F1-06 se mergeó en PR #58 (`6356111`). Ya existen listado, detalle, modificación y baja lógica en `ClientesController.cs`. No se mantiene un bloqueo por ausencia de esos endpoints.
+- **Contrato real:** `GET /api/clientes` devuelve `PaginaResponse<ClienteResumenResponse>`, con filtros DNI exacto y apellido parcial sin distinguir mayúsculas, y query `pagina`/`tamanoPagina`. El resumen contiene únicamente `id`, `dni`, `nombre`, `apellido`, `email`, `telefono` y `activo`. GET detalle y PUT devuelven `ClienteResponse`; DELETE devuelve 204 y bloquea con 400 si hay póliza Pendiente, Vigente o Suspendida.
+- **Pendiente:** B3 necesita además `validadoRenaper`, `cantidadVehiculos` y `cantidadPolizasActivas`. Se solicita evaluar su incorporación a `ClienteResumenResponse`; no se declara acordada ni implementada esa ampliación. La definición de los conteos debe confirmarse con el backend antes de incorporarlos al wire.
+- **Fuentes:** `backend/Aseguradora.Application/Clientes/DTOs/ClienteResumenResponse.cs`, `ClienteFiltro.cs`, `ClienteResponse.cs`, `ClienteModificacionRequest.cs` y `ClienteService.cs`.
+- **Severidad actual:** degrada B3, no bloquea consumir el listado/detalle/PUT/DELETE. El nombre/DNI y el estado Renaper del detalle ya están disponibles para B5 y las otras features consumidoras.
+- **Workaround:** T-24 tipa y mockea el resumen con sus siete campos reales. B3 mantiene las columnas afectadas con `—` como dato no disponible (FB7.11), sin fabricar cero, false o badges Pendiente, ni hacer un request de detalle por fila para simular el campo. En B5 se usa `validadoRenaper` del detalle, que sí existe. `/cuenta` corresponde a PB-28 y continúa pendiente.
 
 ### PB-04. Usuarios: listado, edición, estado y último ingreso
 

@@ -143,15 +143,15 @@ Reglas de datos del back que condicionan la vista: RN01 (DNI único), RN02 (clie
 
 ## 9. Datos: endpoints y origen de cada bloque
 
-Estados según `development` (`git cat-file` sobre `development`) y PR #50.
+Estado de clientes actualizado el 2026-11-04 contra `development` (`8e7df6f`, PR #58); el resto conserva sus fuentes originales.
 
 | Método y ruta | Estado | Uso en B5 |
 |---|---|---|
-| `GET /api/clientes/{id}` | Especificado (US-F1-06). No está en `development` ni en PR #50 | Encabezado: nombre, DNI, CUIL, badge Renaper. **Bloqueante para B5.** Mock con MSW hasta que se publique (FB4). |
-| `PUT /api/clientes/{id}` | Especificado (US-F1-06) | Editar (contacto y domicilio) |
-| `DELETE /api/clientes/{id}` | Especificado (US-F1-06) | Dar de baja (baja lógica, RN15) |
-| `GET /api/clientes` con filtros | Especificado (US-F1-06) | No se usa en B5 (sí en B3) |
-| `POST /api/clientes` y `POST /api/clientes/{id}/validar-renaper` | En PR #50 (no mergeado) | No se usan en B5 (sí en B4 y para reintentar validación; el botón de reintento NO está en el Figma) |
+| `GET /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | Encabezado: nombre, DNI, CUIL y badge Renaper del detalle real. No depende de los campos faltantes del resumen. |
+| `PUT /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | Editar (contacto y domicilio) |
+| `DELETE /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | Dar de baja (baja lógica, RN15) |
+| `GET /api/clientes` con filtros | Implementado (US-F1-06, PR #58) | No se usa en B5 (sí en B3) |
+| `POST /api/clientes` y `POST /api/clientes/{id}/validar-renaper` | Implementado | No se usan en B5 (sí en B4 y para reintentar validación; el botón de reintento NO está en el Figma) |
 | `GET /api/vehiculos?clienteId={id}` | Implementado (en `development`) | Lista de vehículos (Marca, Modelo, Anio, Patente, Tipo, Uso, ValidadoDnrpa, Activo) |
 | `GET /api/polizas?clienteId={id}` | Implementado (en `development`) | Pólizas por vehículo (badge del vehículo) y tabla de pólizas. Parámetros: `ClienteId`, `Patente`, `Estado`, `Pagina`, `Tamano` (máx. 100). |
 | `GET /api/polizas/{id}/cuotas` | Implementado | Próxima cuota y "Ver cuotas" (por póliza) |
@@ -209,7 +209,7 @@ Propuesta (a confirmar): ancho mínimo de diseño 1280 px. Por debajo de eso, el
 
 ## 13. Dudas e inconsistencias Figma ↔ back
 
-**D-B5-01 · Cliente: endpoint de detalle no disponible (bloqueante).** El encabezado necesita `GET /api/clientes/{id}`. El controller `ClientesController` no está en `development` y PR #50 solo trae `POST /api/clientes`, `POST /api/clientes/{id}/validar-renaper` y `GET /api/clientes/renaper/{dni}`. Propuesta: MSW hasta que US-F1-06 se publique (FB4). No arrancar B5 contra un endpoint "Especificado" sin mock.
+**D-B5-01 · Cliente: detalle disponible.** Resuelto por US-F1-06/PR #58. El detalle devuelve nombre, DNI, CUIL y estado Renaper. El pendiente PB-03 afecta solo los tres campos del resumen de B3, no el encabezado de B5. La cuenta/deuda continúa pendiente PB-28 y su rail oculto (D-33).
 
 **D-B5-02 · Editar cliente: destino NO DEFINIDO.** Opciones: (a) modal con los campos de contacto y domicilio, que es lo que permite `PUT` (AnalisisBack §7: modifica contacto y domicilio); (b) reutilizar la pantalla B4 "Nuevo cliente" en modo edición. Tradeoff: (a) es más rápido y no toca B4; (b) reutiliza validaciones pero mezcla flujo de alta con edición. Decisión del equipo.
 
@@ -229,7 +229,7 @@ Además, "Ver cuotas" necesita definir si abre cuotas por póliza (existe `GET /
 
 **D-B5-14 · Enums en el JSON.** Igual que D-B6-05: `Program.cs` no configura `JsonStringEnumConverter`, así que `tipo`, `uso` y `estado` (de vehículo y de póliza) llegan como **números**. Las etiquetas `Auto · Particular`, `Vigente`, `Vencida` de esta pantalla dependen de resolver ese punto (recomendación: convertir a texto en el back).
 
-**D-B5-08 · Botón "Dar de baja".** El Figma lo muestra en texto rojo con icono. No hay variante de peligro en la lista de `Button` (Primary, Secondary, Ghost). Propuesta: variante Ghost con color `status-cancelada-text`. Además: el back no define qué pasa si el cliente tiene pólizas activas (RN15 no lo dice; AnalisisBack §7 dice "Baja lógica" sin condición). Confirmar si se bloquea la baja o se cancelan las pólizas (CU12 exige motivo).
+**D-B5-08 · Botón "Dar de baja".** El Figma lo muestra en texto rojo con icono. No hay variante de peligro en la lista de `Button` (Primary, Secondary, Ghost). Propuesta: variante Ghost con color `status-cancelada-text`. Comportamiento de negocio confirmado por US-F1-06/PR #58: el backend bloquea con 400 si existe póliza Pendiente, Vigente o Suspendida. La baja no cancela pólizas; la UI muestra el `detail` de ese error (D-15). La propuesta visual del botón conserva su estado original.
 
 **D-B5-09 · Acción "Nueva cotización" sin vehículo.** B7 requiere `vehiculoId` (`CotizarVehiculoRequest.VehiculoId`, `[Required]`). El Figma no muestra selector. Decidir si se abre un selector de vehículos o si solo queda el link `Cotizar` de cada vehículo.
 

@@ -59,7 +59,7 @@ Componentes propios:
 - `ClientesPage` (pantalla, `features/clientes/pages`): compone filtros, tabla y paginación. Delgada: no calcula.
 - `FiltrosClientes` (`features/clientes/components`): campo de búsqueda + dos selects + chip. Usa `zod` para normalizar la búsqueda (ver sección 6).
 - `TablaClientes` (`features/clientes/components`): tabla con columnas; reutiliza `Table/Header` y `Table/Row` de `@nexa/ui`.
-- `BadgeRenaper` (`features/clientes/components`): mapea `validadoRenaper` (booleano) al `Badge/Estado` de `@nexa/ui`.
+- `BadgeRenaper`: referencia visual del Figma, fuera del alcance actual del listado porque el resumen no incluye `validadoRenaper`. Mostrar `—` en esa celda hasta resolver PB-03.
 - `PaginacionTabla` (`shared/` si se reutiliza en B2/B3; si no, en el feature): "1-10 de 128" + Anterior/Siguiente.
 - `LayoutBackoffice` (`app/`): sidebar y topbar compartidos con B2 y B4.
 
@@ -149,38 +149,34 @@ Reglas de forma (zod):
 
 ## 9. Datos: endpoints y origen de cada dato
 
+Actualización de alcance 2026-11-04: listado/detalle de US-F1-06 implementados (PR #58). El Figma no agrega campos al contrato real (FB4/FB7.11).
+
 | Dato en pantalla | Endpoint | Estado | Campo o cálculo |
 |---|---|---|---|
-| Lista de clientes (filas) | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | **Especificado** (US-F1-06). No está en el PR #50. | Respuesta: `PaginaResponse<ClienteResumenResponse>` (`items`, `pagina`, `tamanoPagina`, `total`). |
-| Conteo del chip "128 clientes" | Mismo endpoint | Especificado | `total`. |
-| Paginación "1-10 de 128" | Mismo endpoint | Especificado | Rango = `(pagina - 1) * tamanoPagina + 1` a `min(pagina * tamanoPagina, total)`. `total`. |
-| Columna Nombre | Mismo endpoint | Especificado | `nombre` + " " + `apellido` del resumen. La spec de `ClienteResumenResponse` no fija los campos; ver D-7. |
-| Columna DNI | Mismo endpoint | Especificado | `dni` (8 dígitos). Mostrar con puntos (`30.512.468`) con formateador de `@nexa/ui`; enviar y guardar sin puntos. |
-| Columna Email | Mismo endpoint | Especificado | `email`. |
-| Columna Teléfono | Mismo endpoint | Especificado | `telefono`. Texto tal cual (puede ser nulo: mostrar "—", propuesta). |
-| Columna Vehículos | Mismo endpoint | **Especificado: falta campo.** El resumen no lo tiene en la spec. | Propuesta: `cantidadVehiculos` en `ClienteResumenResponse`. |
-| Columna Renaper | Mismo endpoint | Especificado (campo `validadoRenaper` existe en `ClienteResponse` del PR #50; el resumen no lo nombra) | `validadoRenaper` → `Validado` (true) o `Pendiente` (false). Ver D-7. |
-| Columna Pólizas activas | Mismo endpoint | **Especificado: falta campo.** | Propuesta: `cantidadPolizasActivas` (pólizas en `Vigente`, `Pendiente` o `Suspendida`). |
-| Detalle de cliente (si el menú lo usa) | `GET /api/clientes/{id}` | Especificado | `ClienteResponse` (ver `B4-nuevo-cliente.md`). |
-| Validar en Renaper (acción de fila, solo badge `Pendiente`) | `POST /api/clientes/{id}/validar-renaper` | En PR (#50) | Sin body. `200` con `ClienteResponse` actualizado. `400` sin `codigo` (no figura en Renaper, fallecido o menor de 18). `404` con `codigo: "CLIENTE_NO_ENCONTRADO"`. `502` (Renaper caído). `401` / `403`. Tras el `200`, refrescar la fila. |
+| Lista de clientes | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | Implementado | `PaginaResponse<ClienteResumenResponse>`: `items`, `pagina`, `tamanoPagina`, `total`. Solo activos. |
+| Chip y paginación | Mismo endpoint | Implementado | Chip: `total`. Rango: `(pagina - 1) * tamanoPagina + 1` a `min(pagina * tamanoPagina, total)`; mostrar el estado vacío cuando `total = 0`. |
+| Nombre, DNI, Email, Teléfono | Mismo endpoint | Implementado | `nombre` + `apellido`, `dni`, `email`, `telefono`. DNI con puntos usando T-09 de `@nexa/api`; nulos como `—`. |
+| Vehículos | Mismo endpoint | Campo no disponible (PB-03) | `cantidadVehiculos` no existe en el resumen. Mostrar `—`, no cero. |
+| Renaper | Mismo endpoint | Campo no disponible (PB-03) | `validadoRenaper` existe en el detalle, no en el resumen. Mostrar `—`, sin badge Validado/Pendiente. |
+| Pólizas activas | Mismo endpoint | Campo no disponible (PB-03) | `cantidadPolizasActivas` no existe en el resumen. Mostrar `—`, no cero. |
+| Detalle | `GET /api/clientes/{id}` | Implementado | `ClienteResponse`; aquí sí está `validadoRenaper`. |
+| Validar en Renaper | `POST /api/clientes/{id}/validar-renaper` | Implementado | Acción fuera de B-04; su comportamiento se define en T-25/B-06. No inferir su disponibilidad desde un badge de lista que no existe. |
 
-Ejemplo de respuesta propuesta de un ítem (para que el back y el front usen la misma forma; el back define el nombre final):
+Ejemplo de forma del resumen real (los valores son de prueba; no renderizarlos como texto fijo):
 
 ```json
 {
-  "id": "guid",
-  "dni": "30512468",
-  "nombre": "Tomás",
-  "apellido": "Iturralde",
-  "email": "tomas.iturralde@gmail.com",
-  "telefono": "351 555-0142",
-  "validadoRenaper": true,
-  "cantidadVehiculos": 2,
-  "cantidadPolizasActivas": 2
+  "id": "c1000000-0000-0000-0000-000000000001",
+  "dni": "30123456",
+  "nombre": "Juan Carlos",
+  "apellido": "Pérez",
+  "email": "juan.perez@example.com",
+  "telefono": null,
+  "activo": true
 }
 ```
 
-Nota: el back devuelve `dni` como texto de 8 dígitos (RN01, `varchar(8)`). El formato con puntos es solo de presentación.
+Se preservan las columnas del diseño con el estado de dato no disponible. No añadir campos ficticios al DTO o mock, ni consultar detalle por fila para ocultar el hueco del listado. La ampliación se mantiene abierta en PB-03. Los conteos no se calculan en esta pantalla.
 
 ## 10. Reglas de negocio visibles
 
@@ -213,8 +209,8 @@ Nota: el back devuelve `dni` como texto de 8 dígitos (RN01, `varchar(8)`). El f
 - **D-3. Campo de búsqueda del topbar oculto.** El Figma tiene un `Search` en el topbar con `hidden="true"`. No se muestra. Confirmar que no debe aparecer (el de la búsqueda real está en los filtros).
 - **D-4. Anchos de columna.** El `Table/Header` dice "columnas de igual ancho (layoutGrow)" en la nota del componente, pero en B3 las columnas tienen anchos distintos (210, 116, 226, 124, 104, 130, 146, 40). Confirmar que el diseño es el correcto. Propuesta: usar los anchos del diseño.
 - **D-5. Tamaño de página.** El Figma muestra 10 filas ("1-10 de 128"). La spec dice `tamanoPagina` por defecto 20 y máximo 100 (US-F1-06). Propuesta: 10 por defecto, consistente con el diseño.
-- **D-6. Acciones de la fila.** El icono de tres puntos no tiene opciones en el Figma. Los endpoints de detalle, modificación y baja existen en la spec. Confirmar las opciones y si la baja necesita confirmación (la spec de US-F1-06 propone bloquear la baja si el cliente tiene póliza activa). Propuesta adicional: "Validar en Renaper" en filas `Pendiente`, que reintenta la validación caída (endpoint del PR #50).
-- **D-7. Campos de `ClienteResumenResponse`.** La spec de US-F1-06 nombra el DTO pero no define sus campos. Las columnas Vehículos, Pólizas activas y Renaper dependen de esos campos. Pedir al back la forma del resumen (sección 9).
+- **D-6. Acciones de la fila.** El icono de tres puntos no tiene opciones en el Figma. Los endpoints de detalle, modificación y baja ya están implementados (PR #58). Confirmar las opciones y si la baja necesita confirmación (el backend de US-F1-06 bloquea la baja si hay póliza Pendiente, Vigente o Suspendida). Propuesta adicional: "Validar en Renaper" en filas `Pendiente`, que reintenta la validación caída (endpoint del PR #50).
+- **D-7. Campos de `ClienteResumenResponse`.** Resuelto el contrato base por US-F1-06/PR #58: siete campos reales en §9. La ampliación Renaper/conteos sigue pendiente PB-03. Hasta entonces, mostrar `—` en esas celdas (FB7.11), sin inventar valores.
 - **D-8. Nombre del botón de la topbar.** La capa del Figma se llama "Consultar" (heredada del componente `Button`), pero el texto visible es "Nuevo cliente". Usar el texto visible. Confirmar con diseño.
 - **D-9. Nombre completo en una columna.** El Figma muestra un solo campo "Nombre" con el nombre completo (`Tomás Iturralde`). El back tiene `nombre` y `apellido` separados. Propuesta: mostrar `nombre apellido` en una columna. Confirmar orden y si se quiere ordenar por apellido.
 - **D-10. Formato del DNI.** El Figma muestra `30.512.468` (con puntos) en la tabla y en el campo de búsqueda. El back guarda y devuelve 8 dígitos. Propuesta: mostrar con puntos y enviar sin puntos (sección 6).

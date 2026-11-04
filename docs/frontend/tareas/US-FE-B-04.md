@@ -8,7 +8,7 @@ Pantalla: [B3 Clientes](../pantallas/B3-clientes.md). Índice: [INDEX](INDEX.md)
 
 ## 1. Objetivo
 
-El empleado o el administrador abre `/clientes` y ve la lista de clientes activos con su DNI, email, teléfono, cantidad de vehículos, estado de validación Renaper y cantidad de pólizas activas. Puede buscar por DNI o apellido, paginar de 10 en 10 y llegar a la ficha de un cliente o al alta de uno nuevo. Esta tarea crea el feature `features/clientes` y es dueña de su `index.ts` y de su `routes.tsx`.
+El empleado o el administrador abre `/clientes` y ve la lista de clientes activos con su DNI, email y teléfono. Las columnas Vehículos, Renaper y Pólizas activas muestran `—` como dato no disponible hasta ampliar el resumen (PB-03/FB7.11). Puede buscar por DNI o apellido, paginar de 10 en 10 y llegar a la ficha de un cliente o al alta de uno nuevo. Esta tarea crea el feature `features/clientes` y es dueña de su `index.ts` y de su `routes.tsx`.
 
 ## 2. Alcance
 
@@ -16,7 +16,7 @@ El empleado o el administrador abre `/clientes` y ve la lista de clientes activo
 - Ruta `/clientes` en `apps/backoffice/src/features/clientes/routes.tsx` y `pages/ClientesPage.tsx`.
 - Título `Clientes` y botón `Nuevo cliente` (enlace a `/clientes/nuevo`) en el slot `accion` del layout de T-16 (RV-42).
 - Campo de búsqueda con normalización (DNI u apellido), debounce y reinicio de página.
-- Tabla de siete columnas con `BadgeRenaper`, filas de 48 px y enlace en el nombre a `/clientes/:id`.
+- Tabla de siete columnas con `—` en Renaper y conteos no disponibles, filas de 48 px y enlace en el nombre a `/clientes/:id`.
 - Paginación de 10 filas (`1-10 de 128`), Anterior y Siguiente, y chip con el total.
 - Estados de carga, lista con datos, sin resultados, sin clientes, error.
 - Aviso de alta (`location.state.aviso` con `{ tipo, texto }`, RV-41), que producen B-05 y B-08 (sección 13, D-B04-5).
@@ -34,7 +34,7 @@ El empleado o el administrador abre `/clientes` y ve la lista de clientes activo
 - **Oleada:** 4.
 - **Depende de:** US-FE-T-04, US-FE-T-05, US-FE-T-06, US-FE-T-09, US-FE-T-11, US-FE-T-16, US-FE-T-19, US-FE-T-24.
 - **Puede empezar sin esperar a:** US-FE-T-25 (alta y Renaper; no comparten datos en la lista).
-- **Bloqueada por pedidos al back:** PB-03 (MSW; la lista usa el mock de T-24 con la forma de PB-03). Ver sección 7.
+- **Bloqueada por pedidos al back:** PB-03 solo degrada las columnas Renaper/conteos. El listado real ya existe (PR #58); T-24 y su mock reproducen sus siete campos, sin enriquecerlos artificialmente. Ver sección 7.
 
 ## 4. Documentos a leer
 
@@ -57,7 +57,7 @@ Bajo `frontend/apps/backoffice/src/features/clientes/` (dueño B-04):
 | `pages/ClientesPage.tsx` | Compone encabezado, filtros, tabla, paginación y aviso. Delgada. |
 | `components/FiltrosClientes.tsx` | Campo de búsqueda y chip de conteo. Usa el esquema zod de `schemas/`. |
 | `components/TablaClientes.tsx` | Usa `Table` de `@nexa/ui`. Columnas de §8. |
-| `components/BadgeRenaper.tsx` | Mapea `validadoRenaper` a `Badge` (`Validado` o `Pendiente`). |
+| `components/BadgeRenaper.tsx` | Fuera del alcance actual del listado: no crear mientras el resumen no publique ese campo. La celda muestra `—`. |
 | `components/PaginacionTabla.tsx` | "1-10 de N", Anterior y Siguiente en `<nav aria-label="Paginación">`. Si se reutiliza en B2 o B11, pasa a `shared/`. |
 | `components/AvisoAlta.tsx` | Banner del aviso que llega por `location.state`. |
 | `schemas/busquedaClientes.ts` | Esquema zod de la búsqueda y normalización. |
@@ -74,7 +74,7 @@ Compartidos (no editar): `packages/api/src/**` y `mocks/**` (T-24, T-11); `packa
 4. `FiltrosClientes`: `Input` con label `Buscar por DNI o apellido`, ayuda `Buscar por DNI completo o apellido.` (`aria-describedby`), `maxLength={100}`. Debounce de 300 ms. Cada cambio de búsqueda reinicia `pagina` a 1.
 5. Chip Neutro con `{n} clientes` (plural según §8), `aria-live="polite"` para anunciar el cambio.
 6. `TablaClientes`: anchos de B3 §3 (Nombre 210, DNI 116, Email 226, Teléfono 124, Vehículos 104, Renaper 130, Pólizas activas 146). Las filas tienen 48 px. DNI con `font-mono`, formateado con T-09. Teléfono `null` muestra `—`.
-7. `BadgeRenaper`: `true` → `Validado`; `false` → `Pendiente`. Texto siempre visible (no solo color).
+7. Vehículos, Renaper y Pólizas activas: mostrar `—`. No interpretar ausencia como cero o false, ni consultar detalles por fila; el estado del detalle sigue disponible en B5.
 8. Nombre: `nombre apellido` como enlace a `/clientes/{id}` (la ruta la agrega B-07; antes de B-07 el enlace puede apuntar igual).
 9. `PaginacionTabla`: "1-10 de 128" con la fórmula de B3 §9. Anterior deshabilitado en la página 1; Siguiente deshabilitado al llegar a la última (`Math.ceil(total / 10)`).
 10. `AvisoAlta`: lee `location.state.aviso` una vez; si existe, muestra el texto con su tipo.
@@ -85,13 +85,13 @@ Compartidos (no editar): `packages/api/src/**` y `mocks/**` (T-24, T-11); `packa
 
 | Método y ruta | Estado | Request | Response 200 | Errores |
 |---|---|---|---|---|
-| `GET /api/clientes` | Especificado (PB-03, US-F1-06) | Query: `dni?`, `apellido?`, `pagina`, `tamanoPagina` | `PaginaResponse<ClienteResumenResponse>` | 400 si `tamanoPagina` > 100; 401; 403 |
+| `GET /api/clientes` | Implementado (US-F1-06, PR #58) | Query: `dni?`, `apellido?`, `pagina`, `tamanoPagina` | `PaginaResponse<ClienteResumenResponse>` | 400 si `tamanoPagina` > 100; 401; 403 |
 
 ```ts
 // Tipos en @nexa/api (dueño US-FE-T-24, dto/clientes.ts). No redefinir.
 export interface ClienteFiltro {
-  dni?: string;          // 8 dígitos sin puntos (exacto, propuesta de la spec)
-  apellido?: string;     // coincidencia parcial sin distinguir mayúsculas (propuesta)
+  dni?: string;          // 8 dígitos sin puntos (exacto, implementado)
+  apellido?: string;     // coincidencia parcial sin distinguir mayúsculas (implementada)
   pagina?: number;       // default 1
   tamanoPagina?: number; // esta tarea envía 10 (D-01). Máximo 100
 }
@@ -103,7 +103,7 @@ export interface PaginaResponse<T> {
   total: number;
 }
 
-// Forma propuesta por PB-03. La spec no define los campos (B3 D-7).
+// Contrato real: ClienteResumenResponse.cs (US-F1-06, PR #58).
 export interface ClienteResumenResponse {
   id: string;
   dni: string;               // 8 dígitos, sin puntos
@@ -111,10 +111,7 @@ export interface ClienteResumenResponse {
   apellido: string;
   email: string;
   telefono: string | null;
-  validadoRenaper: boolean;
   activo: boolean;           // el back solo devuelve activos (RN15)
-  cantidadVehiculos: number;
-  cantidadPolizasActivas: number;
 }
 ```
 
@@ -122,7 +119,7 @@ export interface ClienteResumenResponse {
 - Query key: `clientesKeys.lista(filtro)` de T-24.
 - No hay mutaciones en esta tarea.
 - PB-03 bloquea la lista: `GET /api/clientes` está Especificado, no existe en `development` ni en el PR #50. Workaround: MSW de T-24 con la forma propuesta por PB-03.
-- Campos no definidos en el back (B3 D-7): `cantidadVehiculos`, `cantidadPolizasActivas` y `validadoRenaper` en el resumen. Se usan los nombres de PB-03. Si el back define otros, cambia el mapeo, no la UI.
+- Los campos adicionales de PB-03 no existen en el resumen actual: no agregarlos al tipo ni al mock. Mostrar `—` en las tres columnas (FB7.11); cualquier ampliación del wire requiere actualizar el contrato antes de usarla.
 - Workaround MSW (FB7.7): el handler `handlers/clientes.ts` lo escribe T-24. Esta tarea no escribe handlers.
 
 ## 8. Contenido de UI
@@ -138,7 +135,7 @@ Textos literales de B3 §5. Los de "muestra" no se escriben.
 | Placeholder de búsqueda | `Ej. 30.512.468` |
 | Chip | `{n} clientes`; con 1 cliente, `1 cliente` (propuesta) |
 | Encabezados | `Nombre` · `DNI` · `Email` · `Teléfono` · `Vehículos` · `Renaper` · `Pólizas activas` |
-| Badge | `Validado` · `Pendiente` |
+| Renaper y conteos no disponibles | `—` (sin badges ni ceros ficticios) |
 | Paginación | `1-10 de {total}` · `Anterior` · `Siguiente` |
 | Caption de la tabla | `Clientes` |
 | Sin resultados (propuesta, B3 §7) | `No hay clientes que coincidan con la búsqueda.` + botón `Limpiar filtros` |
@@ -178,7 +175,7 @@ Herramientas: Vitest, Testing Library, MSW.
 | `pide la lista con pagina=1 y tamanoPagina=10 al entrar` | Query params. |
 | `formatea el DNI con puntos sin enviarlo con puntos` | Visual con puntos; request sin puntos. |
 | `el teléfono null se muestra como —` | Caso borde. |
-| `BadgeRenaper: true muestra Validado y false muestra Pendiente` | Texto del badge. |
+| `Renaper y conteos ausentes se muestran como —` | No hay badges, ceros ni enriquecimiento por fila; DTO/mock de siete campos reales. |
 | `busca un DNI de 8 dígitos como dni` | Query `dni=30512468`. |
 | `busca texto como apellido` | Query `apellido=...`. |
 | `busca 3051 (no es DNI completo) como apellido` | Regla de §6. |
@@ -205,7 +202,7 @@ Herramientas: Vitest, Testing Library, MSW.
 6. Cambiar la búsqueda reinicia la página a 1; la búsqueda se dispara 300 ms después de dejar de escribir.
 7. La paginación muestra `1-10 de {total}` con la fórmula de §9 y deshabilita Anterior y Siguiente en los bordes.
 8. El chip muestra `{n} clientes` y se anuncia con `aria-live="polite"`.
-9. Badge Renaper muestra `Validado` o `Pendiente` como texto.
+9. Las celdas Renaper, Vehículos y Pólizas activas muestran `—` hasta ampliar el contrato; no se inventan campos en el DTO o mock ni se muestran valores falsos.
 10. Sin resultados, sin clientes y error tienen los textos y acciones de §8 y §9.
 11. El aviso de `location.state.aviso` se muestra una vez.
 12. No hay filtros de Renaper ni de Activo, ni menú de fila (D-B04-1, D-B04-2, D-B04-3).
@@ -215,7 +212,7 @@ Herramientas: Vitest, Testing Library, MSW.
 
 ## 12. Verificación manual
 
-Requiere `VITE_USE_MOCKS=true` (PB-03) o el back con `GET /api/clientes` publicado.
+El listado real ya está publicado (PR #58). Puede probarse con el backend o con `VITE_USE_MOCKS=true`; el mock de T-24 reproduce exactamente sus siete campos.
 
 1. Abrir `/clientes`. Ver el título, la tabla con diez filas, el chip y la paginación.
 2. Escribir un DNI de 8 dígitos con puntos. Ver una sola fila y el chip en `1 cliente`.
@@ -244,8 +241,8 @@ Requiere `VITE_USE_MOCKS=true` (PB-03) o el back con `GET /api/clientes` publica
 - **Búsqueda con `dni` y `apellido` a la vez:** solo uno. El zod decide.
 - **Olvidar reiniciar la página:** el usuario ve una página vacía al buscar.
 - **Mostrar la tabla vacía en error:** engaña. Mostrar el banner y no la tabla.
-- **Confundir `Pendiente` de Renaper con `Pendiente` de póliza:** son tokens distintos; el badge de cliente usa la variante de Renaper.
-- **Campos no confirmados:** `cantidadVehiculos` y `cantidadPolizasActivas` pueden cambiar de nombre. Mapear en un solo lugar (`useClientes`).
+- **Confundir ausencia con estado Pendiente:** el resumen no devuelve Renaper; la celda muestra `—`, no un badge de estado.
+- **Campos ausentes:** Renaper y conteos continúan pendientes PB-03. No mapear propiedades inexistentes ni sustituirlas por false/cero.
 - **Debounce sin limpiar el timer** al desmontar: deja requests colgadas.
 
 ## 15. Definición de terminado
@@ -261,6 +258,7 @@ Requiere `VITE_USE_MOCKS=true` (PB-03) o el back con `GET /api/clientes` publica
 - Resuelto (RV-41): el aviso `location.state.aviso` lo muestra esta tarea (D-B04-5) y lo producen B-05 y B-08; el INDEX lo refleja en sus filas.
 - Resuelto (RV-04 / RV-42): T-11 y T-19 se agregan a las dependencias. El helper de T-19 y el mock de T-11 son usos de test declarados en §3.
 - Resuelto (FC1, REVISION §1 e): B-04 es la primera tarea de `features/clientes`; dueña de `index.ts` y `routes.tsx`.
-- ABIERTO: campos de `ClienteResumenResponse`. La spec (US-F1-06) no los define (B3 D-7). Esta tarea usa los de PB-03. Pedir al back confirmación antes de cerrar el contrato. Motivo: no figura en REVISION.md ni en FB8.
+- Contrato base confirmado por US-F1-06/PR #58: resumen de siete campos. Pendiente PB-03: añadir Renaper/conteos; mientras tanto la UI muestra `—` (FB7.11).
 - Resuelto (RV-42): el título y el botón "Nuevo cliente" van en el slot `accion` de T-16 (DP-6); D-B04-4 se alinea.
 
+**Nota de alcance (2026-11-04):** los textos de badges del Figma se mantienen como referencia de diseño; no habilitan el uso de un campo ausente en el resumen. La ampliación continúa pendiente en PB-03.
