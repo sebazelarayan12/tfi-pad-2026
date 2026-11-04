@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import { COPYRIGHT_PUBLICO, PublicLayout } from './PublicLayout';
+import { COPYRIGHT_PUBLICO } from './contenidoPublico';
+import { PublicLayout } from './PublicLayout';
 
 const renderEn = (ruta: string) =>
   render(
