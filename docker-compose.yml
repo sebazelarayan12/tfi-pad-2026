@@ -18,6 +18,8 @@ services:
       Jwt__Key: ${JWT_KEY}
       Facturacion__Cuit: ${FACTURACION_CUIT:-}
       Facturacion__PuntoVenta: ${FACTURACION_PUNTO_VENTA:-0}
+      Facturacion__IntervaloReintentoMinutos: ${FACTURACION_INTERVALO_REINTENTO_MINUTOS:-15}
+      Facturacion__ReintentosHabilitados: ${FACTURACION_REINTENTOS_HABILITADOS:-true}
       # Initial administrator created on startup (US-F1-02). Leave empty to skip it.
       Seed__Administrador__Email: ${SEED_ADMINISTRADOR_EMAIL:-}
       Seed__Administrador__Password: ${SEED_ADMINISTRADOR_PASSWORD:-}
@@ -30,6 +32,18 @@ services:
       Integraciones__Pasarelas__pasarela1__ApiKey: ${INTEGRACIONES_PASARELA1_APIKEY}
       Integraciones__Pasarelas__pasarela2__ApiKey: ${INTEGRACIONES_PASARELA2_APIKEY}
       PagoFacil__CodigoEmpresa: ${PAGOFACIL_CODIGO_EMPRESA}
+      # Online payment (CU15). The gateway calls back at Pagos__UrlBaseApi; production must set the public API URL.
+      Pagos__UrlBaseApi: ${PAGOS_URL_BASE_API:-http://localhost:8080}
+      Pagos__UrlRetornoExito: ${PAGOS_URL_RETORNO_EXITO:-http://localhost:5174/pago/exito}
+      Pagos__UrlRetornoError: ${PAGOS_URL_RETORNO_ERROR:-http://localhost:5174/pago/error}
+      Pagos__ReservaMinutos: ${PAGOS_RESERVA_MINUTOS:-60}
+      Integraciones__Pasarelas__pasarela1__ConfirmarWebhook: ${PASARELA1_CONFIRMAR_WEBHOOK:-true}
+      Integraciones__Pasarelas__pasarela2__ConfirmarWebhook: ${PASARELA2_CONFIRMAR_WEBHOOK:-true}
+      # Networks allowed to send CF-Connecting-IP (RN20). Default is Docker's private range, where
+      # cloudflared lives; without it every visitor would share one rate-limit counter.
+      # `-` (not `:-`): the default applies only when REDES_CONFIABLES is unset, so setting it to an
+      # empty string in .env really turns the header off.
+      ForwardedHeaders__RedesConfiables__0: ${REDES_CONFIABLES-172.16.0.0/12}
     ports:
       # Loopback only: reachable from this machine, never from the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"

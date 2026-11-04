@@ -39,9 +39,14 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
             };
             // Lets support match a client error report with the server log entry.
             problem.Extensions["traceId"] = context.TraceIdentifier;
+            // Stable reason code for external clients (for example CLIENTE_NO_ENCONTRADO); absent when none is set.
+            if (exception is NotFoundException { Codigo: { } codigo })
+                problem.Extensions["codigo"] = codigo;
 
             context.Response.Clear();
             context.Response.StatusCode = status;
+            if (exception is ServicioNoDisponibleException)
+                context.Response.Headers.RetryAfter = ServicioNoDisponibleException.ReintentarEnSegundos.ToString(System.Globalization.CultureInfo.InvariantCulture);
             await context.Response.WriteAsJsonAsync(problem, options: null, contentType: ProblemJson);
         }
     }
@@ -54,6 +59,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         // Also covers TransicionInvalidaException, its subclass.
         ReglaDeDominioException => (StatusCodes.Status400BadRequest, exception.Message),
         ExternalServiceException => (StatusCodes.Status502BadGateway, exception.Message),
+        ServicioNoDisponibleException => (StatusCodes.Status503ServiceUnavailable, exception.Message),
         // Never leak internal details of unexpected failures.
         _ => (StatusCodes.Status500InternalServerError, UnexpectedErrorMessage)
     };

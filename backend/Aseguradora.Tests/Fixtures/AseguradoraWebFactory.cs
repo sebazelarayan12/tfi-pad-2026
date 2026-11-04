@@ -101,6 +101,9 @@ public sealed class AseguradoraWebFactory : WebApplicationFactory<Program>
         // UseSetting lands before Program.cs reads configuration at builder time.
         builder.UseSetting("Facturacion:Cuit", "00000000000");
         builder.UseSetting("Facturacion:PuntoVenta", "1");
+        builder.UseSetting("Pagos:UrlBaseApi", "https://api.example.com");
+        builder.UseSetting("Pagos:UrlRetornoExito", "https://web.example.com/pago/exito");
+        builder.UseSetting("Pagos:UrlRetornoError", "https://web.example.com/pago/error");
         builder.UseSetting("ConnectionStrings:Default", _connectionString ?? BaseInaccesible);
         // With a container the host migrates and runs the ISeeder implementations at startup.
         builder.UseSetting("Migraciones:AplicarAlIniciar", _connectionString is null ? "false" : "true");
@@ -115,6 +118,7 @@ public sealed class AseguradoraWebFactory : WebApplicationFactory<Program>
         // The daily expiry job (US-F3-05) would change the seeded data at startup; a test that needs it
         // turns it back on through Ajustes.
         builder.UseSetting(VencimientosJob.ClaveHabilitado, "false");
+        builder.UseSetting("Facturacion:ReintentosHabilitados", "false");
 
         foreach (var (clave, valor) in Ajustes)
             builder.UseSetting(clave, valor);

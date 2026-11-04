@@ -21,6 +21,9 @@ public sealed class ApiFactory(string environment, IReadOnlyDictionary<string, s
         // UseSetting lands before Program.cs reads configuration at builder time.
         builder.UseSetting("Facturacion:Cuit", "00000000000");
         builder.UseSetting("Facturacion:PuntoVenta", "1");
+        builder.UseSetting("Pagos:UrlBaseApi", "https://api.example.com");
+        builder.UseSetting("Pagos:UrlRetornoExito", "https://web.example.com/pago/exito");
+        builder.UseSetting("Pagos:UrlRetornoError", "https://web.example.com/pago/error");
         builder.UseSetting("ConnectionStrings:Default", UnreachableDatabase);
         builder.UseSetting("Migraciones:AplicarAlIniciar", "false");
         // Frente 1 validates Jwt__Key on startup; tests keep the same key as TokenDePrueba.

@@ -467,11 +467,11 @@ Orden recomendado: primera ola US-T-01, US-T-02, US-T-03, F1-01, F2-01, F3-01 y 
 | Prueba de punta a punta del flujo completo (Fase 2, sección 8) | pendiente | US-T-04 |
 | Colección Swagger / HTTP del flujo (Fase 2) | pendiente | US-T-04 |
 | Checklist de reemplazo mock -> real (Fase 2, sección 2) | pendiente | US-T-04 (`docs/integraciones.md`) |
-| Azure, despliegue y VM con Docker (11.1) | pendiente (decisión abierta) | US-T-05 |
+| Azure, despliegue y VM con Docker (11.1) | ya hecho (PR #19) | US-T-05 |
 | Cloudflare: Tunnel, WAF, rate limiting, Bot Fight Mode (11.1, 11.5) | pendiente | US-T-05 |
 | Zona horaria `America/Argentina/Buenos_Aires` y tzdata (11.3, 6 mejora 5) | pendiente (lógica del job: F3) | US-T-05 |
 | Swagger público en producción (sección 10, 11) | pendiente (decisión abierta) | US-T-05 |
-| Dominio propio (sección 10, 11.1) | pendiente (decisión abierta) | US-T-05 |
+| Dominio propio (sección 10, 11.1) | ya hecho (PR #19) | US-T-05 |
 | Migraciones en producción (11.2) | pendiente | US-T-05 |
 | Pago duplicado / confianza en webhook (sección 10) | fuera de transversal | F4 |
 | Limitador RN20 y `/api/publico/*` (11.4) | fuera de transversal | F1 |
@@ -888,7 +888,7 @@ Nombres de rol (Application): `Roles.Administrador = "Administrador"`, `Roles.Em
 
 **Alcance (incluye):**
 - `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaRequest.cs`: `Dni` (8 dígitos) y `NumeroPoliza` (formato `POL-` + 7 dígitos), con Data Annotations.
-- `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaResponse.cs`: `numeroPoliza`, `estado`, `coberturaVigente` (`true` solo si la póliza está Vigente, RN10), `vigenteDesde`, `vigenteHasta`, `plan` (codigo, nombre), `vehiculo` (patente, marca, modelo, anio), `cuotas` (numero, importe, recargo, total, vencimiento, estado) ordenadas por número.
+- `backend/Aseguradora.Application/Publico/DTOs/ConsultaPublicaResponse.cs`: `numeroPoliza`, `estado`, `coberturaVigente` (`true` solo si la póliza está Vigente, RN10), `vigenteDesde`, `vigenteHasta`, `plan` (codigo, nombre), `vehiculo` (patente, marca, modelo, anio), `cuotas` (idCuota, numero, importe, recargo, total, vencimiento, estado) ordenadas por número. `idCuota` es el único id que se expone: `POST /api/publico/pagos` pide `cuotaIds`, así que sin él la web no podría pasar de consultar a pagar.
 - `backend/Aseguradora.Application/Publico/ConsultaPublicaService.cs`: usa `IVerificadorPublico.VerificarPolizaAsync` (F1-07) y los repositorios (`IRepository<T>`) para vehículo, plan y cuotas. No usa `Include` de EF Core, porque Application no referencia EF.
 - `backend/Aseguradora.Api/Controllers/PublicoController.cs`: `POST /api/publico/consulta` (200), con `[AllowAnonymous]` (heredado de F1-07).
 
@@ -1149,7 +1149,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 
 **Alcance (incluye):**
 - `VehiculoService`: `ListarPorClienteAsync(Guid clienteId)` (solo `Activo = true`), `ObtenerAsync(Guid id)`, `ModificarUsoAsync(Guid id, UsoVehiculo uso)`, `DarDeBajaAsync(Guid id)`.
-- `backend/Aseguradora.Application/Dtos/ModificarUsoRequest.cs`: `record ModificarUsoRequest(UsoVehiculo Uso)`. Es el único campo editable (la spec dice "Modifica uso").
+- `backend/Aseguradora.Application/Dtos/ModificarUsoRequest.cs`: `sealed record ModificarUsoRequest` con `[Required] public UsoVehiculo? Uso { get; init; }` (propiedad `init`, no record posicional: con record posicional un body sin `uso` daba 500). Es nullable y `[Required]` para que un JSON sin `uso` responda 400 y no tome `Particular` (valor 0) por defecto. Es el único campo editable (la spec dice "Modifica uso").
 - `backend/Aseguradora.Api/Controllers/VehiculosController.cs` (creado en US-F2-04), todos con `[Authorize(Policy = Politicas.Empleado)]`:
   - `GET /api/vehiculos?clienteId=` (400 si falta el parámetro).
   - `GET /api/vehiculos/{id}`.
@@ -1166,7 +1166,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 **Criterios de aceptación:**
 - [ ] `GET /api/vehiculos?clienteId=<seed>` devuelve solo vehículos activos de ese cliente.
 - [ ] `GET /api/vehiculos` sin `clienteId` responde 400.
-- [ ] `PUT /api/vehiculos/{id}` con `uso = "COMERCIAL"` cambia el uso y no cambia la patente.
+- [ ] `PUT /api/vehiculos/{id}` con `uso = 1` (Comercial; la API serializa los enums como número, igual que el alta de US-F2-04) cambia el uso y no cambia la patente. Sin `uso` responde 400.
 - [ ] `DELETE /api/vehiculos/{id}` sobre `SeedData.VehiculoId` (póliza Vigente) responde 400 con mensaje de póliza activa.
 - [ ] `DELETE /api/vehiculos/{id}` sobre un vehículo sin póliza activa responde 204 y deja la fila con `Activo = false` (RN15).
 - [ ] `GET /api/vehiculos/{id}` con id inexistente responde 404.
@@ -1174,10 +1174,15 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 
 **Tests requeridos:**
 - `VehiculoServiceTests`: `ListarPorClienteAsync_no_devuelve_inactivos`; `DarDeBajaAsync_con_poliza_Vigente_lanza_BusinessRuleException`; `DarDeBajaAsync_con_poliza_Pendiente_o_Suspendida_lanza_BusinessRuleException` (Theory); `DarDeBajaAsync_con_polizas_Cancelada_o_Vencida_permite_la_baja` (Theory); `DarDeBajaAsync_no_borra_la_fila`; `ModificarUsoAsync_cambia_solo_el_uso`; `ObtenerAsync_inexistente_lanza_NotFoundException`.
-- `VehiculosControllerTests`: `GET_sin_clienteId_devuelve_400`; `GET_id_inexistente_devuelve_404`; `DELETE_con_poliza_activa_devuelve_400`; `DELETE_valido_devuelve_204`.
+- `VehiculosControllerTests`: `GET_sin_clienteId_devuelve_400`; `GET_id_inexistente_devuelve_404`; `DELETE_con_poliza_activa_devuelve_400`; `DELETE_valido_devuelve_204_y_deja_la_fila_inactiva`. Autorización: 401 sin token y 403 sin rol en `GET` (listado y por id), `PUT` y `DELETE`.
 
-**Decisiones pendientes:**
-- `GET /api/vehiculos/{id}` de un vehículo dado de baja: propuesta **200** con `activo = false` (trazabilidad). Alternativa: 404.
+**Decisiones cerradas:**
+- `GET /api/vehiculos/{id}` de un vehículo dado de baja responde **200** con `activo = false` (trazabilidad).
+- `DELETE /api/vehiculos/{id}` sobre un vehículo ya dado de baja es idempotente: responde 204 y no cambia nada. `PUT /api/vehiculos/{id}` sobre un vehículo dado de baja responde 400 (no se edita un vehículo inactivo). Tests: `DarDeBajaAsync_sobre_vehiculo_ya_inactivo_es_idempotente`, `ModificarUsoAsync_sobre_vehiculo_inactivo_lanza_BusinessRuleException`, `DELETE_repetido_sobre_vehiculo_inactivo_devuelve_204` y `PUT_sobre_vehiculo_inactivo_devuelve_400`.
+- Los enums se serializan como número en todo el API (no hay `JsonStringEnumConverter` global). Pasar a texto es un cambio global que va en otro PR.
+
+**Notas:**
+- La verificación de póliza activa y el `Activo = false` de `DarDeBajaAsync` no son atómicos: una póliza emitida entre ambos pasos no se detectaría. Poco probable en este flujo; se puede cubrir con F3 (emisión) o con un test de concurrencia.
 - Modificar `Uso` no cambia cotizaciones ni pólizas ya emitidas (la prima se copia al emitir, tabla Polizas). Se anota en la respuesta de la API; no requiere decisión.
 
 ---
@@ -1222,6 +1227,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 **Decisiones pendientes:**
 - Sin planes compatibles: propuesta **400** con mensaje ("Ningún plan es compatible con el vehículo"). Alternativa: 201 con `opciones` vacío.
 - Año de referencia: propuesta `TimeProvider` y año UTC (RN16). La edad del conductor se calcula con la fecha UTC de hoy.
+- Vehículo dado de baja (`Activo = false`): `POST /api/cotizaciones` responde **400** (coherente con RN15; no se cotiza un vehículo inactivo). Test: `CotizarVehiculo_con_vehiculo_dado_de_baja_lanza_BusinessRuleException`.
 - Una `Cotizacion` por plan (la relación Plan → Cotización de la spec es 1 a N). Esto cambia la forma de la respuesta de la sección 9.5 C; ver US-F2-07.
 
 ---
@@ -1237,7 +1243,7 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 - `backend/Aseguradora.Application/Services/CotizacionExternaService.cs` que implementa `ICotizacionExternaService` y reutiliza `MotorCotizacion` de US-F2-06. No hay cliente ni vehículo: `ClienteId` y `VehiculoId` quedan null, `Origen = Externo`.
 - `backend/Aseguradora.Api/Controllers/ExternoCotizacionesController.cs`, con `[Route("api/externo/cotizaciones")]` y `[HttpPost]`, que expone `POST /api/externo/cotizaciones` (201). `[Authorize(Policy = Politicas.ApiKey)]`: autenticación por API key `X-Api-Key` de US-F1-01.
 - Body HTTP en Api: `backend/Aseguradora.Api/Externo/CotizacionExternaBody.cs`, con los enums en mayúsculas (`MOTO`, `PARTICULAR`) mediante `backend/Aseguradora.Api/Serialization/UpperSnakeEnumConverter.cs`. El converter se aplica solo a este body. El `CotizacionExternaRequest` de Application queda sin atributos de serialización (la capa Application no depende de la serialización) y el controller mapea body → request.
-- Respuesta según 9.5 C: `{ fechaVencimiento, opciones: [{ idCotizacion, codigoPlan, plan, primaMensual }] }` (ver decisiones).
+- Respuesta propuesta: `{ fechaVencimiento, opciones: [{ idCotizacion, codigoPlan, plan, primaMensual }] }`, que difiere de 9.5 C (un `idCotizacion` de nivel superior) y sigue pendiente de acuerdo con los consumidores (ver decisiones pendientes).
 - Registro: `ICotizacionExternaService` → `CotizacionExternaService` dentro de `AddFrente2`.
 
 **Fuera de alcance:** `GET /api/externo/vehiculos/{patente}/seguro-vigente` (F3, `ExternoSeguroController`) y `GET /api/externo/clientes/{dni}/deuda` (F4). Cada frente tiene su propio controller bajo `/api/externo` (C7).
@@ -1261,12 +1267,17 @@ Este frente cubre CU06 a CU09: **CU06** alta de vehículo con validación en DNR
 - `ExternoCotizacionesControllerTests`: `POST_sin_api_key_devuelve_401`; `POST_con_api_key_valida_devuelve_201_con_contrato_9_5_C`; `POST_con_enum_invalido_devuelve_400`.
 - `UpperSnakeEnumConverterTests`: lee `"MOTO"` y escribe `"MOTO"`; rechaza `"moto"` y valores desconocidos (ver decisiones).
 
+**Decisiones cerradas:**
+- **Primas base:** no se cambia el seed. Los fixtures fijan RC en 10.000 y TC en 18.000; TR acepta Auto/Camioneta con antigüedad máxima de 10 años. Ver `CotizarExterno_ejemplo_9_5_C_devuelve_9100_y_16380`.
+- **Enums:** `UpperSnakeEnumConverter` se aplica solo al body externo; acepta nombres exactos en mayúsculas, rechaza minúsculas, números y valores desconocidos. Application conserva su request sin atributos JSON. Ver `Lee_y_escribe_MOTO`, `Rechaza_valores_fuera_del_contrato`, `POST_con_enum_invalido_devuelve_400` y `POST_con_campo_omitido_o_null_devuelve_400`.
+- **Rangos técnicos:** edad entre 0 y 120 inclusive y año entre 1900 y año UTC actual + 1 inclusive, usando `TimeProvider`. Ver `CotizarExterno_datos_invalidos_no_persisten`, `CotizarExterno_acepta_limites_tecnicos` y `POST_con_rango_invalido_devuelve_400`.
+- **Sin planes compatibles:** 400 con `BusinessRuleException("Ningún plan es compatible con el vehículo.")`. Ver `CotizarExterno_sin_planes_compatibles_lanza_BusinessRuleException` y `POST_sin_planes_compatibles_devuelve_400`.
+- **Persistencia y factores:** `CotizarExterno_persiste_cotizaciones_sin_cliente_ni_vehiculo` verifica origen externo y vigencia UTC de 15 días; `CotizarExterno_uso_comercial_aplica_1_40` y `CotizarExterno_aplica_factor_por_edad` verifican RN06 con importes `decimal`.
+- **Swagger y prueba manual:** `Swagger_documenta_enums_externos_en_mayusculas` verifica el contrato OpenAPI y su seguridad. Pasos y resultados locales en `docs/cotizacion-externa.md`; prueba manual confirmada por la persona responsable el 2026-11-01, con capturas 201 para PARTICULAR y COMERCIAL.
+- **Autenticación real:** `POST_sin_api_key_devuelve_401` y `POST_con_api_key_invalida_devuelve_401` verifican el esquema API key real.
+
 **Decisiones pendientes:**
-- **Primas base:** el seed de RC (US-01) tiene `PrimaBase = 12000`, pero el ejemplo 9.5 C usa 10.000 ("primas base de prueba"). Propuesta: no tocar el seed; el test fija 10.000 y 18.000 explícitamente en sus planes del fixture.
-- **Forma de la respuesta:** la spec 9.5 C tiene un `idCotizacion` de nivel superior, pero con una cotización por plan no hay un único id. Propuesta: quitar el id superior y que cada opción lleve su `idCotizacion`. Es un cambio respecto de la spec que requiere acordarlo con Ventas de motos y la Municipalidad.
-- **Enums en mayúsculas:** propuesta aplicar el converter solo al body de `/api/externo/cotizaciones`, y dejar el resto de la API con el formato por defecto. Propuesta: rechazar minúsculas (`"moto"` → 400), porque el contrato de 9.5 C usa mayúsculas.
-- **Rango de `edadConductor` y `anio`:** la spec no los define. Propuesta: edad entre 0 y 120 (límites técnicos) y `anio <= año actual + 1`, con el año de `TimeProvider`. A confirmar.
-- **Sin planes compatibles:** igual que US-F2-06 (400).
+- **Acuerdo de respuesta con consumidores:** la implementación propone `fechaVencimiento` y `opciones`, con `idCotizacion` por opción y sin id superior. Difiere de la spec 9.5 C y requiere aceptación explícita de Ventas de motos y la Municipalidad, con enlaces a ambas confirmaciones en el PR #57. No hay evidencia de ese acuerdo; la forma actual queda como propuesta, aunque sus tests pasen (`POST_con_api_key_valida_devuelve_201_con_contrato_9_5_C`). No considerar cerrado el contrato ni lista la entrega hasta resolverlo.
 
 ---
 
@@ -2008,16 +2019,22 @@ Este frente cubre CU15 (pago online con pasarela, `POST /api/publico/pagos`), CU
 **Entrega a otros (contratos que publica):** `WebhookPagoService.AplicarResultadoAsync` (la usa la tarea 06). Endpoint `POST /api/webhooks/pasarela/{proveedor}` con el contrato de 9.3.
 
 **Criterios de aceptación:**
-- [ ] `APROBADO` sobre pago `Pendiente` → 200 `{ "recibido": true }`; pago `Aprobado`, cuotas `Pagada`, factura emitida (RN12).
-- [ ] El mismo `idPago` dos veces → la segunda responde 200 sin cambios y sin factura nueva (RN12).
-- [ ] `RECHAZADO` o `CANCELADO` → pago `Rechazado`; cuotas sin cambios.
-- [ ] Sin `referenciaExterna` y con `idCuotas` (9.5 B) → crea el pago y lo aprueba si el importe coincide con la suma de (importe + recargo).
-- [ ] Importe distinto → no aprueba, no cambia cuotas, responde 200 y registra el error.
-- [ ] API key de otro proveedor (claim `proveedor` distinto de `{proveedor}`) → 401.
-- [ ] Sin API key → 401 (política `ApiKey`).
-- [ ] Proveedor desconocido → 404.
-- [ ] `idPago` desconocido sin `referenciaExterna` ni `idCuotas` → 404.
-- [ ] `dotnet build` sin errores y `dotnet test` en verde.
+- [x] `APROBADO` sobre pago `Pendiente` → 200 `{ "recibido": true }`; pago `Aprobado`, cuotas `Pagada`, factura emitida (RN12).
+- [x] El mismo `idPago` dos veces → la segunda responde 200 sin cambios y sin factura nueva (RN12).
+- [x] `RECHAZADO` o `CANCELADO` → pago `Rechazado`; cuotas sin cambios.
+- [x] Sin `referenciaExterna` y con `idCuotas` (9.5 B) → crea el pago y lo aprueba si el importe coincide con la suma de (importe + recargo).
+- [x] Importe distinto → no aprueba, no cambia cuotas, responde 200 y registra el error.
+- [x] API key de otro proveedor (claim `proveedor` distinto de `{proveedor}`) → 401.
+- [x] Sin API key → 401 (política `ApiKey`).
+- [x] Proveedor desconocido → 404.
+- [x] `idPago` desconocido sin `referenciaExterna` ni `idCuotas` → 404.
+- [x] `dotnet build` sin errores y `dotnet test` en verde.
+
+**Notas de implementación y revisión (PR #52):**
+- La comparación de importe impide aprobar, no rechazar: `RECHAZADO`/`CANCELADO` se resuelven antes del control de importe, incluso con confirmación habilitada.
+- Límite técnico del aviso: hasta 50 `IdCuotas`, validado tanto por DTO como por servicio (400).
+- Espera del lock agotada: 503 con `Retry-After: 15`. La conciliación recarga el pago y su RowVersion dentro del lock antes de decidir si aplica un resultado.
+- La reserva online de US-F4-04 no impide procesar un cobro 9.5 B ya realizado. Se conserva el default C8 de US-F4-02 para un segundo pago sobre cuotas pagadas: excedente con revisión manual, sin modificar cuotas ni facturar. La decisión de negocio sigue pendiente; no se cambia ese default.
 
 **Tests requeridos:**
 - `WebhookPagoServiceTests`: aprobado; rechazado; cancelado (mapea a `Rechazado`); duplicado; importe no coincide; 9.5 B crea pago; `idCuotas` con cuota no payable → 400.

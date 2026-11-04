@@ -14,7 +14,22 @@ public static class Frente4Extensions
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<FacturacionOpciones>>().Value);
         services.AddScoped<IFacturacionService, FacturacionService>();
+        services.AddSingleton<IEmisorFacturaAislado, Aseguradora.Api.BackgroundJobs.EmisorFacturaAislado>();
+        services.AddOptions<Aseguradora.Api.BackgroundJobs.ReintentoFacturasOpciones>()
+            .Bind(configuration.GetSection("Facturacion")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddHostedService<Aseguradora.Api.BackgroundJobs.ReintentoFacturasJob>();
         services.AddScoped<IAprobacionPagoService, AprobacionPagoService>();
+        services.AddScoped<IDeudaExternaService, DeudaExternaService>();
+        services.AddOptions<PagoOnlineOpciones>()
+            .Bind(configuration.GetSection(PagoOnlineOpciones.Seccion))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<PagoOnlineOpciones>>().Value);
+        services.AddScoped<IPagoService, PagoService>();
+        services.AddScoped<IExclusionWebhook, Aseguradora.Data.Repositories.ExclusionWebhookSql>();
+        services.AddScoped<IRecargadorPago, Aseguradora.Data.Repositories.RecargadorPago>();
+        services.AddSingleton<Func<string, bool>>(_ => proveedor =>
+            configuration.GetValue<bool?>($"Integraciones:Pasarelas:{proveedor}:ConfirmarWebhook") ?? true);
+        services.AddScoped<WebhookPagoService>();
         return services;
     }
 }

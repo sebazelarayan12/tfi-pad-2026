@@ -1,8 +1,11 @@
+using Aseguradora.Api.Serialization;
 using Aseguradora.Application.External;
 using Aseguradora.Application.Services;
 using Aseguradora.Data.Seed;
 using Aseguradora.Integrations;
 using Aseguradora.Integrations.Dnrpa;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Aseguradora.Api.Frentes.Frente2;
 
@@ -25,6 +28,11 @@ public static class Frente2Extensions
 
         services.AddScoped<IPlanService, PlanService>();
         services.AddScoped<IVehiculoService, VehiculoService>();
+        // Program.cs registers TimeProvider; TryAdd keeps this front working on its own.
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<ICotizacionService, CotizacionService>();
+        services.AddScoped<ICotizacionExternaService, CotizacionExternaService>();
+        services.Configure<SwaggerGenOptions>(opciones => opciones.SchemaFilter<CotizacionExternaSchemaFilter>());
         services.AddScoped<ISeeder, PlanesSeeder>();
         services.AgregarIntegracion<IDnrpaService, DnrpaMockService, DnrpaHttpService>(config, "Dnrpa");
 

@@ -4,6 +4,7 @@ using Aseguradora.Api.Frentes.Frente1;
 using Aseguradora.Api.Frentes.Frente2;
 using Aseguradora.Api.Frentes.Frente3;
 using Aseguradora.Api.Middleware;
+using Aseguradora.Api.Security;
 using Aseguradora.Data;
 using Aseguradora.Data.Seed;
 using Aseguradora.Integrations;
@@ -20,7 +21,7 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-// Only the schemes are declared here; Frente 1 implements JWT and API key authentication.
+// The schemes are declared here and SeguridadSwaggerFilter links them to each operation.
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -37,6 +38,8 @@ builder.Services.AddSwaggerGen(options =>
         Name = "X-Api-Key",
         Description = "API key for external systems."
     });
+    // Each operation names the scheme it needs, so Swagger UI sends the stored credential.
+    options.OperationFilter<SeguridadSwaggerFilter>();
 });
 builder.Services.AddHealthChecks().AddDbContextCheck<AseguradoraDbContext>();
 
@@ -50,13 +53,13 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
-// Behind the Cloudflare Tunnel the API only sees cloudflared's address, so the real client IP
-// is read from CF-Connecting-IP. Trusting it is safe only while the API is reachable solely
-// through cloudflared (no public ports).
+// Behind the Cloudflare Tunnel the API only sees cloudflared's address. Cloudflare sends the real
+// client IP in CF-Connecting-IP, not X-Forwarded-For; RN20 reads it in ClientIpResolver, only from
+// the networks listed in ForwardedHeaders:RedesConfiables. This middleware only restores the
+// scheme, so it never consumes the header or rewrites RemoteIpAddress before the rate limiter.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedForHeaderName = "CF-Connecting-IP";
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -102,6 +105,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// RN20: applies to /api/publico/* only (US-F1-07); must run before authentication.
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

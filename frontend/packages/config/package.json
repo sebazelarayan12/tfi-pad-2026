@@ -1,0 +1,14 @@
+{
+  "name": "@nexa/config",
+  "type": "commonjs",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.react.json": "./tsconfig.react.json",
+    "./eslint": "./eslint/index.mjs",
+    "./vitest/base": "./vitest/base.mjs",
+    "./tailwind/nexa.preset": "./tailwind/nexa.preset.js"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
+  }
+}
