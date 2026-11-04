@@ -1,0 +1,51 @@
+name: deploy-web-publica
+
+# Publica la web pública en Cloudflare Pages (proyecto Direct Upload
+# `nexa-web-publica`) cuando `main` cambia algo del front. El backoffice se
+# publica por la integración Git de Pages; este workflow existe porque Pages
+# no deja conectar el mismo repositorio a un segundo proyecto.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-web-publica.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-publica
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Build
+        run: npm run build --workspace=apps/web-publica
+        env:
+          VITE_API_BASE_URL: https://api.nexaseguros.me
+          VITE_USE_MOCKS: 'false'
+      - name: Quitar el worker de MSW
+        run: rm -f apps/web-publica/dist/mockServiceWorker.js
+      - name: Publicar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          command: pages deploy apps/web-publica/dist --project-name=nexa-web-publica --branch=main
