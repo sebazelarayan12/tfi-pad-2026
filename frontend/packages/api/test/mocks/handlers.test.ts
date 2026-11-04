@@ -30,6 +30,9 @@ it('agrega los handlers de los once dominios', () => {
   expect(handlers).toEqual(Object.values(dominios).flat());
 });
 
-it.each(Object.entries(dominios))('exporta un arreglo vacío para %s', (_dominio, lista) => {
-  expect(lista).toEqual([]);
-});
+it.each(Object.entries(dominios).filter(([dominio]) => dominio !== 'pagofacil'))(
+  'exporta un arreglo vacío para %s',
+  (_dominio, lista) => {
+    expect(lista).toEqual([]);
+  },
+);

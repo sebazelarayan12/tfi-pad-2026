@@ -5,3 +5,5 @@ export * from './client/index';
 export * from './format';
 export * from './enums';
 export * from './messages';
+export * from './dto/pagofacil';
+export * from './endpoints/pagofacil';
