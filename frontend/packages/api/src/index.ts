@@ -8,3 +8,5 @@ export * from './messages';
 export * from './dto/polizas';
 export * from './endpoints/polizas';
 export * from './endpoints/cuotas';
+export * from './dto/planes';
+export * from './endpoints/planes';

@@ -28,7 +28,7 @@ const dominios = {
   vehiculos,
 };
 
-// T-28 llenó `polizas` y agregó `cuotas`; los demás siguen siendo placeholders.
+// T-27 llenó `planes` y T-28 `polizas`, y agregó `cuotas`; los demás siguen siendo placeholders.
 const dominiosVacios = {
   auth,
   clientes,
@@ -36,7 +36,6 @@ const dominiosVacios = {
   inicio,
   pagofacil,
   pagos,
-  planes,
   publico,
   usuarios,
   vehiculos,
