@@ -7,3 +7,5 @@ export * from './enums';
 export * from './messages';
 export * from './dto/pagofacil';
 export * from './endpoints/pagofacil';
+export * from './dto/planes';
+export * from './endpoints/planes';
