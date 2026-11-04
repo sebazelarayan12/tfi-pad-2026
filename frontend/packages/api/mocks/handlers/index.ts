@@ -1,6 +1,7 @@
 import { handlers as auth } from './auth';
 import { handlers as clientes } from './clientes';
 import { handlers as cotizaciones } from './cotizaciones';
+import { handlers as cuotas } from './cuotas';
 import { handlers as inicio } from './inicio';
 import { handlers as pagofacil } from './pagofacil';
 import { handlers as pagos } from './pagos';
@@ -15,6 +16,7 @@ export const handlers = [
   ...auth,
   ...clientes,
   ...cotizaciones,
+  ...cuotas,
   ...inicio,
   ...pagofacil,
   ...pagos,
