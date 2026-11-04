@@ -1,0 +1,29 @@
+# Imagen de la web pública: build con Node 20 y servidor estático nginx.
+# Contexto de build: `frontend/` (ver docker-compose.yml).
+
+FROM node:20-alpine AS build
+WORKDIR /repo
+
+# Primero solo los manifiestos: la capa de `npm ci` se reutiliza mientras no cambie el lockfile.
+COPY package.json package-lock.json ./
+COPY apps/backoffice/package.json apps/backoffice/
+COPY apps/web-publica/package.json apps/web-publica/
+COPY packages/api/package.json packages/api/
+COPY packages/config/package.json packages/config/
+COPY packages/ui/package.json packages/ui/
+RUN npm ci
+
+COPY . .
+
+# Vite incrusta las variables VITE_* en el bundle al compilar: son build args, no variables de
+# runtime. Son públicas; nunca pasar secretos acá.
+ARG VITE_API_BASE_URL
+ARG VITE_USE_MOCKS=false
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_USE_MOCKS=$VITE_USE_MOCKS
+RUN npm run build --workspace=apps/web-publica
+
+FROM nginx:1.28-alpine
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /repo/apps/web-publica/dist /usr/share/nginx/html
+EXPOSE 80

@@ -1,0 +1,25 @@
+# Front: backoffice y web pública como imágenes estáticas (nginx).
+# Los puertos coinciden con los orígenes que acepta el CORS del back (5173 y 5174), y van en
+# loopback como el compose de la raíz. Este archivo no depende del back para arrancar.
+services:
+  backoffice:
+    build:
+      context: .
+      dockerfile: Dockerfile.backoffice
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5173:80'
+
+  web-publica:
+    build:
+      context: .
+      dockerfile: Dockerfile.web-publica
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5174:80'
