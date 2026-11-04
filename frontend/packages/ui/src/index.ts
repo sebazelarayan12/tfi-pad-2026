@@ -37,3 +37,9 @@ export { Table } from './components/Table/Table';
 export type { TableColumn, TableProps } from './components/Table/Table';
 export { TabPanel, Tabs } from './components/Tabs/Tabs';
 export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs/Tabs';
+
+// US-FE-T-18: PublicNav y PublicFooter.
+export { PublicNav } from './components/PublicNav';
+export type { PublicNavLink, PublicNavProps } from './components/PublicNav';
+export { PublicFooter } from './components/PublicFooter';
+export type { PublicFooterContacto, PublicFooterProps } from './components/PublicFooter';
