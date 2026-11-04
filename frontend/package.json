@@ -14,7 +14,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:contract": "npm run test:contract --workspace=@nexa/api",
+    "test:contract:real": "npm run test:contract:real --workspace=@nexa/api"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
