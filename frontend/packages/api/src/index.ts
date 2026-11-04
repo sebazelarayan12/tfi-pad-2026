@@ -15,3 +15,5 @@ export * from './dto/pagofacil';
 export * from './endpoints/pagofacil';
 export * from './dto/planes';
 export * from './endpoints/planes';
+export * from './dto/pagos';
+export * from './endpoints/pagos';
