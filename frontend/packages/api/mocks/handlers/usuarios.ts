@@ -11,8 +11,6 @@ import {
   problemaErrorInesperado,
   problemaNegocio,
   problemaNoEncontrado,
-  problemaSinPermiso,
-  problemaSinSesion,
   problemaValidacion,
 } from '../fixtures/comunes';
 
@@ -110,8 +108,8 @@ export function crearHandlersUsuarios() {
   const buscar = (id: string) => usuarios.find((usuario) => usuario.id === id);
   function exigirAdmin(request: Request) {
     const usuario = sesion(request, usuarios);
-    if (!usuario?.activo) return error(request, problemaSinSesion());
-    return usuario.rol === 'Administrador' ? null : error(request, problemaSinPermiso());
+    if (!usuario?.activo) return new HttpResponse(null, { status: 401 });
+    return usuario.rol === 'Administrador' ? null : new HttpResponse(null, { status: 403 });
   }
 
   return [
@@ -156,7 +154,7 @@ export function crearHandlersUsuarios() {
     }),
     http.get(yo, ({ request }) => {
       const usuario = sesion(request, usuarios);
-      if (!usuario?.activo) return error(request, problemaSinSesion());
+      if (!usuario?.activo) return new HttpResponse(null, { status: 401 });
       const { id, email, nombre, apellido, rol } = usuario;
       return HttpResponse.json<YoResponseMock>({ id, email, nombre, apellido, rol });
     }),

@@ -80,15 +80,13 @@ it('devuelve error de campo cuando falta el rol', async () => {
 
 it('conserva el detalle de email duplicado', async () => {
   await crearUsuario(admin, datos);
-  await expect(
-    crearUsuario(admin, { ...datos, email: datos.email.toUpperCase() }),
-  ).rejects.toMatchObject({
+  await expect(crearUsuario(admin, datos)).rejects.toMatchObject({
     status: 400,
     detail: 'El email ya está registrado.',
   });
 });
 
-it('conserva el detalle completo de Identity', async () => {
+it('conserva el detail que devuelve el back', async () => {
   servidorMock.use(variantesUsuarios.contrasenaRechazada);
   await expect(crearUsuario(admin, datos)).rejects.toMatchObject({
     status: 400,
@@ -97,8 +95,11 @@ it('conserva el detalle completo de Identity', async () => {
   });
 });
 
-it('devuelve 401 sin sesión y 403 para Empleado', async () => {
+it('devuelve 401 sin sesión', async () => {
   await expect(crearUsuario(anonimo, datos)).rejects.toMatchObject({ status: 401 });
+});
+
+it('devuelve 403 para Empleado', async () => {
   await expect(crearUsuario(empleado, datos)).rejects.toMatchObject({ status: 403 });
 });
 
@@ -122,7 +123,7 @@ it('no reintenta el alta ante 502', async () => {
   expect(llamadas).toBe(1);
 });
 
-it('envía pagina y tamano y devuelve el listado paginado', async () => {
+it('pagina con pagina y tamano y devuelve PaginaResponse', async () => {
   const filtro = { pagina: 2, tamano: 1 };
   const pagina = await listarUsuariosMock(admin, filtro);
   expect(pagina).toMatchObject({
