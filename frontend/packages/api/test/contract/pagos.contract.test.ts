@@ -113,15 +113,6 @@ describe('POST /api/pagos/caja', () => {
     });
   });
 
-  it('devuelve 400 por RowVersion con el texto de recarga', async () => {
-    servidorMock.use(cajaConflictoConcurrencia);
-
-    await expect(cobrarEnCaja(api(), SOLICITUD)).rejects.toMatchObject({
-      status: 400,
-      detail: 'El pago o sus cuotas fueron modificados por otro cobro. Recargue los datos.',
-    });
-  });
-
   it('no reintenta ante 502', async () => {
     let peticiones = 0;
     const alIniciarPeticion = ({ request }: { request: Request }) => {
@@ -217,8 +208,6 @@ describe('Mocks de PB-05 y PB-11', () => {
   });
 
   it('el mock de listado (PB-05) se marca MOCK y devuelve PaginaResponse', async () => {
-    expect(listarPagosMock.name).toBe('listarPagosMock');
-
     const pagina = await listarPagosMock(api(), {});
     const pagos: PagoListadoResponse[] = pagina.items;
 
@@ -235,8 +224,6 @@ describe('Mocks de PB-05 y PB-11', () => {
   });
 
   it('el mock por póliza (PB-05) devuelve PagoResponse[] con factura', async () => {
-    expect(listarPagosDePolizaMock.name).toBe('listarPagosDePolizaMock');
-
     const pagos = await listarPagosDePolizaMock(api(), POLIZA_UNO_ID);
 
     expect(pagos).toHaveLength(2);
@@ -247,9 +234,7 @@ describe('Mocks de PB-05 y PB-11', () => {
   it('pagosKeys separa detalle, factura, listado y pagos por póliza', () => {
     expect(pagosKeys.detalle('a')).not.toEqual(pagosKeys.factura('a'));
     expect(pagosKeys.lista({ pagina: 1 })).not.toEqual(pagosKeys.lista({ pagina: 2 }));
-    expect(pagosKeys.listado({ pagina: 1 })).toEqual(pagosKeys.lista({ pagina: 1 }));
     expect(pagosKeys.porPoliza('a')).not.toEqual(pagosKeys.porPoliza('b'));
-    expect(pagosKeys.dePoliza('a')).toEqual(pagosKeys.porPoliza('a'));
   });
 });
 

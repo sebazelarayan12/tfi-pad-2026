@@ -20,10 +20,6 @@ export const pagosKeys = {
   lista: (filtro: PagoListadoFiltroMock = {}) => [...pagosKeys.all, 'lista', filtro] as const,
   /** MOCK (PB-05): `GET /api/polizas/{id}/pagos` no existe en el back. */
   porPoliza: (polizaId: string) => [...pagosKeys.all, 'porPoliza', polizaId] as const,
-  /** Alias de `lista` para el nombre que usa US-FE-B-19. */
-  listado: (filtro: PagoListadoFiltroMock = {}) => [...pagosKeys.all, 'lista', filtro] as const,
-  /** Alias de `porPoliza` para el nombre que usa US-FE-B-18. */
-  dePoliza: (polizaId: string) => [...pagosKeys.all, 'porPoliza', polizaId] as const,
 };
 
 /**
