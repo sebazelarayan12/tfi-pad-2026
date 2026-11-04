@@ -17,10 +17,11 @@ Contrato del back para el frente. Sigue `docs/frontend/00-decisiones-base.md` (F
 | Login (`POST /api/auth/login`) | Implementado | `backend/Aseguradora.Api/Controllers/AuthController.cs:21-26` |
 | Alta de usuarios (`POST /api/auth/usuarios`) | Implementado | `AuthController.cs:29-41` |
 | Consulta pública (`POST /api/publico/consulta`) | Implementado | `backend/Aseguradora.Api/Controllers/PublicoConsultaController.cs:14-20` |
-| Alta, validación y previsualización de clientes (`/api/clientes` POST, `POST /{id}/validar-renaper`, `GET /renaper/{dni}`) | En PR #50 | `ClientesController.cs` (PR #50, no existe en `development`) |
-| Listado, detalle, modificación y baja de clientes | Especificado | `docs/tareas-divididas.md:776-825` (US-F1-06) |
+| Alta, validación y previsualización de clientes (`/api/clientes` POST, `POST /{id}/validar-renaper`, `GET /renaper/{dni}`) | Implementado | `backend/Aseguradora.Api/Controllers/ClientesController.cs` |
+| Listado, detalle, modificación y baja de clientes | Implementado (US-F1-06, PR #58) | `ClientesController.cs`, `Application/Clientes/ClienteService.cs` y sus DTO |
+| Cuenta del cliente (`GET /api/clientes/{id}/cuenta`) | No implementado (PB-28) | Solo propuesta MSW; rail oculto (D-33) |
 
-`development` no tiene `ClientesController`. Ningún endpoint de clientes es consumible hasta que se mergee la PR #50 (o la US-F1-06).
+**Actualización de clientes (2026-11-04, base `8e7df6f`):** `ClientesController` ya está en `development`. §3.4 se contrastó con el código de US-F1-06 (PR #58). Las citas históricas a PR #50 de §3.1/§3.2 describen el origen del contrato de alta/Renaper, no un bloqueo actual de publicación. El resumen real no incluye Renaper ni conteos; esa ampliación continúa pendiente en PB-03.
 
 ---
 
@@ -74,7 +75,8 @@ Regla para el front: en 400 con `errors`, mapear por clave y mostrar el mensaje 
 
 | Código | Cuándo aparece en este grupo | Forma |
 |---|---|---|
-| 200 | login OK, consulta OK, `GET renaper/{dni}` OK, `validar-renaper` OK | cuerpo |
+| 200 | login, consulta pública, Renaper y GET/PUT de clientes correctos | cuerpo |
+| 204 | baja lógica de cliente correcta (`DELETE /api/clientes/{id}`) | sin cuerpo |
 | 201 | alta de usuario (`AuthController.cs:40`), alta de cliente (PR #50, `ClientesController.cs:33`) | cuerpo; el alta de usuario **no** manda `Location` |
 | 400 | validación de modelo (B) o regla de negocio (A) | B o A |
 | 401 | credenciales inválidas en login (A); token ausente, vencido o inválido en el resto (C) | A o C |
@@ -534,27 +536,26 @@ Fuente: `backend/Aseguradora.Application/Clientes/DTOs/PersonaRenaperResponse.cs
 
 ### 3.4 Listado, detalle, modificación y baja de clientes
 
-**Estado:** Especificado. No existe en `development` ni en PR #50. Sólo está en la spec (`docs/tareas-divididas.md:776-825`, US-F1-06; `docs/AnalisisBack.md:472-482`). **No arrancar pantallas contra estos endpoints sin mock (FB4).**
+**Estado: Implementado** en `development`, US-F1-06, PR #58. Fuentes: `backend/Aseguradora.Api/Controllers/ClientesController.cs` y `backend/Aseguradora.Application/Clientes/DTOs/` (`ClienteFiltro.cs`, `ClienteResumenResponse.cs`, `ClienteModificacionRequest.cs`, `ClienteResponse.cs`). Reglas: `ClienteService.cs`.
 
-| Método | Ruta | Política | Spec |
+| Método | Ruta | Política | Respuesta |
 |---|---|---|---|
-| GET | `/api/clientes` | `Politicas.Empleado` | listado con filtros y paginado. Sólo muestra `activo = true` (`tareas-divididas.md:793`) |
-| GET | `/api/clientes/{id}` | `Politicas.Empleado` | detalle. Id inexistente o inactivo: 404 (`:808`, `:823`) |
-| PUT | `/api/clientes/{id}` | `Politicas.Empleado` | modifica sólo contacto y domicilio. 200 (`:790`) |
-| DELETE | `/api/clientes/{id}` | `Politicas.Empleado` | baja lógica, `activo = false`. **204** (`:791`) |
+| GET | `/api/clientes` | `Politicas.Empleado` | 200 `PaginaResponse<ClienteResumenResponse>`, solo activos |
+| GET | `/api/clientes/{id}` | `Politicas.Empleado` | 200 `ClienteResponse`; 404 para inexistente/inactivo |
+| PUT | `/api/clientes/{id}` | `Politicas.Empleado` | 200 `ClienteResponse` actualizado, solo contacto/domicilio |
+| DELETE | `/api/clientes/{id}` | `Politicas.Empleado` | 204 sin cuerpo; baja lógica |
 
-Propuesta de tipos, **derivada de la spec y no implementada**:
+Tipos del contrato real (camelCase):
 
 ```ts
-// Query de GET /api/clientes. Spec: tareas-divididas.md:786, 804-806
 export interface ClienteFiltro {
-  dni?: string;          // exacto (decisión pendiente, tareas-divididas.md:820)
-  apellido?: string;     // coincidencia parcial sin distinguir mayúsculas (propuesta, :820)
-  pagina?: number;       // default 1
-  tamanoPagina?: number; // default 20, máximo 100; más de 100 da 400 (:807)
+  dni?: string;          // exacto, ignora espacios laterales
+  apellido?: string;     // contiene, sin distinguir mayúsculas ni espacios laterales
+  pagina?: number;       // default 1, rango 1..21474836
+  tamanoPagina?: number; // default 20, rango 1..100
 }
 
-// Formato paginado publicado en development (backend/Aseguradora.Application/Comun/PaginaResponse.cs:10)
+// Importar desde @nexa/api; tipo común de T-12, no redefinir en el dominio.
 export interface PaginaResponse<T> {
   items: T[];
   pagina: number;
@@ -562,7 +563,16 @@ export interface PaginaResponse<T> {
   total: number;
 }
 
-// Body de PUT. Spec: tareas-divididas.md:786, 794
+export interface ClienteResumenResponse {
+  id: string;
+  dni: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string | null;
+  activo: boolean;
+}
+
 export interface ClienteModificacionRequest {
   email: string;
   telefono?: string | null;
@@ -572,14 +582,17 @@ export interface ClienteModificacionRequest {
   provincia: string;
   codigoPostal: string;
 }
-
-// ClienteResumenResponse: NO DEFINIDO. La spec nombra el tipo (tareas-divididas.md:786) pero no sus campos.
-// Respuesta de GET /{id} (detalle): NO DEFINIDO. La spec no dice si es ClienteResponse ni qué campos incluye.
-// Respuesta de PUT: NO DEFINIDO (la spec sólo dice 200, tareas-divididas.md:790).
-// Respuesta de DELETE: 204 sin cuerpo (tareas-divididas.md:791).
 ```
 
-Reglas de la spec que el front debe conocer: DNI, nombre y datos de Renaper **no** se modifican con PUT (`:810`); PUT con email de otro cliente da 400 y no modifica nada (`:809`); DELETE con póliza activa es **propuesta** de 400 (`:822`, decisión pendiente).
+- Orden estable del listado: apellido, nombre y DNI. Página fuera del total: `items: []`, conservando `total`.
+- Paginación fuera de rango: 400 de validación (forma B), con claves `Pagina`/`TamanoPagina`; no exigir `detail`.
+- El resumen **no contiene** `validadoRenaper`, `cantidadVehiculos` ni `cantidadPolizasActivas`. Pendiente parcial PB-03; no incluirlos artificialmente en el DTO o mock actual. El detalle sí devuelve `validadoRenaper`.
+- GET detalle, PUT y DELETE de inexistente/inactivo: 404 con `codigo: CLIENTE_NO_ENCONTRADO` y `detail`.
+- PUT: DataAnnotations de `ClienteModificacionRequest.cs` generan 400 con `errors`. Email de otro cliente (incluido uno inactivo) genera 400 de negocio con `detail`, sin modificar datos. Se recortan contacto/domicilio; teléfono vacío u omitido se normaliza a null.
+- DNI, nombre y datos Renaper no forman parte del PUT. El cuerpo recibido se envía sin agregar campos desde el front.
+- Baja bloqueada con 400 cuando hay póliza Pendiente, Vigente o Suspendida. Baja repetida: 404. El cliente inactivo deja de aparecer en la lista.
+- Autenticación JWT: Empleado o Administrador. Sin sesión válida: 401; sin rol admitido: 403 (forma C).
+- `/api/clientes/{id}/cuenta` no existe: PB-28 conserva su propuesta solo MSW y el rail oculto (D-33).
 
 ---
 
