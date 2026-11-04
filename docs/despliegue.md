@@ -227,37 +227,38 @@ Resultado esperado: la API responde (por ejemplo 400 o 422 por el cuerpo vacío)
 
 ## 10. Front en Cloudflare Pages
 
-Los dos fronts son SPAs estáticas (React + Vite) y se publican en **Cloudflare Pages**, no en la VM. Pages compila en sus servidores (la VM de 4 GB ya la usa SQL Server), sirve desde su CDN con HTTPS automático y redespliega cuando se actualiza la rama de producción. La API sigue en la VM y los fronts la llaman desde el navegador.
+Los dos fronts son SPAs estáticas (React + Vite) y se publican en **Cloudflare Pages**, no en la VM. Pages compila en sus servidores (la VM de 4 GB ya la usa SQL Server), sirve desde su CDN con HTTPS automático y redespliega cuando se actualiza la rama de producción. La API sigue en la VM y los fronts la llaman desde el navegador. Los dos proyectos se publican distinto (ver el cuadro y 10.1): Pages no deja conectar el mismo repositorio a un segundo proyecto (aparece como "In use").
 
 ```
 Navegador ──> app.nexaseguros.me  (Pages: backoffice)  ──fetch──> api.nexaseguros.me ──> túnel ──> VM
           └─> nexaseguros.me      (Pages: web pública) ──fetch──┘
 ```
 
-| Front | Proyecto de Pages | Dominio | Directorio de salida |
+| Front | Proyecto de Pages | Dominio | Cómo se publica |
 | --- | --- | --- | --- |
-| Backoffice | `nexa-backoffice` | `app.nexaseguros.me` | `apps/backoffice/dist` |
-| Web pública | `nexa-web-publica` | `nexaseguros.me` | `apps/web-publica/dist` |
+| Backoffice | `nexa-backoffice` | `app.nexaseguros.me` | Integración Git de Pages (compila Cloudflare) |
+| Web pública | `nexa-web-publica` | `nexaseguros.me` | Direct Upload desde GitHub Actions (`.github/workflows/deploy-web-publica.yml`) |
 
 Las imágenes Docker de `frontend/` (US-FE-T-20) **no se usan en producción**: sirven para correr el front en local o en otro host.
 
-### 10.1 Crear los dos proyectos
+### 10.1 Backoffice: integración Git
 
-Se hace una vez por front, en Cloudflare → Workers & Pages → Create → Pages → Connect to Git.
+Se hace una vez, en Cloudflare → Workers & Pages → Create → Pages → Connect to Git.
 
 1. Autorizar la aplicación de GitHub de Cloudflare sobre el repositorio y elegirlo.
 2. **Production branch:** `main`. Producción se actualiza solo con los releases (merge de `development` a `main`, `docs/workflow.md`, regla 3).
 3. Configuración de build:
 
-   | Campo | Backoffice | Web pública |
-   | --- | --- | --- |
-   | Framework preset | None | None |
-   | Root directory (advanced) | `frontend` | `frontend` |
-   | Build command | `npm run build --workspace=apps/backoffice && rm -f apps/backoffice/dist/mockServiceWorker.js` | `npm run build --workspace=apps/web-publica && rm -f apps/web-publica/dist/mockServiceWorker.js` |
-   | Build output directory | `apps/backoffice/dist` | `apps/web-publica/dist` |
+   | Campo | Valor |
+   | --- | --- |
+   | Project name | `nexa-backoffice` |
+   | Framework preset | None |
+   | Root directory (advanced) | `frontend` |
+   | Build command | `npm run build --workspace=apps/backoffice && rm -f apps/backoffice/dist/mockServiceWorker.js` |
+   | Build output directory | `apps/backoffice/dist` |
 
    El `rm` saca el worker de MSW que Vite copia desde `public/`: un despliegue nunca lleva mocks. Pages instala las dependencias solo; si el primer build falla por módulos faltantes, anteponer `npm ci &&` al comando.
-4. **Variables de entorno** (sección Production, las dos son de build):
+4. **Variables de entorno** (sección Production, son de build):
 
    | Variable | Valor |
    | --- | --- |
@@ -269,6 +270,17 @@ Se hace una vez por front, en Cloudflare → Workers & Pages → Create → Page
 5. Desactivar los previews: Settings → Builds → Branch control → preview deployments en **None**. Un preview vive en una URL `*.pages.dev`, que el CORS de la API rechaza (el origen debe coincidir exacto), así que no podría llamar a la API.
 
 El proyecto no debe tener un `404.html` en su salida: sin él, Pages sirve `index.html` en cualquier ruta que no sea un archivo, que es lo que necesita el router de la SPA (por ejemplo, recargar `/clientes/123`).
+
+### 10.1b Web pública: Direct Upload y GitHub Actions
+
+El repositorio ya está conectado al proyecto del backoffice, así que la web pública no puede usar la integración Git. Se publica con un workflow que compila en GitHub y sube el resultado con `wrangler`. Se configura una vez:
+
+1. **Proyecto:** Cloudflare → Workers & Pages → Create → Pages → **Upload assets** (no Connect to Git). Nombre exacto: `nexa-web-publica` (el workflow lo usa). Subir una carpeta cualquiera con un `index.html`: el primer deploy real del workflow la reemplaza.
+2. **API token:** My Profile → API Tokens → Create Token → Custom, con un solo permiso: Account → **Cloudflare Pages** → **Edit**, limitado a la cuenta. Sin filtro de IP (los runners de GitHub cambian). Se muestra una sola vez: copiarlo directo a GitHub, nunca pegarlo en chats ni commits. Si se le pone vencimiento, anotar la fecha: al vencer, el deploy falla por autenticación.
+3. **Account ID:** se ve en la URL del dashboard (`dash.cloudflare.com/<ACCOUNT_ID>/...`).
+4. **Secrets del repo** (Settings → Secrets and variables → Actions): `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`.
+
+El workflow corre en cada push a `main` que toque `frontend/` o el propio workflow, y a mano desde Actions → deploy-web-publica → Run workflow. Compila con `VITE_API_BASE_URL=https://api.nexaseguros.me` y `VITE_USE_MOCKS=false` (viven en el workflow, no en Pages), borra `mockServiceWorker.js` y publica `apps/web-publica/dist`. Un proyecto Direct Upload no tiene previews por rama: solo se publica desde `main`.
 
 ### 10.2 Dominios propios
 
@@ -317,8 +329,9 @@ En el navegador, abrir `https://app.nexaseguros.me` y `https://nexaseguros.me` c
 
 ### 10.5 Operación
 
-- **Publicar una versión:** merge de `development` a `main` por Pull Request. Pages compila y publica solo; el avance se ve en la pestaña Deployments de cada proyecto.
-- **Cambiar `VITE_API_BASE_URL` u otra variable:** las variables entran al compilar, así que hay que reintentar el despliegue (Deployments → Retry deployment) después de editarlas.
+- **Publicar una versión:** release de `development` a `main` por Pull Request (ver "Releases a `main`" en `docs/workflow.md`). El backoffice lo publica Pages solo (pestaña Deployments del proyecto); la web pública, el workflow (pestaña Actions del repo).
+- **Cambiar `VITE_API_BASE_URL` u otra variable:** las variables entran al compilar. Backoffice: editarlas en Pages y reintentar (Deployments → Retry deployment). Web pública: editarlas en el workflow (por PR) o relanzarlo a mano.
+- **Si el deploy de la web pública falla por autenticación:** el token venció o se borró. Crear uno nuevo y actualizar el secret `CLOUDFLARE_API_TOKEN`.
 - **Volver atrás:** Deployments → elegir un despliegue anterior → Rollback.
-- **Límites del plan Free:** 500 builds por mes. Con releases por `main` sobra.
+- **Límites del plan Free:** 500 builds por mes en Pages (solo cuenta el backoffice; la web compila en GitHub). Con releases por `main` sobra.
 - **URL `*.pages.dev`:** sigue activa para cada proyecto. La API la rechaza por CORS; no hay que usarla.
