@@ -8,5 +8,7 @@ export * from './messages';
 export * from './dto/usuarios';
 export * from './auth/login';
 export * from './endpoints/usuarios';
+export * from './dto/pagofacil';
+export * from './endpoints/pagofacil';
 export * from './dto/planes';
 export * from './endpoints/planes';
