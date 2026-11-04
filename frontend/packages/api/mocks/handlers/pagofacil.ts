@@ -132,7 +132,7 @@ export const variantesPagoFacil = {
   ),
   rendicionSuperaTamano: rendicionError('El archivo supera el máximo de 5 MB.'),
   rendicionLineasMalFormadas: rendicionError(
-    'El archivo de rendición tiene líneas mal formadas: línea 1: longitud inválida; línea 2: fecha inválida',
+    'El archivo de rendición tiene líneas mal formadas: línea 1: La línea tiene 59 caracteres y deben ser 60.; línea 2: La línea solo puede tener dígitos.',
   ),
   rendicionVacia: rendicionError('El archivo de rendición está vacío.'),
   rendicionYaProcesada: (nombre: string) =>
@@ -149,7 +149,7 @@ export const variantesPagoFacil = {
     error(request, problemaSinSesion()),
   ),
   basePositivaJsonConTextPlain: http.get(basePositiva, () =>
-    HttpResponse.json({ inesperado: true }),
+    HttpResponse.text(archivoBase, { headers: { 'Content-Type': 'application/json' } }),
   ),
   cuponCuotaPagada: cuponError(
     problemaNegocio('No se puede generar el cupón de una cuota en estado Pagada (RN11).'),

@@ -78,7 +78,7 @@ it.each([
   ],
   [
     variantes.rendicionLineasMalFormadas,
-    'El archivo de rendición tiene líneas mal formadas: línea 1: longitud inválida; línea 2: fecha inválida',
+    'El archivo de rendición tiene líneas mal formadas: línea 1: La línea tiene 59 caracteres y deben ser 60.; línea 2: La línea solo puede tener dígitos.',
   ],
 ] as const)('preserva el detalle de rendición: %s', async (handler, detail) => {
   servidorMock.use(handler);
