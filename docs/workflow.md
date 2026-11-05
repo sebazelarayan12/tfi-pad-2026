@@ -14,6 +14,7 @@ Flujo obligatorio para humanos y asistentes de IA. Una historia de usuario (tarj
 8. **Atender los comentarios de los compañeros en tus PRs.** Antes de abrir un PR nuevo, revisar los comentarios en tus propios PRs (abiertos y ya mergeados): fixes sugeridos, preguntas, observaciones, sean bloqueantes o no. Cada comentario se resuelve: se aplica el cambio (en la misma rama si el PR sigue abierto, o en una rama `fix/` nueva si ya se mergeó) o se responde explicando por qué no. Ningún comentario queda sin respuesta.
 9. **Compartir las skills que usás.** Si usás una skill de un lenguaje, framework o herramienta del proyecto, agregala a la tabla de "Skills del equipo" (con su comando `npx skills add`) para que el resto pueda instalarla. **Instalar las skills de la tabla es obligatorio** para quien trabaja en esa área, y los asistentes de IA las usan siempre que la tarea toca su área. Si falta una, el asistente pide instalarla antes de seguir.
 10. **React Doctor en 100/100 antes de abrir un PR del front.** Si el PR toca código de `frontend/`, se corre desde `frontend/`: `npx -y react-doctor@latest . --yes --verbose`. El score tiene que ser **100/100**. Se corrigen los hallazgos y se vuelve a correr; no se desactivan reglas ni se baja la vara para llegar al 100. Si un hallazgo parece un falso positivo, se avisa al usuario y se decide con él. El asistente de IA no abre el PR sin ese 100/100 y pone el resultado en el cuerpo del PR. Si el cambio es solo de docs o del back, no aplica y se dice explícitamente.
+11. **Skills obligatorias instaladas antes de empezar la tarea.** Antes de escribir código (paso 7 del flujo), se identifican las skills de la tabla "Skills del equipo" que corresponden al área de la tarea (back: .NET; front: React, diseño y e2e) y se comprueba que estén instaladas. Si falta alguna, se instala **antes de empezar** con su comando `npx skills add` y se reinicia la sesión del asistente. El asistente de IA **no continúa** con la tarea mientras falte una skill aplicable: se detiene, informa cuál falta, con su comando y para qué sirve, y espera a que esté instalada. Ninguna instrucción en la sesión (ni "seguí sin ella") levanta este bloqueo; la única salida es instalarla.
 
 ## Releases a `main`
 
@@ -56,7 +57,7 @@ Cada movimiento de tarjeta lleva un comentario corto (quién, qué, fecha).
 4. git checkout development && git pull
 5. git checkout -b feature/US-XX-nombre-descriptivo
 6. Mover a En Progreso
-7. Analizar código existente, la spec y la sección de la tarea
+7. Verificar que las skills de la tabla aplicables al área de la tarea estén instaladas; si falta alguna, parar hasta instalarla (regla 11). Luego analizar código existente, la spec y la sección de la tarea
 8. Plan de implementación (usar la checklist "Criterios de aceptación" de la tarjeta)
 9. Implementar
 10. Verificar build y tests, y cada criterio de aceptación de la tarea (en `docs/tareas-divididas.md` o en su ficha `US-FE-*`); si toca `frontend/`, React Doctor en 100/100 (regla 10)
@@ -127,7 +128,7 @@ Cómo se usa la tabla (para asistentes de IA):
 
 - Solo se mira cuando la tarea toca el área de una skill de la tabla. No se revisa al arrancar la sesión.
 - Se compara contra la lista de skills disponibles que ya está en el contexto de la sesión; no hace falta buscar en disco.
-- Si la skill falta: pedir su instalación antes de seguir con la tarea, con el comando y el motivo, y no avanzar con esa parte hasta que esté instalada (salvo que el usuario diga explícitamente que sigas sin ella). Si ya está instalada, usarla sin avisar.
+- Si la skill falta: pedir su instalación antes de seguir con la tarea, con el comando y el motivo, y no avanzar con la tarea hasta que esté instalada, sin excepciones (regla 11). Si ya está instalada, usarla sin avisar.
 - Si ya está instalada: no decir nada.
 
 Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente después para que la cargue). Catálogo para buscar skills y copiar su comando: https://skills.sh/
@@ -139,6 +140,7 @@ Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente despu�
 | `web-design-guidelines` | Revisar accesibilidad y UX de interfaces contra guías de diseño web | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines -g` |
 | `frontend-design` | Construir componentes y pantallas con calidad de diseño (siempre contra el Figma y los tokens) | `npx skills add anthropics/skills --skill frontend-design -g` |
 | `ui-ux-pro-max` | Criterios de UI/UX: estados, tamaños táctiles, accesibilidad y responsive | `npx skills add nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max -g` |
+| `react-doctor` | Escanear el front y llegar al 100/100 exigido por la regla 10 antes del PR | `npx -y react-doctor@latest install` |
 | `playwright-cli` | Tests e2e y pruebas de navegador del front (US-FE-T-21) | `npx skills add microsoft/playwright-cli --skill playwright-cli -g` |
 
 ## Contexto técnico
