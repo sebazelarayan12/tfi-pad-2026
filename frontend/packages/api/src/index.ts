@@ -41,3 +41,6 @@ export type {
   VehiculoPublico,
 } from './dto/publico';
 export * from './endpoints/publico';
+// US-FE-B-01: ApiClientProvider y useApiClient (FC18).
+export { ApiClientProvider, useApiClient } from './client/ApiClientProvider';
+export type { ApiClientProviderProps } from './client/ApiClientProvider';
