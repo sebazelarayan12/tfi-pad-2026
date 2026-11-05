@@ -17,7 +17,7 @@ Un empleado o un administrador ingresa con email y contraseña en `/login`, el b
 - `LoginPage` (formulario con react-hook-form + zod), `LayoutAcceso` (layout de acceso sin sidebar) y el hook de mutación.
 - Validaciones de campo con los textos de B1 §5 (sección 8 de esta tarea).
 - Bootstrap de mocks en `main.tsx`: bloque que llama a `iniciarMocksSiCorresponde` de T-11 antes del render (RV-D03). El archivo `main.tsx` es de T-14.
-- `ApiClientProvider` y `useApiClient` en `packages/api/src/client/ApiClientProvider.tsx` (FC18), exportados por bloque en el barrel, y su montaje en `app/providers.tsx` con el cliente de `app/apiClient.ts` (archivo de T-14; solo se monta el provider).
+- Montaje de `ApiClientProvider` (FC18) en `app/providers.tsx` con el cliente de `app/apiClient.ts` (archivo de T-14; solo se monta el provider). `ApiClientProvider` y `useApiClient` ya los entregó el PR #100 en `packages/api/src/client/ApiClientProvider.tsx`, exportados por el barrel: no se vuelven a crear.
 - Manejo de 200, 400 por campo, 401 de credenciales, 5xx, timeout y sin conexión.
 - Redirección a `/inicio` tras login y redirección desde `/login` si la sesión es válida.
 - Accesibilidad de la pantalla (FC16) y test de axe con el helper de US-FE-T-19.
@@ -50,7 +50,7 @@ Un empleado o un administrador ingresa con email y contraseña en `/login`, el b
 
 ## 5. Archivos a crear o modificar
 
-Todos bajo `frontend/apps/backoffice/src/`, salvo `frontend/packages/api/src/client/ApiClientProvider.tsx` (nuevo, FC18) y su bloque en `packages/api/src/index.ts`.
+Todos bajo `frontend/apps/backoffice/src/`. `ApiClientProvider.tsx` y su bloque del barrel ya están en `development` (PR #100).
 
 | Archivo | Dueño | Notas |
 |---|---|---|
