@@ -19,3 +19,25 @@ export * from './dto/pagos';
 export * from './endpoints/pagos';
 export * from './dto/clientes';
 export * from './endpoints/clientes';
+// T-31: API pública. `FacturaResponse` y `CuponPagoFacilResponse` viven en
+// dto/publico.ts como copias (RV-D09), pero no se re-exportan acá para no
+// duplicar los nombres de T-29 y T-30; se importan desde sus dominios dueños.
+export type {
+  ConsultaEstadoPagoRequest,
+  ConsultaPublicaRequest,
+  ConsultaPublicaResponse,
+  CuotaPublica,
+  CuponPublicoRequest,
+  CuponPublicoRespuestaMock,
+  EstadoCuotaPublica,
+  EstadoPagoPublicoMock,
+  EstadoPolizaPublico,
+  FacturaPublica,
+  MedioPagoPublicoMock,
+  PagoPublicoRequest,
+  PagoPublicoResponse,
+  PlanPublico,
+  PublicoFacturaRequest,
+  VehiculoPublico,
+} from './dto/publico';
+export * from './endpoints/publico';
