@@ -140,6 +140,7 @@ Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente despu�
 | `web-design-guidelines` | Revisar accesibilidad y UX de interfaces contra guías de diseño web | `npx skills add vercel-labs/agent-skills --skill web-design-guidelines -g` |
 | `frontend-design` | Construir componentes y pantallas con calidad de diseño (siempre contra el Figma y los tokens) | `npx skills add anthropics/skills --skill frontend-design -g` |
 | `ui-ux-pro-max` | Criterios de UI/UX: estados, tamaños táctiles, accesibilidad y responsive | `npx skills add nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max -g` |
+| `react-doctor` | Escanear el front y llegar al 100/100 exigido por la regla 10 antes del PR | `npx -y react-doctor@latest install` |
 | `playwright-cli` | Tests e2e y pruebas de navegador del front (US-FE-T-21) | `npx skills add microsoft/playwright-cli --skill playwright-cli -g` |
 
 ## Contexto técnico
