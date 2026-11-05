@@ -1,21 +1,32 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { ratioContraste } from './contraste';
 
-// Valores de design-system.md §1 y §8.1 (tokens.css de US-FE-T-03).
-// Si un token cambia en el diseño, este test falla y obliga a actualizar la tabla (FB7.8).
+// Los colores se leen de tokens.css (US-FE-T-03), no de una copia. Los ratios y veredictos de
+// PARES son la referencia de design-system.md §8.1: si T-03 cambia un token, el ratio calculado
+// deja de coincidir y este test falla, lo que obliga a revisar la tabla (FB7.8, ficha §10.1).
+const css = readFileSync(join(import.meta.dirname, '../tokens.css'), 'utf8');
+
+function token(nombre: string): string {
+  const coincidencia = new RegExp(`--nexa-${nombre}:\\s*(#[0-9a-fA-F]{6})\\s*;`).exec(css);
+  if (!coincidencia?.[1]) throw new Error(`tokens.css no define --nexa-${nombre} como #rrggbb`);
+  return coincidencia[1].toLowerCase();
+}
+
 const TOKEN = {
-  surfacePanel: '#ffffff',
-  surfaceSidebar: '#f5f5f2',
-  borderStrong: '#d3d5ce',
-  textPrimary: '#17191c',
-  textTertiary: '#8a8e93',
-  actionPrimary: '#17191c',
-  actionOnPrimary: '#ffffff',
-  accentLime: '#dceb6b',
-  suspendidaText: '#9a6400',
-  suspendidaBg: '#fbf0d6',
-  canceladaText: '#b03a2e',
+  surfacePanel: token('surface-panel'),
+  surfaceSidebar: token('surface-sidebar'),
+  borderStrong: token('border-strong'),
+  textPrimary: token('text-primary'),
+  textTertiary: token('text-tertiary'),
+  actionPrimary: token('action-primary'),
+  actionOnPrimary: token('action-on-primary'),
+  accentLime: token('accent-lime'),
+  suspendidaText: token('status-suspendida-text'),
+  suspendidaBg: token('status-suspendida-bg'),
+  canceladaText: token('status-cancelada-text'),
 } as const;
 
 const AA_TEXTO = 4.5;
