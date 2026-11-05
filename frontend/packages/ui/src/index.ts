@@ -38,6 +38,12 @@ export type { TableColumn, TableProps } from './components/Table/Table';
 export { TabPanel, Tabs } from './components/Tabs/Tabs';
 export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs/Tabs';
 
+// US-FE-T-18: PublicNav y PublicFooter.
+export { PublicNav } from './components/PublicNav';
+export type { PublicNavLink, PublicNavProps } from './components/PublicNav';
+export { PublicFooter } from './components/PublicFooter';
+export type { PublicFooterContacto, PublicFooterProps } from './components/PublicFooter';
+
 // US-FE-T-15: NavItem y Sidebar.
 export { NavItem } from './components/NavItem/NavItem';
 export type { NavItemLinkProps, NavItemProps } from './components/NavItem/NavItem';
