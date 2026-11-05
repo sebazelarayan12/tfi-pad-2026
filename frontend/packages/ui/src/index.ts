@@ -37,3 +37,10 @@ export { Table } from './components/Table/Table';
 export type { TableColumn, TableProps } from './components/Table/Table';
 export { TabPanel, Tabs } from './components/Tabs/Tabs';
 export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs/Tabs';
+
+// US-FE-T-15: NavItem y Sidebar.
+export { NavItem } from './components/NavItem/NavItem';
+export type { NavItemLinkProps, NavItemProps } from './components/NavItem/NavItem';
+export type { NavIcon } from './components/NavItem/iconos';
+export { Sidebar } from './components/Sidebar/Sidebar';
+export type { GrupoNav, SidebarProps, SidebarUsuario } from './components/Sidebar/Sidebar';
