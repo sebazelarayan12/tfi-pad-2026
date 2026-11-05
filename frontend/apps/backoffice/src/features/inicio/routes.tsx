@@ -1,4 +1,8 @@
 import type { RouteObject } from 'react-router-dom';
+import { InicioPage } from './pages/InicioPage';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+export const inicioRoutes: RouteObject[] = [
+  { path: '/inicio', element: <InicioPage />, handle: { titulo: 'Inicio' } },
+];
+
+export { inicioRoutes as rutas };

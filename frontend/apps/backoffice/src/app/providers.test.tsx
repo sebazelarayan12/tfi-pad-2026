@@ -42,8 +42,8 @@ describe('queryClient', () => {
 });
 
 describe('ProveedoresApp', () => {
-  it('renderiza sin errores', () => {
+  it('renderiza el login al abrir el backoffice sin sesión', async () => {
     render(<ProveedoresApp />);
-    expect(screen.getByRole('heading', { name: 'Página no encontrada' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Ingresar al panel' })).toBeInTheDocument();
   });
 });
