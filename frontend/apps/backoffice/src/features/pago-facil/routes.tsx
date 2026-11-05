@@ -1,4 +1,8 @@
 import type { RouteObject } from 'react-router-dom';
+import { PagoFacilPage } from './pages/PagoFacilPage';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+export const pagoFacilRoutes: RouteObject[] = [
+  { path: '/pago-facil', element: <PagoFacilPage />, handle: { titulo: 'Pago Fácil' } },
+];
+
+export { pagoFacilRoutes as rutas };
