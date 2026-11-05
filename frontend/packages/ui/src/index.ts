@@ -43,3 +43,10 @@ export { PublicNav } from './components/PublicNav';
 export type { PublicNavLink, PublicNavProps } from './components/PublicNav';
 export { PublicFooter } from './components/PublicFooter';
 export type { PublicFooterContacto, PublicFooterProps } from './components/PublicFooter';
+
+// US-FE-T-15: NavItem y Sidebar.
+export { NavItem } from './components/NavItem/NavItem';
+export type { NavItemLinkProps, NavItemProps } from './components/NavItem/NavItem';
+export type { NavIcon } from './components/NavItem/iconos';
+export { Sidebar } from './components/Sidebar/Sidebar';
+export type { GrupoNav, SidebarProps, SidebarUsuario } from './components/Sidebar/Sidebar';

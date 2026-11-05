@@ -3,6 +3,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./testing": "./src/testing/a11y.ts",
     "./tokens.css": "./src/tokens.css"
   },
   "scripts": {
