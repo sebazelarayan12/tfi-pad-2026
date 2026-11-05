@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+import { LoginPage } from './pages/LoginPage';
+
+export const rutas: RouteObject[] = [{ path: '/login', element: <LoginPage /> }];
