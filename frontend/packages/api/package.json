@@ -11,6 +11,9 @@
     "test:contract": "vitest run test/contract",
     "test:contract:real": "cross-env CONTRACT_TARGET=real vitest run test/contract"
   },
+  "peerDependencies": {
+    "react": "^18"
+  },
   "devDependencies": {
     "@nexa/config": "*",
     "cross-env": "^10.1.0",
