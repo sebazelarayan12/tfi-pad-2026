@@ -100,8 +100,9 @@ Pantallas enlazadas en la columna "Pantallas". Detalle en `tareas/<ID>.md`.
 | US-FE-B-21 | Pago Fácil: historial y base positiva | Historial con `GET /api/pagofacil/rendiciones` y botón "Generar base positiva" (blob, revisar `res.ok` y `Content-Type`, nombre `BASEPOS_<empresa>_<yyyyMMdd>.txt` desde el registro H). Historial de bases oculto (D-12). Bloque de tabla debajo del aviso en `RendicionCard` (RV-11). | B | [B12](../pantallas/B12-pago-facil.md) | GET /api/pagofacil/rendiciones (Impl); GET /api/pagofacil/base-positiva (Impl) | 5 | US-FE-B-20, US-FE-T-11, US-FE-T-19, US-FE-T-30 | — | PB-17 (degrada: nombre armado en el front), PB-18 (degrada: desborde) | M | [ver](US-FE-B-21.md) |
 | US-FE-B-22 | Planes: listado y edición | `/planes` (solo Admin): tabla de planes activos, panel de edición con `PUT /api/planes/{id}`, chips de `TiposPermitidos`, antigüedad "Sin límite" si es null. Crea `features/planes`. | B | [B13](../pantallas/B13-planes.md) | GET /api/planes (Impl); GET /api/planes/{id} (Impl); PUT /api/planes/{id} (Impl) | 4 | US-FE-T-04, US-FE-T-05, US-FE-T-06, US-FE-T-09, US-FE-T-11, US-FE-T-13, US-FE-T-16, US-FE-T-19, US-FE-T-27 | US-FE-B-23 | — | M | [ver](US-FE-B-22.md) |
 | US-FE-B-23 | Planes: alta, desactivación, inactivos y reactivación | `POST /api/planes` (201), `DELETE /api/planes/{id}` para desactivar, listado de inactivos y reactivar con `PATCH .../activo` (ambos mock). Reactivar oculto hasta el PB. | B | [B13](../pantallas/B13-planes.md) | POST /api/planes (Impl); DELETE (Impl); inactivos y PATCH activo (NO) | 5 | US-FE-B-22, US-FE-T-07, US-FE-T-09, US-FE-T-11, US-FE-T-19, US-FE-T-27 | — | PB-09 (MSW, reactivar oculto) | S | [ver](US-FE-B-23.md) |
-| US-FE-B-24 | Usuarios: alta de empleado o administrador | `/usuarios` (solo Admin): nombre, apellido, email, contraseña inicial que escribe el admin, y rol sin preselección (D-20), `POST /api/auth/usuarios` 201. Crea `features/usuarios`. El back valida la política de contraseña; el front no la genera (RV-D18) **[CONFIRMAR]** seguridad. | B | [B14](../pantallas/B14-usuarios.md) | POST /api/auth/usuarios (Impl) | 4 | US-FE-T-04, US-FE-T-05, US-FE-T-10, US-FE-T-11, US-FE-T-13, US-FE-T-16, US-FE-T-19, US-FE-T-32 | US-FE-B-25 | PB-15 (degrada) | S | [ver](US-FE-B-24.md) |
+| US-FE-B-24 | Usuarios: alta de empleado o administrador | `/usuarios` (solo Admin): nombre, apellido, email, rol sin preselección (D-20) y contraseña temporal que genera el front con `Generar` (RV-D18, decidido por el usuario), `POST /api/auth/usuarios` 201. Crea `features/usuarios`. El empleado la cambia en su primer ingreso (US-FE-B-26). **[CONFIRMAR]** seguridad: confirmación del equipo. | B | [B14](../pantallas/B14-usuarios.md) | POST /api/auth/usuarios (Impl) | 4 | US-FE-T-04, US-FE-T-05, US-FE-T-10, US-FE-T-11, US-FE-T-13, US-FE-T-16, US-FE-T-19, US-FE-T-32 | US-FE-B-25 | PB-15 (degrada) | S | [ver](US-FE-B-24.md) |
 | US-FE-B-25 | Usuarios: listado, edición y activación | Listado con rol y estado, edición (`PUT`) y activación (`PATCH`), todo contra mock (PB-04). Sin último ingreso. `PATCH` de activación y `tamano` según RV-D30 (PB-04). | B | [B14](../pantallas/B14-usuarios.md) | GET /api/usuarios (NO); PUT /api/usuarios/{id} (NO); PATCH activo (NO) | 5 | US-FE-B-24, US-FE-T-04, US-FE-T-06, US-FE-T-07, US-FE-T-11, US-FE-T-19, US-FE-T-32 | — | PB-04 (MSW) | M | [ver](US-FE-B-25.md) |
+| US-FE-B-26 | Cambio obligatorio de contraseña en el primer ingreso | `/cambiar-password` (sesión con `debeCambiarPassword`): contraseña temporal, nueva y repetida, requisitos de contraseña fuerte a la vista, `POST /api/auth/cambiar-password` (200 con token nuevo). La guarda de sesión manda a esta pantalla hasta que se cambie. Agrega `cambiarPassword`, el campo `debeCambiarPassword` y su handler MSW (excepciones de ownership). Sin frame en Figma: diseño propuesto **[CONFIRMAR]**. | B | — (sin frame; reutiliza [B1](../pantallas/B1-login.md)) | POST /api/auth/cambiar-password (NO, PB-31) | 4 | US-FE-T-04, US-FE-T-05, US-FE-T-10, US-FE-T-11, US-FE-T-13, US-FE-T-19, US-FE-T-32, US-FE-B-01 | US-F1-09 (back), US-FE-B-24 | PB-31 (MSW) | M | [ver](US-FE-B-26.md) |
 | US-FE-W-01 | Inicio público: hero, cómo pagar y footer | `/` (ruta pública): hero con CTA a `/consultar-poliza`, sección "Cómo pagar", composición de la TablaPlanes de W-02 y PublicFooter. Imagen del hero provisional (NO DEFINIDO). Crea `features/inicio` web. Sin enlace a W5 hasta DN-W1-1 (RV-D21). | W | [W1](../pantallas/W1-inicio.md) | — (estático) | 4 | US-FE-T-05, US-FE-T-07, US-FE-T-11, US-FE-T-18, US-FE-T-19, US-FE-W-02 | US-FE-W-03 | — | S | [ver](US-FE-W-01.md) |
 | US-FE-W-02 | Planes públicos: tabla de planes | Componente `TablaPlanes` de la feature `planes` (web) con `GET /api/planes` anónimo: nombre, código y tipos; "desde" = PrimaBase (D-07, **[CONFIRMAR]**); matriz de coberturas oculta (D-08). Carga y error con reintento. Variante mobile. | W | [W1](../pantallas/W1-inicio.md) | GET /api/planes (Impl) | 3 | US-FE-T-05, US-FE-T-06, US-FE-T-07, US-FE-T-09, US-FE-T-11, US-FE-T-17, US-FE-T-19, US-FE-T-27 | US-FE-W-03 | — | S | [ver](US-FE-W-02.md) |
 | US-FE-W-03 | Consulta de póliza y tipos de navegación | `/consultar-poliza` (desktop y W2m mobile): DNI de 8 dígitos y `POL-` + 7 dígitos, `POST /api/publico/consulta`, 404 con el texto del Figma (RV-D01) y 429 con espera fija de 60 s (PB-17). Define los tipos de `location.state` para W3 a W5 (RV-45). Crea `features/polizas` web. | W | [W2](../pantallas/W2-consultar-poliza.md) | POST /api/publico/consulta (Impl) | 3 | US-FE-T-04, US-FE-T-05, US-FE-T-07, US-FE-T-11, US-FE-T-17, US-FE-T-18, US-FE-T-19, US-FE-T-31 | US-FE-W-02 | PB-17 (degrada: espera fija), PB-29 (DNI corto, mejora) | M | [ver](US-FE-W-03.md) |
@@ -130,13 +131,13 @@ Convención (RV-D02): T-01 y T-02 son prerrequisitos de rebase y no cuentan para
 - **Ola 1 (8):** `US-FE-T-04` (primitivos), `US-FE-T-05` (primitivos), `US-FE-T-06` (primitivos), `US-FE-T-07` (primitivos), `US-FE-T-10` (enums y mensajes), `US-FE-T-11` (MSW base), `US-FE-T-14` (scaffold backoffice), `US-FE-T-17` (scaffold web).
 - **Ola 2 (14):** `US-FE-T-13` (sesión), `US-FE-T-15` (NavItem y Sidebar), `US-FE-T-18` (PublicLayout), `US-FE-T-19` (a11y), `US-FE-T-20` (Docker), `US-FE-T-23` (contract tests), `US-FE-T-24`, `US-FE-T-26`, `US-FE-T-27`, `US-FE-T-28`, `US-FE-T-29`, `US-FE-T-30`, `US-FE-T-31`, `US-FE-T-32`.
 - **Ola 3 (7):** `US-FE-T-16` (layout backoffice), `US-FE-T-22` (README), `US-FE-T-25` (API clientes: alta y Renaper), `US-FE-B-01` (login), `US-FE-B-17` (cobro en caja), `US-FE-W-02` (planes públicos), `US-FE-W-03` (consulta de póliza).
-- **Ola 4 (11):** `US-FE-B-02`, `US-FE-B-04`, `US-FE-B-09`, `US-FE-B-10`, `US-FE-B-13`, `US-FE-B-19`, `US-FE-B-20`, `US-FE-B-22`, `US-FE-B-24`, `US-FE-W-01`, `US-FE-W-04`.
+- **Ola 4 (12):** `US-FE-B-02`, `US-FE-B-04`, `US-FE-B-09`, `US-FE-B-10`, `US-FE-B-13`, `US-FE-B-19`, `US-FE-B-20`, `US-FE-B-22`, `US-FE-B-24`, `US-FE-B-26`, `US-FE-W-01`, `US-FE-W-04`.
 - **Ola 5 (13):** `US-FE-B-03`, `US-FE-B-05`, `US-FE-B-07`, `US-FE-B-11`, `US-FE-B-12`, `US-FE-B-14`, `US-FE-B-15`, `US-FE-B-21`, `US-FE-B-23`, `US-FE-B-25`, `US-FE-W-05`, `US-FE-W-06`, `US-FE-W-07`.
 - **Ola 6 (6):** `US-FE-B-06`, `US-FE-B-08`, `US-FE-B-16`, `US-FE-B-18`, `US-FE-T-21`, `US-FE-W-08`.
 
 - **Ola 7 (7):** `US-FE-V-01` a `US-FE-V-07` (verificación visual contra el Figma, un grupo de pantallas por tarea).
 
-**Cuenta por tipo:** T = 32 tareas, B = 25, W = 8, V = 7 (total 72).
+**Cuenta por tipo:** T = 32 tareas, B = 26, W = 8, V = 7 (total 73).
 
 **Camino más largo (hasta Ola 6):** T-08 → T-14 → T-13 → T-16 → B-04 → B-05 → B-06, y B-04 → B-07 → B-08. Cadena de web pública: W-03 → W-04 → W-06 → W-08 (Ola 6). W-04 es dueño de `shared/formato/listaCuotas.ts`, que W-06 reutiliza (RV-47); W-07 depende de W-04.
 
@@ -148,7 +149,7 @@ Convención (RV-D02): T-01 y T-02 son prerrequisitos de rebase y no cuentan para
 
 | Pantalla | Tareas que la cubren |
 |---|---|
-| [B1 Login](../pantallas/B1-login.md) | US-FE-B-01 |
+| [B1 Login](../pantallas/B1-login.md) | US-FE-B-01, US-FE-B-26 (cambio obligatorio de contraseña: sin frame propio en Figma) |
 | [B2 Inicio](../pantallas/B2-inicio.md) | US-FE-B-02, US-FE-B-03 |
 | [B3 Clientes](../pantallas/B3-clientes.md) | US-FE-B-04 |
 | [B4 Nuevo cliente](../pantallas/B4-nuevo-cliente.md) | US-FE-B-05, US-FE-B-06 |
@@ -229,6 +230,7 @@ Estado según `analisis-front.md §4`. "API" = tarea que escribe la función de 
 | `DELETE /api/planes/{id}` | Impl | T-27 | B-23 (B13, desactivar) |
 | `GET /api/planes?incluirInactivos=true` y `PATCH /api/planes/{id}/activo` | NO (PB-09) | T-27 (mock) | B-23 (B13) |
 | `POST /api/auth/usuarios` | Impl | T-32 | B-24 (B14) |
+| `POST /api/auth/cambiar-password` | NO (PB-31, US-F1-09) | B-26 (excepción de ownership: función, DTO y handler MSW) | B-26 |
 | `GET /api/usuarios`, `PUT /api/usuarios/{id}`, `PATCH /api/usuarios/{id}/activo` | NO (PB-04) | T-32 (mock) | B-25 (B14) |
 
 ---
@@ -255,7 +257,8 @@ Regla general: un archivo compartido tiene un único dueño. Si otra tarea neces
 | `packages/api/src/dto/comunes.ts`, `dto/auth.ts` | US-FE-T-12 | |
 | `packages/api/src/dto/<dominio>.ts` (clientes, vehiculos, planes, cotizaciones, polizas, pagos, pagofacil, publico, usuarios) | API card del dominio (T-24..T-32) | Un archivo por dominio. `clientes`: T-24 crea y T-25 agrega bloque (RV-15). `publico.ts` copia `FacturaResponse` y `CuponPagoFacilResponse` (T-31, RV-D09). |
 | `packages/api/src/endpoints/<dominio>.ts` | API card del dominio | FC2. |
-| `packages/api/src/auth/login.ts` (y demás funciones de `/api/auth/*`) | US-FE-T-32 | RV-D04. T-12 queda solo con tipos. |
+| `packages/api/src/auth/login.ts` (y demás funciones de `/api/auth/*`) | US-FE-T-32 | RV-D04. T-12 queda solo con tipos. Excepción: US-FE-B-26 agrega `packages/api/src/auth/cambiarPassword.ts`, el campo `debeCambiarPassword` en `LoginResponse` (`dto/auth.ts`, T-12) y el handler MSW de `POST /api/auth/cambiar-password` (`mocks/handlers/auth.ts`, T-11), solo esas adiciones y por bloque. |
+| `apps/backoffice/src/features/auth/` (sesión, `LoginPage`) y `apps/backoffice/src/app/guards/RequireSesion.tsx` | US-FE-T-13 / US-FE-B-01 | Excepción: US-FE-B-26 agrega `debeCambiarPassword` a `Sesion` y a `iniciarSesion`, la redirección de `LoginPage` y la guarda de `RequireSesion`, con los tests correspondientes. No cambia nada más. |
 | `packages/api/src/client/*` | US-FE-T-08 | |
 | `packages/api/src/format/*` | US-FE-T-09 | Incluye `parseImporteEsAR` (RV-26). |
 | `packages/api/src/enums/*`, `packages/api/src/messages/*` | US-FE-T-10 | `EstadoBadgeValue` en `enums/badges.ts` (RV-22, RV-D07). |
@@ -312,7 +315,7 @@ Cada default es la propuesta que sale de los documentos. El equipo confirma en l
 | D-18 | Plan seleccionado en cotizar (B7) | Ninguno; "Continuar" deshabilitado hasta elegir. | B7 D-B7-05 |
 | D-19 | Cuotas preseleccionadas (B11) | Ninguna. | B11 #10 |
 | D-20 | Rol inicial en alta de usuario (B14) | Sin preselección; el rol es obligatorio. | B14 #8 |
-| D-21 | Contraseña inicial del alta de usuario (B14) | El admin escribe la contraseña; el back valida la política de Identity. El front no genera contraseñas (cambia el default de B-24). **[CONFIRMAR]** (RV-D18). | B14 #6; RV-D18 |
+| D-21 | Contraseña inicial del alta de usuario (B14) | **Decidido por el usuario (2026-11-06):** el front genera la contraseña temporal (botón `Generar`, como en el Figma) y el empleado debe cambiarla en el primer ingreso (US-F1-09 + US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, RV-D18). | B14 #6; RV-D18 |
 | D-22 | "Número de operación" en W6 (D5) | `numeroPago` del back (`PAG-xxxxxx`). | W6 D5 |
 | D-23 | Color del badge "Vencida" (W4 D10, analysis §11.1 #10) | Tokens de `design-system §5.4` hasta que diseño confirme. | W4 D10 |
 | D-24 | Contraste AA (FB7.8) | Implementar tokens como están; registrar pedido a diseño en T-19. | FB7.8; analisis §9.1 |

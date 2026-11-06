@@ -4,7 +4,7 @@ Tipo B · Oleada 4 · Tamaño S · Rama sugerida `feature/US-FE-B-24-usuarios-al
 
 ## 1. Objetivo
 
-Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear un empleado o un administrador con `POST /api/auth/usuarios`. Pide nombre, apellido, email, la contraseña inicial que escribe el administrador y rol (sin preselección). El back valida la política de contraseña; el front no genera ni valida contraseñas (RV-D18). Con 201 limpia el formulario y borra la contraseña de la memoria de la pantalla. Usuario: solo Administrador. La tabla de usuarios es de US-FE-B-25.
+Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear un empleado o un administrador con `POST /api/auth/usuarios`. Pide nombre, apellido, email, rol (sin preselección) y una contraseña temporal que el front genera con el botón `Generar` (RV-D18, decidido por el usuario el 2026-11-06). El empleado debe cambiarla en su primer ingreso (US-F1-09 y US-FE-B-26). El back valida la política al crear. Con 201 limpia el formulario y borra la contraseña de la memoria de la pantalla. Usuario: solo Administrador. La tabla de usuarios es de US-FE-B-25.
 
 ## 2. Alcance
 
@@ -12,7 +12,8 @@ Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear
 - Feature `apps/backoffice/src/features/usuarios/`: `api/`, `components/`, `pages/`, `schemas/`, `types/`, `routes.tsx` e `index.ts`. Esta tarea es la primera de la feature (FC1).
 - Ruta `/usuarios` protegida con `RequireRol` (T-13) con rol `Administrador`.
 - Panel `NuevoEmpleadoPanel` con `react-hook-form` y zod (360 px).
-- Componentes `PasswordField` (campo con mostrar u ocultar) y `RolSelector` (radiogroup con chips).
+- Componentes `PasswordField` (campo con botón `Generar` y mostrar u ocultar) y `RolSelector` (radiogroup con chips).
+- Generador `generarPasswordTemporal()` (`schemas/generarPassword.ts`) con `crypto.getRandomValues`.
 - Hook `useCrearUsuario` (mutación, `retry: 0`).
 - Schema `crearUsuarioSchema` con los mensajes del DTO.
 - Botón `Nuevo empleado` de la topbar: limpia el formulario y enfoca `Nombre`.
@@ -23,7 +24,8 @@ Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear
 - Búsqueda oculta por DNI o apellido: no se renderiza (B14 §5).
 - Campana y menú de usuario: T-16.
 - Confirmación por email o envío de la contraseña: fuera de alcance del front (B14 §6, "Compartila por un canal seguro.").
-- Generación de contraseñas en el front y validación de su política: el back valida (RV-D18).
+- Cambio obligatorio de la contraseña en el primer ingreso (pantalla, guarda y endpoint): US-FE-B-26 y US-F1-09 (PB-31). Esta tarea solo genera la temporal.
+- Validar en el front la política de Identity: el back es la autoridad. El generador solo produce una contraseña que la cumple (D-B24-02).
 
 ## 3. Dependencias
 
@@ -66,7 +68,8 @@ Bajo `frontend/apps/backoffice/src/features/usuarios/`. Dueño de todos: US-FE-B
 | `index.ts` | crear | Exporta `usuariosRoutes`. B-25 agrega sus exports. |
 | `pages/UsuariosPage.tsx` | crear | Topbar (`Usuarios`, `Nuevo empleado`) y las dos columnas: tabla (B-25, bloque vacío) y panel. |
 | `components/NuevoEmpleadoPanel.tsx` | crear | Formulario de alta. |
-| `components/PasswordField.tsx` | crear | `Input` de `Contraseña temporal` con botón de mostrar u ocultar. Sin botón de generación (RV-D18). |
+| `components/PasswordField.tsx` | crear | `Input` de `Contraseña temporal` con el botón `Generar` (secundario S, 73 × 32 px, Figma) y el botón de mostrar u ocultar. |
+| `schemas/generarPassword.ts` | crear | `generarPasswordTemporal()`: 16 caracteres con mayúscula, minúscula, dígito y símbolo, con `crypto.getRandomValues` (D-B24-02). |
 | `components/RolSelector.tsx` | crear | `radiogroup` con dos chips. |
 | `api/useCrearUsuario.ts` | crear | `useMutation` sobre `POST /api/auth/usuarios`. `retry: 0`. |
 | `schemas/crearUsuarioSchema.ts` | crear | zod + mensajes del DTO. |
@@ -92,12 +95,17 @@ No se editan `packages/*`. El DTO `CrearUsuarioRequest` y `UsuarioResponse` los 
    });
    ```
    - Los mensajes son los del DTO (`seguridad-clientes-publico.md` §2.5).
-   - `password` solo exige que no esté vacía. El front no impone longitud ni reglas de composición: el DTO no las tiene y la política la valida el back (RV-D18).
+   - `password` solo exige que no esté vacía. El front no valida la política al enviar: la valida el back. Si el administrador edita la contraseña generada, se envía tal cual.
    - `rol` sin valor inicial: el formulario arranca con `rol: undefined` (D-20).
-4. No se crea generador de contraseñas: el campo arranca vacío y la contraseña la escribe el administrador (RV-D18).
+4. Crear `schemas/generarPassword.ts` con `generarPasswordTemporal(): string`:
+   - 16 caracteres, con al menos una mayúscula, una minúscula, un dígito y un símbolo (alfabeto sin caracteres ambiguos: `0 O 1 l I`).
+   - Solo `crypto.getRandomValues` (nunca `Math.random`) y selección sin sesgo de módulo (descartar valores fuera del múltiplo del alfabeto).
+   - Mezcla final (Fisher-Yates con el mismo origen aleatorio) para que las posiciones de las clases no sean predecibles.
+   - El campo arranca vacío; la contraseña aparece solo al pulsar `Generar` (RV-D18, decidido por el usuario).
 5. Crear `api/useCrearUsuario.ts`: `useMutation({ mutationFn: crearUsuario, retry: 0 })`. `onSuccess` invalida `usuariosKeys.all` (la tabla de B-25 se refresca).
 6. Crear `PasswordField`:
    - `Input` de T-04 con label `Contraseña temporal` y `type="password"`. El helper `Compartila por un canal seguro.` se muestra como en el Figma.
+   - Botón `Generar` a la derecha del campo (Figma): pone la contraseña generada en el campo y la deja visible (`type="text"`) para que el administrador pueda leerla y pasarla.
    - Botón de mostrar u ocultar con `aria-label` `Mostrar contraseña` / `Ocultar contraseña` (propuesta, B14 §12). Cambia `type` entre `password` y `text`.
 7. Crear `RolSelector`: `<div role="radiogroup" aria-labelledby>` con label `Rol`, y dos `<input type="radio">` estilizados como `Chip` de T-05 (`Empleado` y `Administrador`). Ninguno seleccionado al montar (D-20).
 8. Crear `NuevoEmpleadoPanel` (360 px, padding 24 px):
@@ -131,6 +139,7 @@ export type RolUsuario = 'Administrador' | 'Empleado';
 export interface CrearUsuarioRequest {
   email: string;        // obligatorio, formato email, máx. 256
   password: string;     // obligatorio; la política la valida el back (RV-D18)
+  // el back marca la cuenta como DebeCambiarPassword (US-F1-09, PB-31)
   rol: RolUsuario;      // 'Administrador' | 'Empleado' (exacto)
   nombre: string;       // obligatorio, máx. 100
   apellido: string;     // obligatorio, máx. 100
@@ -172,6 +181,7 @@ Textos que el Figma no define (propuesta, B14 §7 "NO DEFINIDO"):
 | Éxito | `Usuario creado.` |
 | Creando | `Creando usuario…` |
 | Mostrar contraseña | `Mostrar contraseña` / `Ocultar contraseña` (aria-label) |
+| Generar | `Generar` (Figma, B14 §5); `aria-label` `Generar contraseña temporal` (propuesta) |
 | Rol obligatorio | `El rol es obligatorio.` (texto del DTO) |
 | Errores de `errors` | `Nombre` → `El nombre es obligatorio.` / `El nombre no puede superar los 100 caracteres.`; `Apellido` → `El apellido es obligatorio.` / `El apellido no puede superar los 100 caracteres.`; `Email` → `El email es obligatorio.` / `El email no tiene un formato válido.` / `El email no puede superar los 256 caracteres.`; `Password` → `La contraseña es obligatoria.` (vacía) o `La contraseña no cumple la política de seguridad.` (rechazo del back, propuesta); `Rol` → `El rol debe ser Administrador o Empleado.` |
 | 403 | `No tenés permiso para crear usuarios.` |
@@ -187,7 +197,7 @@ Valores de muestra (no son texto fijo): `Hernán Sosa`, `Julieta`, `Ávila`, `ju
 | Rol sin elegir | `El rol es obligatorio.` bajo el selector. No se envía. |
 | Email inválido | Error de campo; no se envía. |
 | Contraseña vacía | `La contraseña es obligatoria.`; no se envía. |
-| Contraseña escrita por el admin | Se envía tal cual; el front no valida su política. Si el back la rechaza, llega como `detail` (fila siguiente). |
+| Contraseña generada o editada por el admin | Se envía tal cual; el front no valida su política. Si el back la rechaza, llega como `detail` (fila siguiente). |
 | Creando | Botón deshabilitado; un solo POST (FC11). |
 | 201 | Formulario limpio; contraseña borrada del estado; `Usuario creado.`; foco en `Nombre`. |
 | 400 email repetido (`detail`) | Alerta del panel con `role="alert"`; no marca el campo. |
@@ -210,6 +220,12 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 3. `rechaza_rol_ausente`: `El rol es obligatorio.`.
 4. `rechaza_password_vacia`: `La contraseña es obligatoria.`.
 5. `no_impone_politica_de_password_en_el_front`: `password: "abc"` pasa el schema (la política la valida el back, RV-D18).
+
+`schemas/generarPassword.test.ts`:
+5a. `genera_16_caracteres_con_las_cuatro_clases`: en 200 corridas, siempre 16 caracteres con mayúscula, minúscula, dígito y símbolo.
+5b. `usa_crypto_getRandomValues_y_nunca_math_random`: spy sobre `crypto.getRandomValues` (llamado) y sobre `Math.random` (no llamado).
+5c. `no_repite_entre_llamadas`: 100 contraseñas distintas.
+5d. `no_usa_caracteres_ambiguos`: ninguna contiene `0 O 1 l I`.
 6. `no_recorta_la_password`: una contraseña con espacios en los bordes se envía sin recortar.
 
 `components/NuevoEmpleadoPanel.test.tsx`:
@@ -222,7 +238,7 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 13. `400_detail_identity_muestra_texto_completo`: el texto de Identity que rechaza la contraseña aparece completo en `role="alert"`.
 14. `403_muestra_texto_propio`.
 15. `doble_clic_envia_un_post`: contador = 1.
-16. `no_hay_boton_generar`: el campo contraseña arranca vacío y no existe ningún botón `Generar` (RV-D18).
+16. `generar_llena_el_campo_con_una_password_valida`: el campo arranca vacío; al pulsar `Generar` queda con 16 caracteres, visible, y el POST la envía tal cual.
 17. `mostrar_ocultar_cambia_type_y_aria_label`.
 18. `cancelar_limpia_el_formulario`.
 19. `password_no_se_guarda_en_storage`: spy sobre `sessionStorage.setItem` y `localStorage.setItem` no recibe la contraseña.
@@ -241,10 +257,10 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 5. Con 201, el formulario se limpia, la contraseña se borra del estado y no queda en storage (tests 10 y 19).
 6. Los `errors` del back se muestran en español bajo el campo; nunca el texto en inglés (test 11).
 7. El `detail` (email repetido o contraseña rechazada por Identity) se muestra en la alerta del panel, sin marcar campo (tests 12 y 13).
-8. El front no genera contraseñas ni aplica su política: el administrador la escribe y el back la valida (tests 5, 6 y 16; RV-D18).
+8. La contraseña temporal la genera el front con `crypto.getRandomValues` (16 caracteres, cuatro clases) y el front no aplica la política de Identity: la valida el back (tests 5, 5a a 5d, 6 y 16; RV-D18).
 9. Un doble clic genera un solo POST (test 15).
 10. `Cancelar` limpia el formulario (test 18).
-11. Los tests 1 a 22 están en verde, con `vitest-axe` sin violaciones.
+11. Los tests 1 a 22 (incluidos 5a a 5d) están en verde, con `vitest-axe` sin violaciones.
 12. `npm run lint`, `typecheck`, `test` y `build` están en verde en `apps/backoffice`.
 
 ## 12. Verificación manual
@@ -260,10 +276,10 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 ## 13. Decisiones pendientes con default
 
 - **D-B24-01: botón `Nuevo empleado` de la topbar (B14 §8, NO DEFINIDO).** Default: limpia el formulario y enfoca `Nombre`.
-- [CONFIRMAR] **D-B24-02 (RV-D18): contraseña inicial.** Default: el administrador escribe la contraseña y el back valida la política; el front no genera contraseñas ni la valida. Cambia el default original de la ficha (generación en el front con `crypto.getRandomValues`). No cerrar sin confirmación del equipo: seguridad.
+- **D-B24-02 (RV-D18): contraseña inicial. Decidido por el usuario (2026-11-06).** El front genera la contraseña temporal con el botón `Generar` (como en el Figma). Es temporal: el empleado debe cambiarla en su primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Hasta que esas tareas existan, la temporal no vence. Pendiente de confirmación del equipo (seguridad).
 - **D-B24-03: rol por defecto (B14 §13.8).** Default: sin preselección, obligatorio (D-20).
 - **D-B24-04: texto de éxito y de estado tras crear (B14 §13.12).** Propuesta de §8.
-- [CONFIRMAR] **D-B24-05 (RV-D18): mostrar la contraseña escrita.** Default: el campo se puede mostrar u ocultar con su botón; no hay copia al portapapeles porque no se genera contraseña. No cerrar sin confirmación del equipo: seguridad.
+- [CONFIRMAR] **D-B24-05 (RV-D18): ver y copiar la contraseña generada.** Sin decidir. Propuesta: tras `Generar` la contraseña queda visible en el campo (con botón de mostrar u ocultar) para que el administrador la lea y la pase por un canal seguro, sin botón de copiar al portapapeles (el portapapeles queda fuera de nuestro control). Alternativa: agregar un botón `Copiar`. Decide el usuario antes de implementar (regla 12 de `docs/workflow.md`).
 - **D-B24-06: panel fijo o modal (B14 §13.11).** Default: panel fijo, como en el Figma.
 - **D-B24-07 (RV-D24): acceso denegado.** Default: panel "sin permiso" en la misma URL (default de T-13).
 
@@ -274,7 +290,9 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 - **Texto en inglés.** Los `errors` vienen en inglés cuando el DTO no tiene `ErrorMessage` (PB-15). Mapear por clave, nunca mostrar el texto del back.
 - **Campo marcado por `detail`.** Si el email repetido se marca como error de campo, se confunde con un error de formato. Mostrar en la alerta (FC10).
 - **Rol Administrador por error.** El chip `Administrador` queda en el mismo radiogroup que `Empleado`. Que el usuario elija el rol a propósito: no hay default.
-- **Política duplicada en el front.** Replicar las reglas de Identity en el front puede dar avisos contradictorios con el back. Se valida solo en el back (RV-D18).
+- **Generador débil o sesgado.** Nada de `Math.random`; selección sin sesgo de módulo. Si la política del back sube (por ejemplo, US-F1-09 pide 12 caracteres), 16 con cuatro clases sigue cumpliendo.
+- **Política duplicada en el front.** El front no valida la política al enviar: solo el generador la cumple por construcción. El back es la autoridad.
+- **Temporal sin vencimiento.** Mientras no exista el cambio obligatorio (US-F1-09 y US-FE-B-26), la contraseña temporal sigue valiendo. Avisarlo en el PR.
 
 ## 15. Definición de terminado
 
@@ -285,4 +303,4 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 ## 16. Observaciones al índice
 
-- Resuelto (RV-D18): la contraseña inicial la escribe el administrador y la valida el back; el front no genera contraseñas (pendiente de confirmación de seguridad, ver §13).
+- Resuelto (RV-D18, decidido por el usuario el 2026-11-06): el front genera la contraseña temporal (`Generar`, como en el Figma) y el empleado la cambia en el primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, ver §13). D-B24-05 sigue abierta.
