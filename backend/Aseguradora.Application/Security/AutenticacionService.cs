@@ -11,6 +11,7 @@ namespace Aseguradora.Application.Security;
 public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService tokens)
 {
     private const string MensajeEmailDuplicado = "El email ya está registrado.";
+    private const string MensajePasswordIgual = "La contraseña nueva debe ser distinta de la actual.";
 
     private readonly IUsuarioStore _usuarios = usuarios ?? throw new ArgumentNullException(nameof(usuarios));
     private readonly ITokenService _tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
@@ -37,7 +38,36 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
             ?? throw new CredencialesInvalidasException();
 
         var token = _tokens.CrearToken(usuario, rol);
-        return new LoginResponse(token.Token, rol, token.ExpiraEn);
+        return new LoginResponse(token.Token, rol, token.ExpiraEn, usuario.DebeCambiarPassword);
+    }
+
+    /// <summary>
+    /// Changes the password of the signed-in user and returns a new token without the "must change"
+    /// mark (US-F1-09). A wrong current password or a weak new one fail with
+    /// <see cref="BusinessRuleException"/> (400, never 401, so the front keeps the session).
+    /// </summary>
+    public async Task<LoginResponse> CambiarPasswordAsync(
+        string usuarioId,
+        CambiarPasswordRequest solicitud,
+        CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(usuarioId);
+        ArgumentNullException.ThrowIfNull(solicitud);
+
+        if (string.Equals(solicitud.PasswordActual, solicitud.PasswordNueva, StringComparison.Ordinal))
+            throw new BusinessRuleException(MensajePasswordIgual);
+
+        // The account may have been deleted after the token was issued: treat it as a closed session.
+        _ = await _usuarios.BuscarPorIdAsync(usuarioId, ct) ?? throw new CredencialesInvalidasException();
+
+        await _usuarios.CambiarPasswordAsync(usuarioId, solicitud.PasswordActual, solicitud.PasswordNueva, ct);
+
+        var actualizado = await _usuarios.BuscarPorIdAsync(usuarioId, ct) ?? throw new CredencialesInvalidasException();
+        var roles = await _usuarios.ObtenerRolesAsync(actualizado, ct);
+        var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? throw new CredencialesInvalidasException();
+
+        var token = _tokens.CrearToken(actualizado, rol);
+        return new LoginResponse(token.Token, rol, token.ExpiraEn, actualizado.DebeCambiarPassword);
     }
 
     /// <summary>
@@ -61,7 +91,8 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
             solicitud.Rol,
             solicitud.Nombre,
             solicitud.Apellido,
-            ct);
+            debeCambiarPassword: true,
+            ct: ct);
 
         return new UsuarioResponse(creado.Id, creado.Email, solicitud.Rol);
     }

@@ -35,11 +35,37 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
     public string IdDe(string email) => _cuentas[email].Id;
 
     /// <summary>Seeds an extra account and returns its id.</summary>
-    public string Agregar(string email, string rol, string password)
+    public string Agregar(string email, string rol, string password, bool debeCambiarPassword = false)
     {
         var id = $"usuario-{_siguienteId++}";
-        _cuentas[email] = new Cuenta(id, email, rol, password);
+        _cuentas[email] = new Cuenta(id, email, rol, password, debeCambiarPassword);
         return id;
+    }
+
+    /// <summary>Current password of an account, to assert a change.</summary>
+    public string PasswordDe(string email) => _cuentas[email].Password;
+
+    /// <summary>Current "must change password" flag of an account.</summary>
+    public bool DebeCambiarDe(string email) => _cuentas[email].DebeCambiarPassword;
+
+    public Task<UsuarioCuenta?> BuscarPorIdAsync(string id, CancellationToken ct = default) =>
+        Task.FromResult(_cuentas.Values.FirstOrDefault(cuenta => cuenta.Id == id)?.ACuenta());
+
+    public Task CambiarPasswordAsync(
+        string id,
+        string passwordActual,
+        string passwordNueva,
+        CancellationToken ct = default)
+    {
+        var cuenta = _cuentas.Values.Single(c => c.Id == id);
+        if (cuenta.Password != passwordActual)
+            throw new BusinessRuleException("La contraseña actual es incorrecta.");
+        if (passwordNueva.Length < 12)
+            throw new BusinessRuleException("La contraseña debe tener al menos 12 caracteres.");
+
+        cuenta.Password = passwordNueva;
+        cuenta.DebeCambiarPassword = false;
+        return Task.CompletedTask;
     }
 
     public Task<UsuarioCuenta?> BuscarPorEmailAsync(string email, CancellationToken ct = default) =>
@@ -72,23 +98,40 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
         string rol,
         string nombre,
         string apellido,
+        bool debeCambiarPassword = false,
         CancellationToken ct = default)
     {
         if (_cuentas.ContainsKey(email))
             throw new BusinessRuleException("El email ya está registrado.");
 
-        var cuenta = new Cuenta($"usuario-{_siguienteId++}", email, rol, password);
+        var cuenta = new Cuenta($"usuario-{_siguienteId++}", email, rol, password, debeCambiarPassword);
         _cuentas[email] = cuenta;
-        _creaciones.Add(new Creacion(email, password, rol, nombre, apellido));
+        _creaciones.Add(new Creacion(email, password, rol, nombre, apellido, debeCambiarPassword));
         return Task.FromResult(cuenta.ACuenta());
     }
 
-    public sealed record Creacion(string Email, string Password, string Rol, string Nombre, string Apellido);
+    public sealed record Creacion(
+        string Email,
+        string Password,
+        string Rol,
+        string Nombre,
+        string Apellido,
+        bool DebeCambiarPassword = false);
 
     public sealed record Verificacion(string? Email, string Password);
 
-    private sealed record Cuenta(string Id, string Email, string Rol, string Password)
+    private sealed class Cuenta(string id, string email, string rol, string password, bool debeCambiarPassword)
     {
-        public UsuarioCuenta ACuenta() => new(Id, Email);
+        public string Id { get; } = id;
+
+        public string Email { get; } = email;
+
+        public string Rol { get; } = rol;
+
+        public string Password { get; set; } = password;
+
+        public bool DebeCambiarPassword { get; set; } = debeCambiarPassword;
+
+        public UsuarioCuenta ACuenta() => new(Id, Email, DebeCambiarPassword);
     }
 }

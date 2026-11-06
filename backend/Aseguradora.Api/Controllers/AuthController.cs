@@ -25,6 +25,27 @@ public sealed class AuthController(AutenticacionService autenticacion) : Control
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest solicitud, CancellationToken ct) =>
         Ok(await _autenticacion.LoginAsync(solicitud, ct));
 
+    /// <summary>
+    /// Changes the temporary password (US-F1-09). It accepts a token marked "must change" and returns a
+    /// new token without the mark. A wrong current password answers 400, not 401.
+    /// </summary>
+    [HttpPost("cambiar-password")]
+    [Authorize(Policy = Politicas.CambioPassword)]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LoginResponse>> CambiarPassword(
+        CambiarPasswordRequest solicitud,
+        CancellationToken ct)
+    {
+        var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(usuarioId))
+            return Unauthorized();
+
+        return Ok(await _autenticacion.CambiarPasswordAsync(usuarioId, solicitud, ct));
+    }
+
     /// <summary>Creates an employee or administrator. Only an administrator can call it.</summary>
     [HttpPost("usuarios")]
     [Authorize(Policy = Politicas.Admin)]

@@ -59,6 +59,7 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
         string rol,
         string nombre,
         string apellido,
+        bool debeCambiarPassword = false,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -69,7 +70,8 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
             Email = email,
             Nombre = nombre,
             Apellido = apellido,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            DebeCambiarPassword = debeCambiarPassword
         };
 
         var creado = await usuarios.CreateAsync(usuario, password);
@@ -87,6 +89,34 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
         return ADatos(usuario);
     }
 
+    public async Task<UsuarioCuenta?> BuscarPorIdAsync(string id, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var usuario = await usuarios.FindByIdAsync(id);
+        return usuario is null ? null : ADatos(usuario);
+    }
+
+    public async Task CambiarPasswordAsync(
+        string id,
+        string passwordActual,
+        string passwordNueva,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var usuario = await usuarios.FindByIdAsync(id)
+            ?? throw new BusinessRuleException("No se encontró la cuenta.");
+
+        var cambiado = await usuarios.ChangePasswordAsync(usuario, passwordActual, passwordNueva);
+        if (!cambiado.Succeeded)
+            throw new BusinessRuleException(Describir(cambiado));
+
+        usuario.DebeCambiarPassword = false;
+        var guardado = await usuarios.UpdateAsync(usuario);
+        if (!guardado.Succeeded)
+            throw new BusinessRuleException(Describir(guardado));
+    }
+
     public async Task<bool> EmailExisteAsync(string email, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -94,7 +124,7 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
     }
 
     private static UsuarioCuenta ADatos(Usuario usuario) =>
-        new(usuario.Id, usuario.Email ?? usuario.UserName ?? string.Empty);
+        new(usuario.Id, usuario.Email ?? usuario.UserName ?? string.Empty, usuario.DebeCambiarPassword);
 
     private static string Describir(IdentityResult resultado) =>
         string.Join(" ", resultado.Errors.Select(error => error.Description));

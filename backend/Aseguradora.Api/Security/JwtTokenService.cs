@@ -35,6 +35,9 @@ public sealed class JwtTokenService(IOptions<JwtOpciones> opciones, TimeProvider
             new(ClaimsAseguradora.Rol, rol)
         };
 
+        if (usuario.DebeCambiarPassword)
+            claims.Add(new(ClaimsAseguradora.CambiarPassword, "true"));
+
         var credenciales = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opciones.Key)),
             SecurityAlgorithms.HmacSha256);
