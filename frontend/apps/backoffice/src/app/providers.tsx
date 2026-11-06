@@ -1,4 +1,5 @@
 import { ApiClientProvider } from '@nexa/api';
+import { Toaster } from '@nexa/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ export function ProveedoresApp() {
     <ApiClientProvider client={apiClient}>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>
     </ApiClientProvider>
   );

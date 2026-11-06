@@ -1,3 +1,4 @@
+import { CODIGO_CAMBIO_PASSWORD_REQUERIDO } from '../dto/auth';
 import { ApiError, parseHttpError } from './errores';
 import { serializarQuery, type Query } from './query';
 
@@ -5,6 +6,8 @@ export interface ApiClientOptions {
   baseUrl: string;
   getToken?: () => string | null;
   onUnauthorized?: () => void;
+  /** 403 con `codigo: PASSWORD_CAMBIO_REQUERIDO` (US-F1-09): la sesión debe cambiar la contraseña. */
+  onPasswordChangeRequired?: () => void;
 }
 
 export type ResponseType = 'json' | 'text' | 'blob' | 'raw';
@@ -121,7 +124,12 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const texto = status === 204 ? '' : await readNetwork(() => response.text(), signal);
     if (responseType === 'raw')
       return { status, ok, contentType, texto } satisfies ApiRespuestaCruda as T;
-    if (!ok) throw parseHttpError(status, contentType, texto);
+    if (!ok) {
+      const error = parseHttpError(status, contentType, texto);
+      if (status === 403 && error.codigo === CODIGO_CAMBIO_PASSWORD_REQUERIDO)
+        options.onPasswordChangeRequired?.();
+      throw error;
+    }
     if (responseType === 'text') return texto as T;
     return parseJson<T>(texto, status);
   }

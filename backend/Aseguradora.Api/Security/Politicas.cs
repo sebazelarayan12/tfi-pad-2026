@@ -12,6 +12,12 @@ public static class Politicas
     /// <summary>Role Administrador, validated with a JWT (scheme Bearer).</summary>
     public const string Admin = "Admin";
 
+    /// <summary>
+    /// Role Empleado or Administrador, with a JWT that may still carry the "must change password"
+    /// mark. Only <c>POST /api/auth/cambiar-password</c> uses it (US-F1-09).
+    /// </summary>
+    public const string CambioPassword = "CambioPassword";
+
     /// <summary>Valid API key principal, validated with the scheme ApiKey (header X-Api-Key).</summary>
     public const string ApiKey = "ApiKey";
 }

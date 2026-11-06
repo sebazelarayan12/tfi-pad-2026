@@ -34,13 +34,13 @@ function esRol(valor: unknown): valor is RolUsuario {
 function parsear(texto: string): Sesion | null {
   const datos: unknown = JSON.parse(texto);
   if (typeof datos !== 'object' || datos === null) return null;
-  const { token, rol, expiraEn, email } = datos as Record<string, unknown>;
+  const { token, rol, expiraEn, email, debeCambiarPassword } = datos as Record<string, unknown>;
   if (typeof token !== 'string' || token === '' || !esRol(rol)) return null;
   if (typeof expiraEn !== 'string') return null;
   const vencimiento = new Date(expiraEn);
   if (Number.isNaN(vencimiento.getTime())) return null;
   if (email !== null && typeof email !== 'string') return null;
-  return { token, rol, expiraEn: vencimiento, email };
+  return { token, rol, expiraEn: vencimiento, email, debeCambiarPassword: debeCambiarPassword === true };
 }
 
 /** Devuelve la sesión guardada si es válida y vigente; si no, la borra y devuelve `null`. */

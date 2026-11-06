@@ -9,6 +9,7 @@ export * from './dto/polizas';
 export * from './endpoints/polizas';
 export * from './endpoints/cuotas';
 export * from './dto/usuarios';
+export * from './auth/cambiarPassword';
 export * from './auth/login';
 export * from './endpoints/usuarios';
 export * from './dto/pagofacil';

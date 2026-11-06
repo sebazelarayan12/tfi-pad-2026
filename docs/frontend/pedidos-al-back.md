@@ -44,6 +44,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 | PB-28 | Deuda consolidada del cliente para un Empleado (JWT) | Falta endpoint | Bloquea | B5 | Falta endpoint |
 | PB-29 | Validación de CUIL, DNI de 7 dígitos y límites de rate limit | Mejora | Mejora | B4, W2 | Mejora |
 | PB-30 | Póliza `Vencida` o `Cancelada` con cuotas impagas: cupón y cobro | Inconsistencia de contrato | Degrada | B10, B9 | Inconsistencia de contrato |
+| PB-31 | Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte | Falta endpoint | Degrada | B1, B14 (B-24, B-26) | Falta endpoint |
 
 ---
 
@@ -443,6 +444,15 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Pantallas que desbloquea.** B10, B9 (acciones sobre cuotas de póliza vencida).
 - **Severidad.** Degrada.
 - **Workaround front.** Se muestra la cuota como impaga y se habilita el cupón hasta que el back decida (D6).
+
+### PB-31. Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte
+
+- **Qué pasa hoy.** `AuthController` solo tiene `POST /api/auth/login` y `POST /api/auth/usuarios` (`AuthController.cs:21,29`). No hay endpoint para cambiar la contraseña ni un indicador de "debe cambiarla" en `Usuario` (`Usuario.cs`) ni en `LoginResponse` (`LoginResponse.cs`: `Token`, `Rol`, `ExpiraEn`). `AddIdentityCore<Usuario>()` se registra sin opciones (`IdentityExtensions.cs:15`), así que rigen los defaults de Identity (6 caracteres, mayúscula, minúscula, dígito y símbolo). Un administrador crea al empleado con una contraseña temporal (B-24, RV-D18) y esa contraseña no vence nunca.
+- **Qué necesita el front.** Saber en el login que la cuenta debe cambiar la contraseña, un endpoint para cambiarla y que el back impida usar el resto de la API hasta que se cambie. Sin eso, la pantalla de cambio obligatorio (US-FE-B-26) sería solo una barrera de la UI que cualquiera con el token puede saltear.
+- **Contrato mínimo propuesto.** (a) `Usuario.DebeCambiarPassword` (bool, `true` al crear por `POST /api/auth/usuarios`); (b) `LoginResponse.DebeCambiarPassword` y un claim `cambiar_password` en el JWT; (c) `POST /api/auth/cambiar-password` con `{ passwordActual, passwordNueva }` que devuelve 200 con un `LoginResponse` nuevo (token sin el claim); (d) las políticas `Empleado` y `Admin` rechazan con 403 `PASSWORD_CAMBIO_REQUERIDO` los tokens con el claim, salvo el endpoint de cambio; (e) política fuerte (mínimo 12 caracteres, mayúscula, minúscula, dígito y símbolo) que rige para el alta, el cambio y el seed del administrador. Un error de contraseña actual incorrecta responde 400 y no 401, para no disparar el cierre de sesión global del front.
+- **Pantallas que desbloquea.** B1 (el login ramifica según el indicador), B14 (la temporal deja de ser permanente) y la pantalla nueva de cambio obligatorio (US-FE-B-26).
+- **Severidad.** Degrada (B-24 se entrega igual; hasta que exista, la contraseña temporal no vence).
+- **Workaround front.** US-FE-B-26 trabaja con MSW (`VITE_USE_MOCKS=true`): el handler de login devuelve `debeCambiarPassword: true` para un usuario de prueba y el de `POST /api/auth/cambiar-password` replica el contrato propuesto. Tarjeta del back: `US-F1-09` en `docs/tareas-divididas.md`.
 
 ---
 
