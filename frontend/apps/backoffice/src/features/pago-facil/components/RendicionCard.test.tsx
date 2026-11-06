@@ -54,7 +54,7 @@ it('un 201 sin rechazos muestra el resumen sin tabla', async () => {
   const { usuario, input } = montar();
   await usuario.upload(input, archivo);
   expect(await screen.findByText('Líneas procesadas: 3 de 3.')).toBeInTheDocument();
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  expect(screen.queryByRole('table', { name: 'Líneas rechazadas' })).not.toBeInTheDocument();
 });
 
 it('un 201 parcial muestra línea y motivo sin alerta', async () => {

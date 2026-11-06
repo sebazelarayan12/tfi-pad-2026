@@ -1,4 +1,6 @@
 import type { RouteObject } from 'react-router-dom';
 
-// Stub de US-FE-T-17: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+import { InicioPage } from './pages/InicioPage';
+
+/** `/` de la web pública (D-02). Va antes que el resto de las rutas del layout (FC14). */
+export const rutas: RouteObject[] = [{ path: '/', element: <InicioPage /> }];
