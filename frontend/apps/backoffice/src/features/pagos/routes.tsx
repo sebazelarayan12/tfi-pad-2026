@@ -1,4 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+/** B-17 no tiene ruta propia; B-19 agrega `/pagos`. */
+export const pagosRoutes: RouteObject[] = [];
+
+// Compatibilidad con el scaffold de T-14, que compone `rutas` de cada feature.
+export const rutas = pagosRoutes;
