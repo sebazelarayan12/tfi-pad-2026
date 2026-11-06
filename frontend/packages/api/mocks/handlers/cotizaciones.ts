@@ -2,7 +2,12 @@ import { http, HttpResponse } from 'msw';
 import type { CotizacionDto, OpcionCotizacionMock } from '../../src/dto/cotizaciones';
 import type { VehiculoResponse } from '../../src/dto/vehiculos';
 import { CLIENTE_JUAN_ID, clientesFixture } from '../fixtures/clientes';
-import { problemaNegocio, problemaNoEncontrado, problemaValidacion } from '../fixtures/comunes';
+import {
+  problemaNegocio,
+  problemaNoEncontrado,
+  problemaSinSesion,
+  problemaValidacion,
+} from '../fixtures/comunes';
 import {
   COTIZACION_ID,
   crearEstadoVehiculos,
@@ -159,6 +164,7 @@ export function crearHandlersCotizaciones(
 }
 
 export const variantesCotizaciones = {
+  sinToken: variante('post', ruta, problemaSinSesion()),
   cotizarSinPlanes: variante('post', ruta, sinPlanes),
   cotizarVehiculoDadoDeBaja: variante(
     'post',

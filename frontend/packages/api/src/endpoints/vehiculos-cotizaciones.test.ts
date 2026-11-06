@@ -219,6 +219,12 @@ describe('cotizaciones', () => {
       detail,
     });
   });
+  it('la variante sinToken de cotizaciones responde 401', async () => {
+    servidorMock.use(variantesCotizaciones.sinToken);
+    await expect(cotizarVehiculo(api, { vehiculoId: VEHICULO_ID })).rejects.toMatchObject({
+      status: 401,
+    });
+  });
   it.each([
     [VEHICULO_BAJA_ID, 400],
     [GUID_VACIO, 404],
