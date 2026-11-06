@@ -52,16 +52,24 @@ Al terminar, la feature `planes` de la web pública expone `TablaPlanes`: una ta
 
 ## 5. Archivos a crear o modificar
 
-Todos bajo `frontend/apps/web-publica/src/features/planes/`:
+Bajo `frontend/apps/web-publica/src/features/planes/`:
 
 | Archivo | Acción | Dueño |
 |---|---|---|
 | `index.ts` | crear: exporta `TablaPlanes` y `planesRoutes` (stub) | W-02 (primer task del feature `planes` web) |
-| `routes.tsx` | crear stub: `planesRoutes: RouteObject[] = []` | W-02 |
+| `routes.tsx` | ya existe (stub de T-17 que exporta `rutas: RouteObject[] = []`, lo importa `app/router.tsx`); se deja vacío e `index.ts` lo reexporta como `planesRoutes` | W-02 |
 | `api/usePlanesPublicos.ts` | crear: hook TanStack Query sobre `listarPlanes()` | W-02 |
 | `api/usePlanesPublicos.test.tsx` | crear | W-02 |
 | `components/TablaPlanes.tsx` | crear | W-02 |
 | `components/TablaPlanes.test.tsx` | crear | W-02 |
+
+Bajo `frontend/apps/web-publica/src/app/` (FC18; la primera tarea de la web que llama a la API monta el cliente):
+
+| Archivo | Acción | Dueño |
+|---|---|---|
+| `apiClient.ts` | crear: `createApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080' })`, sin token (la web no tiene sesión) | W-02 |
+| `providers.tsx` | modificar: solo montar `<ApiClientProvider client={apiClient}>` (de `@nexa/api`, PR #100) | T-17 (W-02 agrega el provider) |
+| `providers.test.tsx` | modificar: test de que el provider entrega el cliente de la app | T-17 (W-02 agrega el test) |
 
 Dueños de archivos compartidos que W-02 **usa** y no modifica: `frontend/packages/api/src/dto/planes.ts`, `packages/api/src/index.ts` (US-FE-T-27 y T-12), `packages/ui/src/index.ts` (T-03; primitivos de T-05, T-06, T-07). Si falta un export, pedirlo a su dueño (FC17). No editar `package.json`.
 
