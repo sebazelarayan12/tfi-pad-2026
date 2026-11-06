@@ -28,12 +28,10 @@ const dominios = {
   vehiculos,
 };
 
-// T-24, T-27, T-28, T-29, T-30 y T-31 ya publican sus handlers.
+// T-24, T-26, T-27, T-28, T-29, T-30 y T-31 ya publican sus handlers.
 const dominiosVacios = {
   auth,
-  cotizaciones,
   inicio,
-  vehiculos,
 };
 
 it('agrega los handlers de los doce dominios', () => {
