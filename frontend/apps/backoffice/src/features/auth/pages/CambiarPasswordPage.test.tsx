@@ -26,7 +26,7 @@ function problema(status: number, cuerpo: Record<string, unknown>) {
 
 function respuestaOk() {
   return HttpResponse.json({
-    token: 'cabecera.eyJlbWFpbCI6ImFAYi5jb20ifQ.firma',
+    token: 'token',
     rol: 'Empleado',
     expiraEn: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
     debeCambiarPassword: false,
@@ -81,7 +81,7 @@ async function completar(usuario: ReturnType<typeof userEvent.setup>, nueva = NU
 
 beforeEach(() => {
   iniciarSesion({
-    token: 'cabecera.eyJlbWFpbCI6ImFAYi5jb20ifQ.firma',
+    token: 'token',
     rol: 'Empleado',
     expiraEn: new Date(Date.now() + 60_000).toISOString(),
     debeCambiarPassword: true,
