@@ -66,6 +66,7 @@ public class CambioPasswordApiTests
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("PASSWORD_CAMBIO_REQUERIDO", body.RootElement.GetProperty("code").GetString());
+        Assert.Equal("PASSWORD_CAMBIO_REQUERIDO", body.RootElement.GetProperty("codigo").GetString());
     }
 
     [Fact]

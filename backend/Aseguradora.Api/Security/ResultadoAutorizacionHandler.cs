@@ -38,6 +38,9 @@ public sealed class ResultadoAutorizacionHandler : IAuthorizationMiddlewareResul
             Detail = Detalle,
             Instance = context.Request.Path
         };
+        // `codigo` is the name the front client reads (ExceptionMiddleware uses it too); `code` is kept
+        // because the card of US-F1-09 names it.
+        problema.Extensions["codigo"] = PasswordVigenteRequirement.Codigo;
         problema.Extensions["code"] = PasswordVigenteRequirement.Codigo;
         problema.Extensions["traceId"] = context.TraceIdentifier;
 
