@@ -9,10 +9,21 @@ namespace Aseguradora.Data.Identity;
 /// </summary>
 public static class IdentityExtensions
 {
+    /// <summary>Minimum password length. The front validates the same value (US-FE-B-26).</summary>
+    public const int LongitudMinimaPassword = 12;
+
     public static IServiceCollection AddIdentityAseguradora(this IServiceCollection services)
     {
         services
-            .AddIdentityCore<Usuario>()
+            .AddIdentityCore<Usuario>(opciones =>
+            {
+                // Strong password policy (US-F1-09): create, change and initial administrator seed.
+                opciones.Password.RequiredLength = LongitudMinimaPassword;
+                opciones.Password.RequireUppercase = true;
+                opciones.Password.RequireLowercase = true;
+                opciones.Password.RequireDigit = true;
+                opciones.Password.RequireNonAlphanumeric = true;
+            })
             .AddRoles<IdentityRole>()
             .AddErrorDescriber<IdentityErrorDescriberEspanol>()
             .AddEntityFrameworkStores<AseguradoraDbContext>();

@@ -13,4 +13,10 @@ public sealed class Usuario : IdentityUser
     public string Nombre { get; set; } = string.Empty;
 
     public string Apellido { get; set; } = string.Empty;
+
+    /// <summary>
+    /// True while the account still uses the temporary password an administrator set (US-F1-09).
+    /// Existing accounts and the initial administrator are <c>false</c>.
+    /// </summary>
+    public bool DebeCambiarPassword { get; set; }
 }
