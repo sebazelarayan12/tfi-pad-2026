@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nexa/api';
-import { AlertaError, Button, Input } from '@nexa/ui';
+import { Button, Input, toast } from '@nexa/ui';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 
@@ -52,8 +52,6 @@ export const NuevoEmpleadoPanel = forwardRef<NuevoEmpleadoPanelHandle>(
   function NuevoEmpleadoPanel(_props, refExterna) {
     const crear = useCrearUsuario();
     const enviando = useRef(false);
-    const [alerta, setAlerta] = useState<string | null>(null);
-    const [exito, setExito] = useState(false);
     const [pedidoFoco, setPedidoFoco] = useState(0);
 
     const {
@@ -82,8 +80,6 @@ export const NuevoEmpleadoPanel = forwardRef<NuevoEmpleadoPanelHandle>(
     function limpiar() {
       reset(VALORES_VACIOS);
       crear.reset();
-      setAlerta(null);
-      setExito(false);
     }
 
     useImperativeHandle(refExterna, () => ({
@@ -95,12 +91,12 @@ export const NuevoEmpleadoPanel = forwardRef<NuevoEmpleadoPanelHandle>(
 
     function alFallar(error: unknown) {
       if (!isApiError(error) || error.kind !== 'http') {
-        setAlerta(MENSAJE_INESPERADO);
+        toast.error(MENSAJE_INESPERADO);
         return;
       }
       if (error.status === 401) return; // La sesión vencida la resuelve el cliente (T-08).
       if (error.status === 403) {
-        setAlerta(MENSAJE_SIN_PERMISO);
+        toast.error(MENSAJE_SIN_PERMISO);
         return;
       }
       if (error.status === 400 && error.errors) {
@@ -113,20 +109,18 @@ export const NuevoEmpleadoPanel = forwardRef<NuevoEmpleadoPanelHandle>(
           return;
         }
       }
-      // El `detail` (email repetido, política de Identity) va en la alerta, sin marcar ningún campo.
-      setAlerta(error.detail ?? MENSAJE_INESPERADO);
+      // El `detail` (email repetido, política de Identity) va en un aviso, sin marcar ningún campo (FC10, FC19).
+      toast.error(error.detail ?? MENSAJE_INESPERADO);
     }
 
     function enviar(valores: CrearUsuarioPayload) {
       if (enviando.current) return;
       enviando.current = true;
-      setAlerta(null);
-      setExito(false);
       crear.mutate(valores, {
         onSuccess: () => {
           reset(VALORES_VACIOS);
           crear.reset();
-          setExito(true);
+          toast.success(MENSAJE_EXITO);
           setPedidoFoco((valor) => valor + 1);
         },
         onError: alFallar,
@@ -186,10 +180,6 @@ export const NuevoEmpleadoPanel = forwardRef<NuevoEmpleadoPanelHandle>(
           {...register('rol')}
           {...(errors.rol?.message ? { mensajeError: errors.rol.message } : {})}
         />
-        {alerta ? <AlertaError>{alerta}</AlertaError> : null}
-        <p role="status" className="text-body-sm text-text-secondary">
-          {exito ? MENSAJE_EXITO : null}
-        </p>
         <div className="mt-auto flex justify-end gap-sp-8 border-t border-border-strong pt-sp-16">
           <Button label="Cancelar" variant="secondary" size="m" onClick={limpiar} />
           <Button

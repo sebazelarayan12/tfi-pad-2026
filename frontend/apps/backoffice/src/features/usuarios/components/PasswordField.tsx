@@ -1,4 +1,4 @@
-import { Button, Input } from '@nexa/ui';
+import { Button, Input, toast } from '@nexa/ui';
 import { forwardRef, useState } from 'react';
 
 import { generarPasswordTemporal } from '../schemas/generarPassword';
@@ -11,8 +11,6 @@ interface PasswordFieldProps {
   mensajeError?: string;
   disabled?: boolean;
 }
-
-type EstadoCopia = 'ninguno' | 'copiada' | 'fallo';
 
 const HELPER = 'Compartila por un canal seguro.';
 const MENSAJE_COPIADA = 'Contraseña copiada.';
@@ -47,20 +45,18 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
   ref,
 ) {
   const [visible, setVisible] = useState(false);
-  const [copia, setCopia] = useState<EstadoCopia>('ninguno');
 
   function generar() {
     onChange(generarPasswordTemporal());
     setVisible(true);
-    setCopia('ninguno');
   }
 
   async function copiar() {
     try {
       await navigator.clipboard.writeText(value);
-      setCopia('copiada');
+      toast.success(MENSAJE_COPIADA);
     } catch {
-      setCopia('fallo');
+      toast.error(MENSAJE_COPIA_FALLO);
     }
   }
 
@@ -78,10 +74,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
           error={mensajeError !== undefined}
           helper={mensajeError ?? HELPER}
           className="pr-sp-40"
-          onChange={(evento) => {
-            onChange(evento.target.value);
-            setCopia('ninguno');
-          }}
+          onChange={(evento) => onChange(evento.target.value)}
           onBlur={onBlur}
         />
         <button
@@ -112,10 +105,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
           disabled={disabled || value === ''}
           onClick={() => void copiar()}
         />
-        <p role="status" className="text-body-sm text-text-secondary">
-          {copia === 'copiada' ? MENSAJE_COPIADA : null}
-          {copia === 'fallo' ? MENSAJE_COPIA_FALLO : null}
-        </p>
       </div>
     </div>
   );

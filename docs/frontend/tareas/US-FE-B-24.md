@@ -4,7 +4,7 @@ Tipo B · Oleada 4 · Tamaño S · Rama sugerida `feature/US-FE-B-24-usuarios-al
 
 ## 1. Objetivo
 
-Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear un empleado o un administrador con `POST /api/auth/usuarios`. Pide nombre, apellido, email, rol (sin preselección) y una contraseña temporal que el front genera con el botón `Generar` (RV-D18, decidido por el usuario el 2026-11-06). El empleado debe cambiarla en su primer ingreso (US-F1-09 y US-FE-B-26). El back valida la política al crear. Con 201 limpia el formulario y borra la contraseña de la memoria de la pantalla. Usuario: solo Administrador. La tabla de usuarios es de US-FE-B-25.
+Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear un empleado o un administrador con `POST /api/auth/usuarios`. Pide nombre, apellido, email, rol (sin preselección) y una contraseña temporal que el front genera con el botón `Generar` (RV-D18, decidido por el usuario el 2026-11-06). El empleado debe cambiarla en su primer ingreso (US-F1-09 y US-FE-B-26). El back valida la política al crear. Con 201 limpia el formulario, borra la contraseña de la memoria de la pantalla y avisa con un toast. Los avisos usan `toast` de `@nexa/ui` (FC19, US-FE-T-33). Usuario: solo Administrador. La tabla de usuarios es de US-FE-B-25.
 
 ## 2. Alcance
 
@@ -15,6 +15,7 @@ Al terminar, `/usuarios` (B14) muestra el panel `Nuevo empleado` y permite crear
 - Componentes `PasswordField` (campo con botón `Generar` y mostrar u ocultar) y `RolSelector` (radiogroup con chips).
 - Generador `generarPasswordTemporal()` (`schemas/generarPassword.ts`) con `crypto.getRandomValues`.
 - Hook `useCrearUsuario` (mutación, `retry: 0`).
+- Avisos con `toast` (FC19): éxito, errores de negocio y copia de la contraseña. Los errores de campo siguen bajo el campo.
 - Schema `crearUsuarioSchema` con los mensajes del DTO.
 - Botón `Nuevo empleado` de la topbar: limpia el formulario y enfoca `Nombre`.
 
@@ -118,10 +119,10 @@ No se editan `packages/*`. El DTO `CrearUsuarioRequest` y `UsuarioResponse` los 
    - `Cancelar` limpia el formulario (B14 §8).
    - `Crear empleado` llama `useCrearUsuario` con `handleSubmit`. Deshabilitado mientras corre.
 9. Lógica de errores de la mutación:
-   - 201: limpia el formulario, borra la contraseña del estado (`reset` con `password: ''`), muestra `Usuario creado.` (propuesta) y devuelve el foco a `Nombre`.
+   - 201: limpia el formulario, borra la contraseña del estado (`reset` con `password: ''`), `toast.success('Usuario creado.')` y devuelve el foco a `Nombre` (el foco se pide después del render: `reset` vacía los campos registrados).
    - 400 con `errors` (`ValidationProblemDetails`, claves PascalCase `Nombre`, `Apellido`, `Email`, `Password`, `Rol`): cada mensaje se muestra bajo el campo con el texto propio de §8 (PB-15). Nunca el texto en inglés del back.
-   - 400 con `detail` (`El email ya está registrado.`, o el texto unido de Identity cuando la contraseña no cumple la política): alerta general del panel con `role="alert"`. No se marca ningún campo (FC10).
-   - 401: lo resuelve T-08. 403: texto de §8. 500: `detail` o texto de error inesperado.
+   - 400 con `detail` (`El email ya está registrado.`, o el texto unido de Identity cuando la contraseña no cumple la política): `toast.error(detail)`. No se marca ningún campo (FC10, FC19).
+   - 401: lo resuelve T-08. 403: `toast.error` con el texto de §8. 500 o error de red: `toast.error` con el `detail` o el texto de error inesperado.
 10. Botón `Nuevo empleado` de la topbar (B14 §8, NO DEFINIDO): limpia el formulario y enfoca `Nombre` (default, D-B24-01).
 11. Crear `UsuariosPage` y `routes.tsx` e `index.ts`.
 12. No guardar la contraseña en `sessionStorage`, `localStorage`, la URL ni la caché de TanStack Query (FC12). La mutación no deja la respuesta en caché.
@@ -179,13 +180,13 @@ Textos que el Figma no define (propuesta, B14 §7 "NO DEFINIDO"):
 
 | Elemento | Texto propuesto |
 |---|---|
-| Éxito | `Usuario creado.` |
+| Éxito (toast) | `Usuario creado.` |
 | Creando | `Creando usuario…` |
 | Mostrar contraseña | `Mostrar contraseña` / `Ocultar contraseña` (aria-label) |
 | Generar | `Generar` (Figma, B14 §5); `aria-label` `Generar contraseña temporal` (propuesta) |
 | Copiar | `Copiar`; `aria-label` `Copiar contraseña temporal` (propuesta) |
-| Copiado | `Contraseña copiada.` |
-| Copiado falló | `No se pudo copiar. Copiala a mano.` |
+| Copiado (toast) | `Contraseña copiada.` |
+| Copiado falló (toast de error) | `No se pudo copiar. Copiala a mano.` |
 | Rol obligatorio | `El rol es obligatorio.` (texto del DTO) |
 | Errores de `errors` | `Nombre` → `El nombre es obligatorio.` / `El nombre no puede superar los 100 caracteres.`; `Apellido` → `El apellido es obligatorio.` / `El apellido no puede superar los 100 caracteres.`; `Email` → `El email es obligatorio.` / `El email no tiene un formato válido.` / `El email no puede superar los 256 caracteres.`; `Password` → `La contraseña es obligatoria.` (vacía) o `La contraseña no cumple la política de seguridad.` (rechazo del back, propuesta); `Rol` → `El rol debe ser Administrador o Empleado.` |
 | 403 | `No tenés permiso para crear usuarios.` |
@@ -203,12 +204,12 @@ Valores de muestra (no son texto fijo): `Hernán Sosa`, `Julieta`, `Ávila`, `ju
 | Contraseña vacía | `La contraseña es obligatoria.`; no se envía. |
 | Contraseña generada o editada por el admin | Se envía tal cual; el front no valida su política. Si el back la rechaza, llega como `detail` (fila siguiente). |
 | Creando | Botón deshabilitado; un solo POST (FC11). |
-| 201 | Formulario limpio; contraseña borrada del estado; `Usuario creado.`; foco en `Nombre`. |
-| 400 email repetido (`detail`) | Alerta del panel con `role="alert"`; no marca el campo. |
-| 400 contraseña rechazada por Identity (`detail`) | Alerta con el texto de Identity (español) tal cual. |
+| 201 | Formulario limpio; contraseña borrada del estado; toast `Usuario creado.`; foco en `Nombre`. |
+| 400 email repetido (`detail`) | Toast de error con `El email ya está registrado.`; no marca el campo. |
+| 400 contraseña rechazada por Identity (`detail`) | Toast de error con el texto de Identity (español) tal cual. |
 | 400 `errors` | Mensaje bajo el campo con el texto de §8 (nunca el texto en inglés de ASP.NET). |
 | 401 | Sesión vencida: lo resuelve T-08. |
-| 403 | `No tenés permiso para crear usuarios.` |
+| 403 | Toast de error `No tenés permiso para crear usuarios.` |
 | Usuario en sesión que crea un Administrador | Permitido. |
 | Doble clic | Un solo POST. |
 | Reenvío tras error de red | No se reenvía (`retry: 0`). |
@@ -236,10 +237,10 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 7. `muestra_textos_literales_del_figma`: `Nuevo empleado`, labels y `Compartila por un canal seguro.`.
 8. `rol_sin_preseleccion`: ningún radio marcado.
 9. `envia_body_con_los_cinco_campos`: MSW captura `email`, `password`, `rol: "Empleado"`, `nombre`, `apellido`.
-10. `201_limpia_formulario_y_borra_password`: el campo contraseña queda vacío y aparece `Usuario creado.`.
+10. `201_limpia_formulario_y_borra_password`: el campo contraseña queda vacío y aparece el toast `Usuario creado.`.
 11. `400_errors_muestra_texto_en_espanol_bajo_el_campo`: `errors.Email` con `Email is invalid.` (texto en inglés) muestra `El email no tiene un formato válido.`.
-12. `400_detail_email_repetido_en_alerta_sin_marcar_campo`: `El email ya está registrado.` en `role="alert"`; `aria-invalid` ausente en `Email`.
-13. `400_detail_identity_muestra_texto_completo`: el texto de Identity que rechaza la contraseña aparece completo en `role="alert"`.
+12. `400_detail_email_repetido_en_toast_sin_marcar_campo`: `El email ya está registrado.` en un toast; `aria-invalid` ausente en `Email`.
+13. `400_detail_identity_muestra_texto_completo`: el texto de Identity que rechaza la contraseña aparece completo en un toast.
 14. `403_muestra_texto_propio`.
 15. `doble_clic_envia_un_post`: contador = 1.
 16. `generar_llena_el_campo_con_una_password_valida`: el campo arranca vacío; al pulsar `Generar` queda con 16 caracteres, visible, y el POST la envía tal cual.
@@ -262,7 +263,7 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 4. El POST envía `CrearUsuarioRequest` completo con el rol elegido (test 9).
 5. Con 201, el formulario se limpia, la contraseña se borra del estado y no queda en storage (tests 10 y 19).
 6. Los `errors` del back se muestran en español bajo el campo; nunca el texto en inglés (test 11).
-7. El `detail` (email repetido o contraseña rechazada por Identity) se muestra en la alerta del panel, sin marcar campo (tests 12 y 13).
+7. El `detail` (email repetido o contraseña rechazada por Identity) se muestra en un toast, sin marcar campo (tests 12 y 13; FC19).
 8. La contraseña temporal la genera el front con `crypto.getRandomValues` (16 caracteres, cuatro clases) y el front no aplica la política de Identity: la valida el back (tests 5, 5a a 5d, 6 y 16; RV-D18). Un botón `Copiar` pasa la contraseña generada al portapapeles (tests 16a y 16b; D-B24-05).
 9. Un doble clic genera un solo POST (test 15).
 10. `Cancelar` limpia el formulario (test 18).
@@ -309,6 +310,7 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 ## 16. Observaciones al índice
 
+- Toasts (FC19, US-FE-T-33): el usuario pidió usar Sonner y esta tarea lo estrena; los avisos de éxito, los errores de negocio y la copia van en toast. Se mantiene bajo el campo todo error de campo.
 - Corregido al implementar: la ficha pedía `RequireRol` en `routes.tsx`, pero la regla de límites de ESLint prohíbe que un feature importe el app-shell. La guarda se hizo en `UsuariosPage` con `useRol`. Si el equipo prefiere `RequireRol`, hay que envolver la ruta en `app/router.tsx` (archivo de T-14).
 - El botón `Nuevo empleado` vive en la página (columna izquierda), no en la topbar: `Topbar` es del layout y no admite acciones por ruta.
 - Resuelto (RV-D18, decidido por el usuario el 2026-11-06): el front genera la contraseña temporal (`Generar`, como en el Figma) y el empleado la cambia en el primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, ver §13). D-B24-05 decidida: botón `Copiar` (usuario, 2026-11-06).

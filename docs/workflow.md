@@ -172,6 +172,7 @@ Instalación: `npx skills add <repo>` (reiniciar la sesión del asistente despu�
 - [ ] Componentes reutilizables, lógica en hooks custom
 - [ ] `useEffect` con dependencias correctas
 - [ ] Estados cargando / vacío / error / sin permiso cubiertos, y accesibilidad básica (foco visible, labels, roles)
+- [ ] Avisos de éxito y errores de negocio con `toast` de `@nexa/ui`, no inline (FC19); los errores de campo siguen bajo el campo
 - [ ] Endpoints inexistentes cubiertos con handler MSW del contrato de la ficha, sin campos inventados
 
 ### General

@@ -1,5 +1,6 @@
 import { ApiClientProvider, createApiClient, type CrearUsuarioRequest } from '@nexa/api';
 import { servidorMock } from '@nexa/api/mocks/server';
+import { Toaster } from '@nexa/ui';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -41,6 +42,7 @@ function montar() {
     <QueryClientProvider client={new QueryClient()}>
       <ApiClientProvider client={cliente}>
         <NuevoEmpleadoPanel />
+        <Toaster />
       </ApiClientProvider>
     </QueryClientProvider>,
   );
@@ -135,12 +137,12 @@ describe('NuevoEmpleadoPanel', () => {
     expect(campo('Email')).toHaveAttribute('aria-invalid', 'true');
   });
 
-  it('400_detail_email_repetido_en_alerta_sin_marcar_campo', async () => {
+  it('400_detail_email_repetido_en_toast_sin_marcar_campo', async () => {
     capturarAlta(() => problema(400, { detail: 'El email ya está registrado.' }));
     const { usuario } = montar();
     await completar(usuario);
     await usuario.click(crear());
-    expect(await screen.findByRole('alert')).toHaveTextContent('El email ya está registrado.');
+    expect(await screen.findByText('El email ya está registrado.')).toBeInTheDocument();
     expect(campo('Email')).not.toHaveAttribute('aria-invalid');
   });
 
@@ -151,7 +153,7 @@ describe('NuevoEmpleadoPanel', () => {
     const { usuario } = montar();
     await completar(usuario);
     await usuario.click(crear());
-    expect(await screen.findByRole('alert')).toHaveTextContent(texto);
+    expect(await screen.findByText(texto)).toBeInTheDocument();
     expect(campo('Contraseña temporal').value).toBe(PASSWORD_PRUEBA);
   });
 
@@ -160,9 +162,7 @@ describe('NuevoEmpleadoPanel', () => {
     const { usuario } = montar();
     await completar(usuario);
     await usuario.click(crear());
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'No tenés permiso para crear usuarios.',
-    );
+    expect(await screen.findByText('No tenés permiso para crear usuarios.')).toBeInTheDocument();
   });
 
   it('500_sin_detail_muestra_error_inesperado', async () => {
@@ -170,7 +170,7 @@ describe('NuevoEmpleadoPanel', () => {
     const { usuario } = montar();
     await completar(usuario);
     await usuario.click(crear());
-    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error inesperado.');
+    expect(await screen.findByText('Ocurrió un error inesperado.')).toBeInTheDocument();
   });
 
   it('doble_clic_envia_un_post', async () => {
@@ -196,7 +196,7 @@ describe('NuevoEmpleadoPanel', () => {
     const { usuario } = montar();
     await completar(usuario);
     await usuario.click(crear());
-    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error inesperado.');
+    expect(await screen.findByText('Ocurrió un error inesperado.')).toBeInTheDocument();
     expect(capturas).toHaveLength(1);
   });
 
