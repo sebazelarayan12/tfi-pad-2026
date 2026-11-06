@@ -9,6 +9,10 @@ export type { SelectOption, SelectProps } from './components/Select/Select';
 // US-FE-T-05: Button, Chip y Badge/Estado.
 export { Button } from './components/Button/Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button/Button';
+// US-FE-W-01: Button como enlace y el tipo `renderLink` que comparten los enlaces de @nexa/ui.
+export { ButtonLink } from './components/Button/ButtonLink';
+export type { ButtonLinkProps } from './components/Button/ButtonLink';
+export type { LinkRenderProps, RenderLink } from './components/Button/enlace';
 export { Chip } from './components/Chip/Chip';
 export type { ChipProps, ChipTipo } from './components/Chip/Chip';
 export { EstadoBadge } from './components/EstadoBadge/EstadoBadge';
