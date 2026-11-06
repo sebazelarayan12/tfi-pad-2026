@@ -4,6 +4,7 @@ import { useSubirRendicion } from '../api/useSubirRendicion';
 import { validarArchivoRendicion } from '../schemas/archivoRendicion';
 import { resultadoErrorRendicion } from '../schemas/parseErroresRendicion';
 import type { ResultadoSubida } from '../types/rendicion';
+import { HistorialRendicionesTable } from './HistorialRendicionesTable';
 import { RendicionAviso } from './RendicionAviso';
 import { RendicionDropzone } from './RendicionDropzone';
 import { RendicionResultado } from './RendicionResultado';
@@ -44,6 +45,7 @@ export function RendicionCard() {
         />
         {resultado.tipo === 'error' ? <RendicionAviso id={avisoId} aviso={resultado} /> : null}
         {resultado.tipo === 'ok' ? <RendicionResultado resultado={resultado.resultado} /> : null}
+        <HistorialRendicionesTable />
       </div>
     </CardWidget>
   );
