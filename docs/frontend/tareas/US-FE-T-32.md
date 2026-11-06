@@ -219,7 +219,7 @@ Motivo: el alta está **Implementada** y depende de roles reales. El listado, la
 ## 13. Decisiones pendientes
 
 - **D-32-1 (PB-04):** default: los mocks existen; B-25 y el "yo" de B-02 quedan con degradación hasta el PB.
-- **[CONFIRMAR] D-32-2 (política de contraseña temporal, D-21, RV-D18):** default: sin validación en el front; el admin escribe la contraseña y se muestra lo que devuelva el back. No cerrar sin confirmación del equipo: seguridad.
+- **D-32-2 (política de contraseña temporal, D-21, RV-D18): decidido por el usuario (2026-11-06).** La contraseña temporal la genera el front (B-24) y el empleado debe cambiarla en su primer ingreso (US-FE-B-26, que agrega `cambiarPassword` y el campo `debeCambiarPassword` a `@nexa/api`). Esta tarea no cambia. Pendiente de confirmación del equipo (seguridad).
 - **D-32-3 (rol inicial, D-20):** default: sin preselección; el campo es obligatorio.
 - **D-32-4 (email dentro del alta):** default: el DTO de `zod` del front solo valida formato; el back es la fuente de verdad (`[EmailAddress]` es menos estricto que zod).
 - **D-API-1 (hooks en features, FC2).** Default (RV-44): los hooks los escriben B-24 y B-25 en `features/usuarios/api/` y B-02 en `features/inicio/api/`; `@nexa/api` solo exporta funciones, tipos y claves.
