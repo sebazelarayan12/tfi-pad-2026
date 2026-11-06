@@ -1,10 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-
-import type { LinkRenderProps } from '../Button/enlace';
 import { axe } from 'vitest-axe';
 
+import type { LinkRenderProps } from '../Button/enlace';
 import { PublicNav } from './PublicNav';
 
 const links = [
