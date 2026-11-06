@@ -91,6 +91,7 @@ Borrador generado a partir de `docs/AnalisisBack.md`. Cada tarea es una tarjeta 
 | US-F1-06 | Consulta, modificación y baja lógica de clientes (CU05) | M |
 | US-F1-07 | Límite de intentos de la web pública (RN20, por prefijo) y verificador de póliza | M |
 | US-F1-08 | Consulta pública de póliza y cuotas (CU02) | M |
+| US-F1-09 | Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte (CU01 y CU03) | M |
 | US-F2-01 | Publicar contratos de cotización, cálculo de prima, fake para F3 y punto de registro del frente | M |
 | US-F2-02 | ABM de planes (CU08) y seed de planes TC y TR | M |
 | US-F2-03 | Servicio DNRPA: mock y cliente HTTP sobre el helper de resiliencia | M |
@@ -500,7 +501,7 @@ Este frente deja listo el esquema de autenticación (JWT para empleados y admini
 
 **Convenciones que aplica este frente:** xUnit para todos los tests, sin Moq ni FluentAssertions (C1). Registro de DI en `AddFrente1(services, config)`, en `backend/Aseguradora.Api/Frentes/Frente1/Frente1Extensions.cs`, con una sola línea en `Program.cs` (C5, C14). Timeouts y reintentos del cliente real de Renaper vienen del helper de US-T-02, sin valores propios (C4). Migraciones con la regla de rebase de US-F1-02 (C6).
 
-**Tareas en orden:** F1-01 (auth base, políticas y arnés) → F1-02 (Identity y seed) → F1-03 (login y alta de empleados) → F1-04 (Renaper: interfaz, mock y real) → F1-05 (alta de cliente y validación Renaper) → F1-06 (consulta, modificación y baja de clientes) → F1-07 (límite RN20 por prefijo y verificador público) → F1-08 (consulta pública de póliza).
+**Tareas en orden:** F1-01 (auth base, políticas y arnés) → F1-02 (Identity y seed) → F1-03 (login y alta de empleados) → F1-04 (Renaper: interfaz, mock y real) → F1-05 (alta de cliente y validación Renaper) → F1-06 (consulta, modificación y baja de clientes) → F1-07 (límite RN20 por prefijo y verificador público) → F1-08 (consulta pública de póliza) → F1-09 (cambio obligatorio de contraseña en el primer ingreso).
 
 ### US-F1-01 · Esquema de autenticación: JWT, roles, políticas y API key
 
@@ -918,13 +919,72 @@ Nombres de rol (Application): `Roles.Administrador = "Administrador"`, `Roles.Em
 
 ---
 
+### US-F1-09 · Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte (CU01 y CU03)
+
+- **Frente:** Seguridad, clientes y web pública · **Rama sugerida:** `feature/US-F1-09-cambio-password-obligatorio` · **Tamaño:** M
+- **Casos de uso / Reglas:** CU01 (login con JWT), CU03 (crear empleados) / RN17 · **Secciones de la spec:** 7 (AuthController), 5 (usuarios y roles), 6 (capas: la API no accede a Data directo) · **Pedido del front:** PB-31 (`docs/frontend/pedidos-al-back.md`)
+
+**Propósito:** Un administrador crea al empleado con una contraseña temporal (CU03). Esta tarea hace que esa contraseña no sirva para trabajar: la cuenta nace marcada como "debe cambiar la contraseña", el login lo informa y el back rechaza el resto de la API hasta que la persona la cambie por una que cumpla una política fuerte. Sin esto, la pantalla de cambio obligatorio del front (US-FE-B-26) sería solo una barrera de la interfaz que cualquiera con el token puede saltear.
+
+**Alcance (incluye):**
+- `backend/Aseguradora.Domain/Entities/Usuario.cs` (o donde esté `Usuario : IdentityUser`): propiedad `DebeCambiarPassword` (bool, `false` por defecto para las cuentas existentes). Migración nueva `AddDebeCambiarPassword` (C6: rebasar antes de crearla; el valor inicial de las filas existentes es `false`).
+- `IUsuarioStore` y `IdentityUsuarioStore`: `CrearAsync` recibe un indicador `debeCambiarPassword` (las altas de `POST /api/auth/usuarios` lo envían en `true`; el seed del administrador inicial, en `false`); `CambiarPasswordAsync(userId, passwordActual, passwordNueva)` con `UserManager.ChangePasswordAsync`, que limpia `DebeCambiarPassword` si tuvo éxito; `DebeCambiarPasswordAsync(userId)`.
+- `LoginResponse(Token, Rol, ExpiraEn, DebeCambiarPassword)`: el login informa la bandera. El token incluye el claim `cambiar_password` (valor `true`) solo si la bandera está activa.
+- `backend/Aseguradora.Application/Security/DTOs`: `CambiarPasswordRequest(PasswordActual, PasswordNueva)` (Data Annotations con `ErrorMessage` en español, como el resto de los DTOs).
+- `AutenticacionService.CambiarPasswordAsync`: valida la contraseña actual, aplica la política y emite un `LoginResponse` nuevo (token sin el claim). La nueva no puede ser igual a la actual.
+- `backend/Aseguradora.Api/Controllers/AuthController.cs`: `POST /api/auth/cambiar-password`, `[Authorize]` con Empleado o Administrador, 200 con el `LoginResponse` nuevo. Contraseña actual incorrecta: 400 con `detail` (no 401, para que el front no cierre la sesión).
+- Política: los tokens con el claim `cambiar_password` son rechazados con 403 y `code: PASSWORD_CAMBIO_REQUERIDO` en todas las rutas protegidas por `Politicas.Empleado` y `Politicas.Admin`, salvo `POST /api/auth/cambiar-password`. Se implementa como requisito de autorización en las políticas existentes (tabla de US-F1-01, sin cambiar sus nombres) más el mapeo del código de error en `ExceptionMiddleware` (o en el `IAuthorizationMiddlewareResultHandler` de US-F1-01).
+- Política de contraseña fuerte en `AddIdentityCore<Usuario>(options => ...)`: mínimo 12 caracteres, mayúscula, minúscula, dígito y símbolo. Rige para el alta, el cambio y el seed del administrador. Los mensajes de `IdentityErrorDescriberEspanol` se mantienen.
+- `backend/Aseguradora.Data/Seed/AdministradorInicialSeeder.cs`: si `Seed__Administrador__Password` no cumple la política nueva, el seeder lo informa con un warning claro y no crea el administrador (no se baja la política para el seed). El valor de ejemplo de `.env.example` (`ChangeMe_Admin1!`, 16 caracteres con las cuatro clases) ya cumple la política; un test lo verifica para que no se desincronice.
+
+**Fuera de alcance:** pantalla de cambio obligatorio (US-FE-B-26); recuperación de contraseña olvidada; vencimiento periódico de contraseñas; cambio voluntario de contraseña desde "Mi cuenta"; bloqueo de cuenta por intentos fallidos; email de bienvenida; revocar tokens ya emitidos (el cambio de contraseña no invalida otros tokens vigentes: decisión pendiente).
+
+**Puede empezar sin esperar a:** F1-02 y F1-03 (ya en `development`). El front trabaja con MSW hasta que esta tarea esté mergeada (PB-31). Los tests unitarios del servicio usan un `IUsuarioStore` falso.
+
+**Entrega a otros (contratos que publica):**
+- `LoginResponse.DebeCambiarPassword` y el claim `cambiar_password` (US-FE-B-26 los consume).
+- `POST /api/auth/cambiar-password` (`CambiarPasswordRequest` → `LoginResponse`).
+- Código de error 403 `PASSWORD_CAMBIO_REQUERIDO` (`ProblemDetails`, extensión `code`).
+- Política de contraseña fuerte para el alta de usuarios (US-FE-B-24 genera contraseñas de 16 caracteres con las cuatro clases, que la cumplen).
+
+**Criterios de aceptación:**
+- [ ] Un usuario creado con `POST /api/auth/usuarios` queda con `DebeCambiarPassword = true`; el administrador del seed y las cuentas existentes, con `false`.
+- [ ] `POST /api/auth/login` responde `debeCambiarPassword: true` para una cuenta marcada y el token incluye el claim `cambiar_password`; para una cuenta no marcada responde `false` y el token no incluye el claim.
+- [ ] Con un token marcado, cualquier ruta protegida por `Politicas.Empleado` o `Politicas.Admin` responde 403 con `code: PASSWORD_CAMBIO_REQUERIDO`.
+- [ ] `POST /api/auth/cambiar-password` funciona con un token marcado: con la contraseña actual correcta y una nueva válida responde 200 con un `LoginResponse` nuevo (`debeCambiarPassword: false`, token sin el claim) y la bandera queda en `false`.
+- [ ] Contraseña actual incorrecta responde 400 con `detail` (no 401) y no cambia la bandera.
+- [ ] Una contraseña nueva que no cumple la política (menos de 12 caracteres, o sin mayúscula, minúscula, dígito o símbolo) responde 400 con el texto de Identity en español.
+- [ ] Una contraseña nueva igual a la actual responde 400.
+- [ ] Sin token, `POST /api/auth/cambiar-password` responde 401.
+- [ ] El alta de usuarios rechaza (400) una contraseña que no cumple la política fuerte.
+- [ ] El seeder del administrador no crea la cuenta con una contraseña que no cumple la política y registra un warning; el valor de ejemplo de `.env.example` cumple la política.
+- [ ] La migración `AddDebeCambiarPassword` se aplica sobre una base con usuarios existentes y deja la bandera en `false`.
+- [ ] `dotnet build` sin errores y `dotnet test` en verde.
+
+**Tests requeridos:**
+- `AutenticacionServiceTests`: cambio correcto, actual incorrecta, nueva igual a la actual, nueva débil, login con bandera activa e inactiva (con `IUsuarioStore` falso).
+- `AuthControllerTests` (integración con SQLite): login con y sin bandera; token marcado contra una ruta protegida (403 `PASSWORD_CAMBIO_REQUERIDO`); `cambiar-password` con 200, 400 (actual incorrecta, política, igual a la actual) y 401; el token nuevo accede a las rutas protegidas; alta con contraseña débil (400).
+- `PoliticaPasswordTests`: cada regla de la política (largo, mayúscula, minúscula, dígito, símbolo) con un caso por regla.
+- `AdministradorInicialSeederTests`: contraseña que no cumple la política (no crea, warning) y que sí cumple (crea).
+- Prueba de migración: base con usuarios previos queda con `DebeCambiarPassword = false`.
+
+**Decisiones pendientes:** (todas `[CONFIRMAR]`: las decide el usuario antes de implementar la parte afectada, regla 12 de `docs/workflow.md`; los defaults son propuestas)
+- [CONFIRMAR] Política mínima: propuesta 12 caracteres con mayúscula, minúscula, dígito y símbolo. Debe coincidir con la validación del front (US-FE-B-26, D-B26-03). Confirmación del equipo (seguridad) pendiente.
+- [CONFIRMAR] Cómo se informa la bandera: propuesta campo `debeCambiarPassword` en `LoginResponse` y claim `cambiar_password` en el JWT. Alternativa: solo el claim, o consultar un endpoint aparte.
+- [CONFIRMAR] Respuesta del cambio: propuesta 200 con `LoginResponse` nuevo (el token anterior sigue vigente hasta que venza). Alternativa: 204 y volver a iniciar sesión.
+- [CONFIRMAR] Revocar los otros tokens del usuario al cambiar la contraseña: propuesta no (fuera de alcance, no hay revocación de tokens en la spec). Riesgo: un token viejo con el claim sigue siendo rechazado por la política, así que no puede usar la API; un token sin el claim (de una cuenta ya cambiada) sigue válido hasta vencer.
+- [CONFIRMAR] Contraseña actual incorrecta: propuesta 400. Alternativa: 401 (el front debería dejar de tratar el 401 de este endpoint como sesión vencida).
+- [CONFIRMAR] Seed con contraseña débil: propuesta no crear la cuenta y avisar con un warning. Alternativa: crear igual con la bandera activa.
+
+---
+
 ## Trazabilidad CU / RN / endpoints del Frente 1
 
 | Referencia | Tarea(s) |
 | --- | --- |
-| CU01 Iniciar sesión y obtener JWT | US-F1-03 (base: US-F1-01 y US-F1-02) |
+| CU01 Iniciar sesión y obtener JWT | US-F1-03 (base: US-F1-01 y US-F1-02), US-F1-09 (cambio obligatorio de contraseña en el primer ingreso) |
 | CU02 Consultar póliza con DNI y número | US-F1-08 (límite por prefijo y verificador: US-F1-07) |
-| CU03 Crear empleados | US-F1-03 (base: US-F1-02) |
+| CU03 Crear empleados | US-F1-03 (base: US-F1-02), US-F1-09 (contraseña temporal y política fuerte) |
 | CU04 Alta de cliente con validación Renaper | US-F1-04 (interfaz y mock/real), US-F1-05 (alta y reintento) |
 | CU05 Consultar, modificar y dar de baja clientes | US-F1-06 |
 | RN01 DNI y email únicos, 18 años | US-F1-05, US-F1-06 |
@@ -932,11 +992,12 @@ Nombres de rol (Application): `Roles.Administrador = "Administrador"`, `Roles.Em
 | RN10 Solo Vigente da cobertura | US-F1-08 (`coberturaVigente`) |
 | RN15 Baja lógica | US-F1-06 |
 | RN16 Importes y fechas en UTC | US-F1-05 (`FechaValidacionRenaper`) |
-| RN17 Roles y API key para externos | US-F1-01 (tabla de políticas), US-F1-02 (roles), US-F1-03 (login y altas) |
+| RN17 Roles y API key para externos | US-F1-01 (tabla de políticas), US-F1-02 (roles), US-F1-03 (login y altas), US-F1-09 (cuenta con cambio pendiente) |
 | RN20 10 intentos por minuto por IP, todo `/api/publico/*` | US-F1-07 (mecanismo por prefijo), US-F1-08 (consulta). Heredan F3 (cupón) y F4 (pagos y factura) |
 | Políticas `Politicas.Empleado`, `Politicas.Admin`, `Politicas.ApiKey` y claim `proveedor` | US-F1-01 (tabla literal) |
 | `POST /api/auth/login` | US-F1-03 |
-| `POST /api/auth/usuarios` | US-F1-03 |
+| `POST /api/auth/usuarios` | US-F1-03 (US-F1-09: la cuenta nace con `DebeCambiarPassword`) |
+| `POST /api/auth/cambiar-password` | US-F1-09 |
 | `GET /api/clientes` | US-F1-06 |
 | `GET /api/clientes/{id}` | US-F1-06 |
 | `POST /api/clientes` | US-F1-05 |

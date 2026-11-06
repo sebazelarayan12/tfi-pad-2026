@@ -1,6 +1,6 @@
 # Pedidos al back (huecos detectados por el frontend)
 
-Consolidado de huecos, bugs e inconsistencias que el front encontró en las pantallas (`pantallas/*.md`) y los contratos (`contratos-api/*.md`). Cada ítem fue verificado contra `backend/Aseguradora.Api/Controllers` y `backend/Aseguradora.Application` antes de listarlo. Rutas relativas a la raíz del repo. Verificación hecha sobre `development` en el estado de `HEAD` `4ba3d4b`.
+Consolidado de huecos, bugs e inconsistencias que el front encontró en las pantallas (`pantallas/*.md`) y los contratos (`contratos-api/*.md`). Cada ítem fue verificado contra `backend/Aseguradora.Api/Controllers` y `backend/Aseguradora.Application` antes de listarlo. Rutas relativas a la raíz del repo. Verificación original sobre `development` en `4ba3d4b`. PB-03 se revisó nuevamente el 2026-11-04 contra `8e7df6f`; los demás pedidos conservan su fecha/base original salvo indicación propia.
 
 Leyenda de severidad: **Bloquea** = la pantalla no se puede construir de forma confiable; **Degrada** = se construye con un workaround visible; **Mejora** = no bloquea.
 
@@ -16,7 +16,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 |----|--------|------|-----------|---------------------|--------|
 | PB-01 | Estado público del pago y recuperación por número de pago | Falta endpoint | Bloquea | W4, W6 | Falta endpoint |
 | PB-02 | Cupón público de Pago Fácil `POST /api/publico/cupon` | Falta endpoint | Bloquea | W3, W4, W5 | Falta endpoint |
-| PB-03 | Clientes: detalle, listado y edición (`GET/PUT/DELETE /api/clientes`) | Falta endpoint | Bloquea | B3, B5, B6, B7, B8, B9, B10, B11 | Falta endpoint |
+| PB-03 | Resumen de clientes: faltan Renaper y conteos | Inconsistencia de contrato | Degrada | B3 (B-04) | Parcialmente resuelto: GET/PUT/DELETE implementados; ampliación del resumen pendiente |
 | PB-04 | Usuarios: listado, edición, activar/desactivar, último ingreso, nombre | Falta endpoint | Bloquea | B14, B1, B2 | Falta endpoint |
 | PB-05 | Búsqueda y listados de pagos (por póliza, por cuota, por número de póliza) | Falta endpoint | Bloquea | B10, B11, B9, B8 | Falta endpoint |
 | PB-06 | Filtros de `GET /api/polizas`: plan, número de póliza, DNI | Falta endpoint | Bloquea | B9 | Falta endpoint |
@@ -44,6 +44,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 | PB-28 | Deuda consolidada del cliente para un Empleado (JWT) | Falta endpoint | Bloquea | B5 | Falta endpoint |
 | PB-29 | Validación de CUIL, DNI de 7 dígitos y límites de rate limit | Mejora | Mejora | B4, W2 | Mejora |
 | PB-30 | Póliza `Vencida` o `Cancelada` con cuotas impagas: cupón y cobro | Inconsistencia de contrato | Degrada | B10, B9 | Inconsistencia de contrato |
+| PB-31 | Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte | Falta endpoint | Degrada | B1, B14 (B-24, B-26) | Falta endpoint |
 
 ---
 
@@ -89,26 +90,14 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Severidad.** Bloquea.
 - **Workaround front.** MSW con el contrato de arriba. No usar el `GET` de empleado.
 
-### PB-03. Clientes: detalle, listado y edición
+### PB-03. Clientes: endpoints publicados; ampliación del resumen pendiente
 
-- **Qué pasa hoy.** `Controllers/` no tiene `ClientesController.cs`. Ni `development` ni la PR #50 tienen `GET /api/clientes`, `GET /api/clientes/{id}`, `PUT` ni `DELETE` (US-F1-06, "Especificado"). La PR #50 (abierta, no mergeada) solo trae `POST /api/clientes`, `POST /{id}/validar-renaper` y `GET /renaper/{dni}` (según `contratos-api/seguridad-clientes-publico.md` §3). Las pantallas B3, B5, B6, B7, B8, B9, B10 y B11 necesitan el nombre/DNI del cliente a partir de `clienteId`, que los DTOs de póliza, vehículo y cotización sí traen.
-- **Qué necesita el front.** Un detalle de cliente para cabecera y contexto; un listado paginado con filtros `dni` y `apellido` para B3; `PUT` de contacto/domicilio y `DELETE` (baja lógica) para B5; y un resumen con conteos (vehículos, pólizas activas, `validadoRenaper`) para la tabla de B3.
-- **Contrato mínimo propuesto.**
-  ```ts
-  // GET /api/clientes/{id}  -> ClienteResponse (contratos-api/seguridad-clientes-publico.md §3.1) + activo
-  // GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=  -> PaginaResponse<ClienteResumenResponse>
-  interface ClienteResumenResponse {
-    id: string; dni: string; nombre: string; apellido: string; email: string; telefono: string | null;
-    validadoRenaper: boolean; activo: boolean;
-    cantidadVehiculos: number; cantidadPolizasActivas: number;   // pedido explícito de B3
-  }
-  // PUT /api/clientes/{id}  body: { email, telefono, calle, numero, localidad, provincia, codigoPostal } -> 200 ClienteResponse
-  // DELETE /api/clientes/{id} -> 204
-  ```
-  Decisión de back: la baja con pólizas activas (B5, D-B5-08) no está definida en la spec.
-- **Pantallas que desbloquea.** B3, B5 (bloqueante), B6/B7/B8/B10/B11 (nombre del cliente), B4 (edición si se reutiliza).
-- **Severidad.** Bloquea.
-- **Workaround front.** MSW. No arrancar B5 contra el endpoint sin mock (FB4).
+- **Revisión 2026-11-04:** US-F1-06 se mergeó en PR #58 (`6356111`). Ya existen listado, detalle, modificación y baja lógica en `ClientesController.cs`. No se mantiene un bloqueo por ausencia de esos endpoints.
+- **Contrato real:** `GET /api/clientes` devuelve `PaginaResponse<ClienteResumenResponse>`, con filtros DNI exacto y apellido parcial sin distinguir mayúsculas, y query `pagina`/`tamanoPagina`. El resumen contiene únicamente `id`, `dni`, `nombre`, `apellido`, `email`, `telefono` y `activo`. GET detalle y PUT devuelven `ClienteResponse`; DELETE devuelve 204 y bloquea con 400 si hay póliza Pendiente, Vigente o Suspendida.
+- **Pendiente:** B3 necesita además `validadoRenaper`, `cantidadVehiculos` y `cantidadPolizasActivas`. Se solicita evaluar su incorporación a `ClienteResumenResponse`; no se declara acordada ni implementada esa ampliación. La definición de los conteos debe confirmarse con el backend antes de incorporarlos al wire.
+- **Fuentes:** `backend/Aseguradora.Application/Clientes/DTOs/ClienteResumenResponse.cs`, `ClienteFiltro.cs`, `ClienteResponse.cs`, `ClienteModificacionRequest.cs` y `ClienteService.cs`.
+- **Severidad actual:** degrada B3, no bloquea consumir el listado/detalle/PUT/DELETE. El nombre/DNI y el estado Renaper del detalle ya están disponibles para B5 y las otras features consumidoras.
+- **Workaround:** T-24 tipa y mockea el resumen con sus siete campos reales. B3 mantiene las columnas afectadas con `—` como dato no disponible (FB7.11), sin fabricar cero, false o badges Pendiente, ni hacer un request de detalle por fila para simular el campo. En B5 se usa `validadoRenaper` del detalle, que sí existe. `/cuenta` corresponde a PB-28 y continúa pendiente.
 
 ### PB-04. Usuarios: listado, edición, estado y último ingreso
 
@@ -456,18 +445,27 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Severidad.** Degrada.
 - **Workaround front.** Se muestra la cuota como impaga y se habilita el cupón hasta que el back decida (D6).
 
+### PB-31. Cambio obligatorio de contraseña en el primer ingreso y política de contraseña fuerte
+
+- **Qué pasa hoy.** `AuthController` solo tiene `POST /api/auth/login` y `POST /api/auth/usuarios` (`AuthController.cs:21,29`). No hay endpoint para cambiar la contraseña ni un indicador de "debe cambiarla" en `Usuario` (`Usuario.cs`) ni en `LoginResponse` (`LoginResponse.cs`: `Token`, `Rol`, `ExpiraEn`). `AddIdentityCore<Usuario>()` se registra sin opciones (`IdentityExtensions.cs:15`), así que rigen los defaults de Identity (6 caracteres, mayúscula, minúscula, dígito y símbolo). Un administrador crea al empleado con una contraseña temporal (B-24, RV-D18) y esa contraseña no vence nunca.
+- **Qué necesita el front.** Saber en el login que la cuenta debe cambiar la contraseña, un endpoint para cambiarla y que el back impida usar el resto de la API hasta que se cambie. Sin eso, la pantalla de cambio obligatorio (US-FE-B-26) sería solo una barrera de la UI que cualquiera con el token puede saltear.
+- **Contrato mínimo propuesto.** (a) `Usuario.DebeCambiarPassword` (bool, `true` al crear por `POST /api/auth/usuarios`); (b) `LoginResponse.DebeCambiarPassword` y un claim `cambiar_password` en el JWT; (c) `POST /api/auth/cambiar-password` con `{ passwordActual, passwordNueva }` que devuelve 200 con un `LoginResponse` nuevo (token sin el claim); (d) las políticas `Empleado` y `Admin` rechazan con 403 `PASSWORD_CAMBIO_REQUERIDO` los tokens con el claim, salvo el endpoint de cambio; (e) política fuerte (mínimo 12 caracteres, mayúscula, minúscula, dígito y símbolo) que rige para el alta, el cambio y el seed del administrador. Un error de contraseña actual incorrecta responde 400 y no 401, para no disparar el cierre de sesión global del front.
+- **Pantallas que desbloquea.** B1 (el login ramifica según el indicador), B14 (la temporal deja de ser permanente) y la pantalla nueva de cambio obligatorio (US-FE-B-26).
+- **Severidad.** Degrada (B-24 se entrega igual; hasta que exista, la contraseña temporal no vence).
+- **Workaround front.** US-FE-B-26 trabaja con MSW (`VITE_USE_MOCKS=true`): el handler de login devuelve `debeCambiarPassword: true` para un usuario de prueba y el de `POST /api/auth/cambiar-password` replica el contrato propuesto. Tarjeta del back: `US-F1-09` en `docs/tareas-divididas.md`.
+
 ---
 
 ## Afirmaciones que NO se confirmaron
 
-Las siguientes afirmaciones de `docs/frontend/` no coinciden con el código, o no pude verificarlas en esta sesión:
+Las siguientes afirmaciones de `docs/frontend/` requieren contraste con el código; cada entrada indica su verificación o pendiente:
 
 1. **`contratos-api/convenciones-transversales.md` §3.2 y `pagos-facturas.md` §2.2**: afirman que el 503 emite `Retry-After: 15` con valor fijo. El código sí escribe el header (`ExceptionMiddleware.cs:49`), pero el valor sale de `ServicioNoDisponibleException.ReintentarEnSegundos`; el valor "15" no fue releído. **Confirmado parcialmente.**
 2. **`convenciones-transversales.md` §1.4**: afirma que el 429 "no trae `Retry-After`". **Confirmado** (`PublicoRateLimitExtensions.cs:74-89` no escribe el header).
 3. **`convenciones-transversales.md` §1.4 / `seguridad-clientes-publico.md` §1.4**: afirman ventana fija de 60 s y límite de 10. **Confirmado** (`PublicoRateLimitExtensions.cs:18-19`, `:59-62`, `FixedWindowRateLimiterOptions`).
 4. **`pagos-facturas.md` §4.2 y `B1`/`W4`**: afirman que "Pago Fácil no es una opción online". Coherente con el código (`PagoService.cs:27` solo acepta `pasarela1`/`pasarela2`). **Confirmado.**
 5. **`convenciones-transversales.md` §5.1 y `polizas-cuotas-pagofacil.md` §1.3**: afirman que `EstadoPoliza` y `EstadoCuota` viajan como número. **Confirmado** por la ausencia de converter en `Program.cs:19`.
-6. **`convenciones-transversales.md` §2.2 / `seguridad-clientes-publico.md` §3.1**: dicen que `ProblemDetails` tiene `codigo` en 404 de clientes (PR #50, `ExceptionMiddleware.cs:43-44`). **Confirmado** para `NotFoundException` con `Codigo` en `development`; el uso `CLIENTE_NO_ENCONTRADO` queda en PR #50 y no lo pude verificar.
+6. **404 de cliente con código estable:** confirmado en `backend/Aseguradora.Application/Clientes/ClienteService.cs`: `CodigoClienteNoEncontrado = "CLIENTE_NO_ENCONTRADO"` se pasa a `NotFoundException` en `BuscarActivoAsync` y al reintentar Renaper sobre un cliente inexistente. `ExceptionMiddleware.cs` escribe ese código en `ProblemDetails`. Ya no depende de PR #50 ni queda como uso sin verificar.
 7. **`polizas-cuotas-pagofacil.md` §4.2 y §5.4** (mensajes de `PolizaService.cs` por línea, `motivo` con `[Required(AllowEmptyStrings=false)]`): no releí `PolizaService.cs` ni `CancelarPolizaRequest.cs` en esta sesión. **No verificado.**
 8. **`pantallas/B8-emitir-poliza.md` D3** (`FechaInicio` = hoy, `PolizaService.cs:38, 61`): no releí el servicio. **No verificado**, aunque es coherente con `CalculadorCuotas`.
 9. **`convenciones-transversales.md` §5.3 y `polizas-cuotas-pagofacil.md` §1.5** (`DateTime` sin `Z` al leer de SQL Server): no hay `ValueConverter` (confirmado por búsqueda), pero el comportamiento de serialización no se verificó en ejecución. **Inferencia, no confirmada.** PB-16 lo marca así.

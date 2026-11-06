@@ -14,4 +14,10 @@ public static class ClaimsAseguradora
     /// <see cref="System.Security.Claims.ClaimTypes.Role"/>, so the policies of C10 read it.
     /// </summary>
     public const string Rol = "role";
+
+    /// <summary>
+    /// Present (value <c>true</c>) only while the account must change its temporary password
+    /// (US-F1-09). The policies of C10 reject such a token except on the change endpoint.
+    /// </summary>
+    public const string CambiarPassword = "cambiar_password";
 }

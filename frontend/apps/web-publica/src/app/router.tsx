@@ -18,9 +18,6 @@ export const rutasApp: RouteObject[] = [
       ...rutasPolizas,
       ...rutasPagos,
       ...rutasPagoFacil,
-      // Placeholder: sin pantallas, `/` renderiza el `Outlet` vacío. US-FE-W-01 lo reemplaza
-      // con la home (su `index` va antes y este se borra).
-      { index: true },
       { path: '*', element: <PaginaNoEncontrada /> },
     ],
   },

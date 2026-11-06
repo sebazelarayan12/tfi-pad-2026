@@ -245,6 +245,7 @@ Método: §3 se parseó desde "Depende de" hasta el siguiente bullet. Los cambio
 - **Opciones:** (a) el front genera (default de B-24); (b) el back genera y devuelve la contraseña; (c) el admin escribe la contraseña y el back la valida.
 - **Default recomendado:** (b) o (c). Si el equipo mantiene (a), que el back valide la política al crear y que la contraseña no persista en el estado de la app tras copiarla.
 - **Costo de equivocarse:** (a) sin validación del back puede crear contraseñas rechazadas por Identity. Decisión de seguridad.
+- **Decisión del usuario (2026-11-06):** opción (a), que además es lo que muestra el Figma de B14 (botón `Generar`). La contraseña generada es temporal: el empleado debe cambiarla en el primer ingreso con una política fuerte. Eso agrega el pedido PB-31, la tarjeta del back US-F1-09 (`DebeCambiarPassword`, endpoint de cambio y política fuerte) y la del front US-FE-B-26 (pantalla de cambio obligatorio). Sigue pendiente la confirmación del equipo (seguridad).
 
 ### RV-D19. Hosting de producción del front y registro de imágenes (T-20)
 - **Fichas:** T-20 §13 (1 y 3), §16; convenciones §1.4 (dominios de Cloudflare Pages en `.env.example`).

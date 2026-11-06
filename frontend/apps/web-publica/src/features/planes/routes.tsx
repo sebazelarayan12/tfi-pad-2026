@@ -1,4 +1,4 @@
 import type { RouteObject } from 'react-router-dom';
 
-// Stub de US-FE-T-17: la primera tarea del feature lo completa.
+// Sin página propia: la tabla de planes se muestra en la home (US-FE-W-01).
 export const rutas: RouteObject[] = [];

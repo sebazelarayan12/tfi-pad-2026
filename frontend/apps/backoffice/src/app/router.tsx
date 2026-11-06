@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
 
-import { rutas as auth } from '../features/auth/routes';
+import { rutas as auth, rutasConSesion } from '../features/auth/routes';
 import { rutas as clientes } from '../features/clientes/routes';
 import { rutas as cotizaciones } from '../features/cotizaciones/routes';
 import { rutas as cuotas } from '../features/cuotas/routes';
@@ -54,7 +54,10 @@ export const rutasApp: RouteObject[] = [
       ...rutasPublicas,
       {
         element: <RequireSesion />,
-        children: [{ element: <LayoutBackoffice />, children: rutasProtegidas }],
+        children: [
+          ...rutasConSesion,
+          { element: <LayoutBackoffice />, children: rutasProtegidas },
+        ],
       },
       { path: '/', element: <Navigate to="/inicio" replace /> },
       { path: '*', element: <PaginaNoEncontrada /> },

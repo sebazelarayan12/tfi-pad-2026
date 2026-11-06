@@ -28,15 +28,9 @@ const dominios = {
   vehiculos,
 };
 
-// Con T-27, T-28, T-30 y T-32 llenos, solo quedan placeholders estos dominios.
+// T-24, T-26, T-27, T-28, T-29, T-30, T-31 y B-26 (auth) ya publican sus handlers.
 const dominiosVacios = {
-  auth,
-  clientes,
-  cotizaciones,
   inicio,
-  pagos,
-  publico,
-  vehiculos,
 };
 
 it('agrega los handlers de los doce dominios', () => {

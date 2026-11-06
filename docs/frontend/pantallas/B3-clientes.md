@@ -1,8 +1,8 @@
 # B3 · Clientes del backoffice
 
-Especificación del listado de clientes (asegurados) del panel interno. Fuente visual: Figma `B3 Clientes` (nodo 18:2387). Fuente de contrato: código del back y spec. Los endpoints de listado todavía no están publicados: el listado es **US-F1-06** (CU05) y el controller de clientes está en el PR #50 (abierto, rama `feature/US-F1-05-clientes-alta-renaper`, que incluye solo el alta y la previsualización de Renaper).
+Especificación del listado de clientes del panel interno. Fuente visual: Figma `B3 Clientes` (nodo 18:2387). El listado y el detalle ya están implementados en `development` por US-F1-06 (PR #58). El contrato y los datos que aún faltan se describen en [seguridad-clientes-publico.md §3.4](../contratos-api/seguridad-clientes-publico.md#34-listado-detalle-modificación-y-baja-de-clientes).
 
-Convención: "Implementado" = existe en `development`/código actual; "En PR (#50)" = en el PR abierto; "Especificado" = solo en la spec o las tareas. Según FB4, el front trabaja con MSW hasta que el back publique los endpoints.
+Convención: "Implementado" = existe en `development`/código actual; "En PR #N" = pendiente de merge; "Especificado" = solo en la spec o las tareas. Según FB4, el front trabaja con MSW hasta que el back publique los endpoints.
 
 ## 1. Propósito y quién la usa
 
@@ -26,8 +26,8 @@ Columna principal (`Columna principal`, 1160 px de ancho desde `x=232`, padding 
 1. **Topbar** (`Topbar`, 1096 × 64 px, `y=32`): título "Clientes" a la izquierda (20/26 px SemiBold), espaciador flexible, botón campana (`Bell`, 36 × 36 px, radio pill, borde strong) y botón primario "Nuevo cliente" (40 px de alto, padding 16 px, icono `user-plus` de 16 px a la izquierda del texto). `gap` 16 px. El campo de búsqueda del topbar existe en el Figma pero está oculto (`hidden`): no se muestra (ver D-3).
 2. **Filtros** (`Filtros`, 1096 × 88 px, `y=120`, `gap` 12 px):
    - Campo "Buscar por DNI o apellido" (`Input`), ancho flexible (569 px en el diseño).
-   - Select "Estado Renaper" (`Select`), 200 px de ancho.
-   - Select "Activo" (`Select`), 200 px de ancho.
+   - Select "Estado Renaper" (`Select`), 200 px de ancho en Figma; no se renderiza (D-1).
+   - Select "Activo" (`Select`), 200 px de ancho en Figma; no se renderiza (D-2).
    - Chip de conteo "128 clientes" (`Chip`, 91 × 28 px), alineado al centro vertical del bloque de filtros (`y=30`). Sin interacción.
 3. **Tabla clientes** (`Tabla clientes`, 1096 × 531 px, `y=232`): contenedor con borde hairline y radio 12 px.
    - Encabezado (`Table/Header`, 40 px de alto, fondo `--nexa-surface-subtle`).
@@ -57,9 +57,9 @@ Componentes del Figma:
 Componentes propios:
 
 - `ClientesPage` (pantalla, `features/clientes/pages`): compone filtros, tabla y paginación. Delgada: no calcula.
-- `FiltrosClientes` (`features/clientes/components`): campo de búsqueda + dos selects + chip. Usa `zod` para normalizar la búsqueda (ver sección 6).
+- `FiltrosClientes` (`features/clientes/components`): campo de búsqueda por DNI/apellido + chip, sin selects de Renaper ni Activo (D-1/D-2). Usa `zod` para normalizar la búsqueda (ver sección 6).
 - `TablaClientes` (`features/clientes/components`): tabla con columnas; reutiliza `Table/Header` y `Table/Row` de `@nexa/ui`.
-- `BadgeRenaper` (`features/clientes/components`): mapea `validadoRenaper` (booleano) al `Badge/Estado` de `@nexa/ui`.
+- `BadgeRenaper`: referencia visual del Figma, fuera del alcance actual del listado porque el resumen no incluye `validadoRenaper`. Mostrar `—` en esa celda hasta resolver PB-03.
 - `PaginacionTabla` (`shared/` si se reutiliza en B2/B3; si no, en el feature): "1-10 de 128" + Anterior/Siguiente.
 - `LayoutBackoffice` (`app/`): sidebar y topbar compartidos con B2 y B4.
 
@@ -106,7 +106,7 @@ Campos de búsqueda y filtros. Ninguno es un formulario que se envíe al back: s
 | Campo | Tipo | Obligatorio | Regla | Parámetro del back |
 |---|---|---|---|---|
 | Buscar por DNI o apellido | texto | No | Si el valor, sin puntos ni espacios, tiene exactamente 8 dígitos, se envía como `dni`. Si no, se envía como `apellido`. Los puntos del formato `30.512.468` se quitan antes de enviar. Longitud máxima: NO DEFINIDO. Propuesta: 100. | `dni` **o** `apellido` (el back los recibe por separado; `ClienteFiltro`, spec US-F1-06) |
-| Estado Renaper | select | No | Valores NO DEFINIDOS en el Figma. Derivados de los badges: `Todos`, `Validado`, `Pendiente`. | **No hay parámetro en el back** (`ClienteFiltro` solo tiene Dni, Apellido, Pagina, TamanoPagina). Ver D-1. |
+| Estado Renaper | select | No | Valores NO DEFINIDOS en el Figma. Derivados de los badges: `Todos`, `Validado`, `Pendiente`. | No se renderiza (D-1); `ClienteFiltro` solo tiene Dni, Apellido, Pagina, TamanoPagina. |
 | Activo | select | No | Valores NO DEFINIDOS. La spec solo lista clientes con `Activo=true` (RN15). | **No hay parámetro.** Ver D-2. |
 | Paginación | número | Sí (implícito) | `pagina` ≥ 1; `tamanoPagina` entre 1 y 100 (spec: por defecto 20, máximo 100). El diseño muestra 10 filas. | `pagina`, `tamanoPagina` (Ver D-5). |
 
@@ -138,54 +138,50 @@ Reglas de forma (zod):
 |---|---|---|
 | Botón "Nuevo cliente" | Abre el alta de cliente. | `/clientes/nuevo` (B4). |
 | Campo de búsqueda | Filtra la lista (sección 6). | Misma pantalla, `pagina=1`. |
-| Select "Estado Renaper" | Filtra por estado de validación. | **NO DEFINIDO** en back (ver D-1). |
-| Select "Activo" | Filtra por activo/inactivo. | **NO DEFINIDO** en back (ver D-2). |
+| Select "Estado Renaper" | No se renderiza; no existe filtro en el backend. | Resuelto en D-1. |
+| Select "Activo" | No se renderiza; el listado solo devuelve activos. | Resuelto en D-2. |
 | Botón "Anterior" | `pagina - 1`. | Misma pantalla. Deshabilitado en la primera página: NO DEFINIDO. |
 | Botón "Siguiente" | `pagina + 1`. | Misma pantalla. Deshabilitado en la última página: NO DEFINIDO. |
 | Botón campana | Notificaciones. | **NO DEFINIDO** (no hay endpoint). |
-| Icono de tres puntos (menú de fila) | Abre opciones de la fila. | **NO DEFINIDO.** La spec tiene `GET /api/clientes/{id}` (detalle), `PUT /api/clientes/{id}` (modificar contacto y domicilio) y `DELETE /api/clientes/{id}` (baja lógica). Propuesta: "Ver detalle", "Modificar", "Dar de baja", y "Validar en Renaper" solo en filas con badge `Pendiente` (`POST /api/clientes/{id}/validar-renaper`, en PR #50). Ver D-6. |
+| Icono de tres puntos (menú de fila) | No se implementa en B-04. | Se accede a B5 mediante el enlace del nombre. Edición, baja y reintento Renaper pertenecen a la ficha; no hay acción Renaper derivada de la lista. Ver D-6. |
 | Fila (clic en cualquier parte) | Abre el detalle del cliente. | **NO DEFINIDO**. No hay pantalla de detalle en el Figma. |
 | Sidebar | Navegación general. | Ver B2. |
 
 ## 9. Datos: endpoints y origen de cada dato
 
+Actualización de alcance 2026-11-04: listado/detalle de US-F1-06 implementados (PR #58). El Figma no agrega campos al contrato real (FB4/FB7.11).
+
 | Dato en pantalla | Endpoint | Estado | Campo o cálculo |
 |---|---|---|---|
-| Lista de clientes (filas) | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | **Especificado** (US-F1-06). No está en el PR #50. | Respuesta: `PaginaResponse<ClienteResumenResponse>` (`items`, `pagina`, `tamanoPagina`, `total`). |
-| Conteo del chip "128 clientes" | Mismo endpoint | Especificado | `total`. |
-| Paginación "1-10 de 128" | Mismo endpoint | Especificado | Rango = `(pagina - 1) * tamanoPagina + 1` a `min(pagina * tamanoPagina, total)`. `total`. |
-| Columna Nombre | Mismo endpoint | Especificado | `nombre` + " " + `apellido` del resumen. La spec de `ClienteResumenResponse` no fija los campos; ver D-7. |
-| Columna DNI | Mismo endpoint | Especificado | `dni` (8 dígitos). Mostrar con puntos (`30.512.468`) con formateador de `@nexa/ui`; enviar y guardar sin puntos. |
-| Columna Email | Mismo endpoint | Especificado | `email`. |
-| Columna Teléfono | Mismo endpoint | Especificado | `telefono`. Texto tal cual (puede ser nulo: mostrar "—", propuesta). |
-| Columna Vehículos | Mismo endpoint | **Especificado: falta campo.** El resumen no lo tiene en la spec. | Propuesta: `cantidadVehiculos` en `ClienteResumenResponse`. |
-| Columna Renaper | Mismo endpoint | Especificado (campo `validadoRenaper` existe en `ClienteResponse` del PR #50; el resumen no lo nombra) | `validadoRenaper` → `Validado` (true) o `Pendiente` (false). Ver D-7. |
-| Columna Pólizas activas | Mismo endpoint | **Especificado: falta campo.** | Propuesta: `cantidadPolizasActivas` (pólizas en `Vigente`, `Pendiente` o `Suspendida`). |
-| Detalle de cliente (si el menú lo usa) | `GET /api/clientes/{id}` | Especificado | `ClienteResponse` (ver `B4-nuevo-cliente.md`). |
-| Validar en Renaper (acción de fila, solo badge `Pendiente`) | `POST /api/clientes/{id}/validar-renaper` | En PR (#50) | Sin body. `200` con `ClienteResponse` actualizado. `400` sin `codigo` (no figura en Renaper, fallecido o menor de 18). `404` con `codigo: "CLIENTE_NO_ENCONTRADO"`. `502` (Renaper caído). `401` / `403`. Tras el `200`, refrescar la fila. |
+| Lista de clientes | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | Implementado | `PaginaResponse<ClienteResumenResponse>`: `items`, `pagina`, `tamanoPagina`, `total`. Solo activos. |
+| Chip y paginación | Mismo endpoint | Implementado | Chip: `total`. Rango: `(pagina - 1) * tamanoPagina + 1` a `min(pagina * tamanoPagina, total)`; mostrar el estado vacío cuando `total = 0`. |
+| Nombre, DNI, Email, Teléfono | Mismo endpoint | Implementado | `nombre` + `apellido`, `dni`, `email`, `telefono`. DNI con puntos usando T-09 de `@nexa/api`; nulos como `—`. |
+| Vehículos | Mismo endpoint | Campo no disponible (PB-03) | `cantidadVehiculos` no existe en el resumen. Mostrar `—`, no cero. |
+| Renaper | Mismo endpoint | Campo no disponible (PB-03) | `validadoRenaper` existe en el detalle, no en el resumen. Mostrar `—`, sin badge Validado/Pendiente. |
+| Pólizas activas | Mismo endpoint | Campo no disponible (PB-03) | `cantidadPolizasActivas` no existe en el resumen. Mostrar `—`, no cero. |
+| Detalle | `GET /api/clientes/{id}` | Implementado | `ClienteResponse`; aquí sí está `validadoRenaper`. |
+| Validar en Renaper | `POST /api/clientes/{id}/validar-renaper` | Implementado | Acción fuera de B-04; su comportamiento se define en T-25/B-08 dentro de la ficha B5. No inferir su disponibilidad desde un badge de lista que no existe. |
 
-Ejemplo de respuesta propuesta de un ítem (para que el back y el front usen la misma forma; el back define el nombre final):
+Ejemplo de forma del resumen real (los valores son de prueba; no renderizarlos como texto fijo):
 
 ```json
 {
-  "id": "guid",
-  "dni": "30512468",
-  "nombre": "Tomás",
-  "apellido": "Iturralde",
-  "email": "tomas.iturralde@gmail.com",
-  "telefono": "351 555-0142",
-  "validadoRenaper": true,
-  "cantidadVehiculos": 2,
-  "cantidadPolizasActivas": 2
+  "id": "c1000000-0000-0000-0000-000000000001",
+  "dni": "30123456",
+  "nombre": "Juan Carlos",
+  "apellido": "Pérez",
+  "email": "juan.perez@example.com",
+  "telefono": null,
+  "activo": true
 }
 ```
 
-Nota: el back devuelve `dni` como texto de 8 dígitos (RN01, `varchar(8)`). El formato con puntos es solo de presentación.
+Se preservan las columnas del diseño con el estado de dato no disponible. No añadir campos ficticios al DTO o mock, ni consultar detalle por fila para ocultar el hueco del listado. La ampliación se mantiene abierta en PB-03. Los conteos no se calculan en esta pantalla.
 
 ## 10. Reglas de negocio visibles
 
 - **RN01.** DNI y email únicos. El listado muestra el DNI como identificador de cliente único.
-- **RN02.** Antes de emitir una póliza, el cliente debe estar validado en Renaper. La columna Renaper muestra esa validación. El badge `Pendiente` indica que el cliente todavía no fue validado.
+- **RN02.** Antes de emitir una póliza, el cliente debe estar validado en Renaper. El estado se consulta en el detalle B5; la columna Renaper del listado no puede mostrar un badge con el contrato actual (§9).
 - **RN15.** No se borran clientes: se dan de baja con `Activo = false`. El listado y el detalle solo muestran `Activo=true`. Por eso el select "Activo" del diseño no tiene un valor que devuelva inactivos (ver D-2).
 - **RN03.** Un vehículo debe estar validado en DNRPA y su titular debe ser el cliente. No se muestra en esta pantalla, pero la columna Vehículos cuenta los vehículos que pasaron esa validación (propuesta a confirmar).
 
@@ -193,33 +189,33 @@ Nota: el back devuelve `dni` como texto de 8 dígitos (RN01, `varchar(8)`). El f
 
 - El Figma solo tiene frame de escritorio (1440 px). **No hay frame mobile del backoffice.** Esta pantalla es solo escritorio según el diseño.
 - Propuesta por debajo de 1280 px: la tabla conserva su ancho mínimo (1096 px de columnas) dentro de un contenedor con scroll horizontal. La página no hace scroll horizontal.
-- Propuesta por debajo de 1024 px: los dos selects pasan a una segunda fila de filtros. No diseñado.
+- Los selects del Figma no se renderizan (D-1/D-2); no se implementa una segunda fila responsive para ellos.
 - Propuesta: columnas Email y Teléfono ocultas en pantallas angostas. No diseñado.
 
 ## 12. Accesibilidad
 
 - La tabla es una `<table>` real con `<caption>` ("Clientes") y `<th scope="col">` en cada encabezado.
-- Cada fila tiene un enlace accesible con el nombre del cliente, o el botón de menú con `aria-label` "Acciones de {nombre}" (el `aria-label` incluye el nombre porque el icono de tres puntos no dice nada por sí mismo).
+- Cada fila tiene un enlace accesible con el nombre del cliente que lleva a B5. No se renderiza botón de menú en B-04 (D-6).
 - Los labels de los filtros son visibles y asociados con `htmlFor`. Las ayudas van con `aria-describedby`.
 - El chip de conteo es un texto simple. Cuando cambia el total tras buscar, anunciarlo con una región `aria-live="polite"` (propuesta).
-- El badge Renaper se lee como texto ("Validado" / "Pendiente"), no solo por color.
+- La celda Renaper del listado tiene el estado de dato no disponible de §9; los badges del detalle B5 incluyen texto, no solo color.
 - La paginación va en un `<nav aria-label="Paginación">`. "Anterior" y "Siguiente" deshabilitados llevan `disabled`, no solo color.
 - Foco visible en botones, selects, campos y enlaces de fila.
 
 ## 13. Dudas e inconsistencias Figma ↔ back
 
-- **D-1. Filtro "Estado Renaper".** `ClienteFiltro` no tiene parámetro de validación Renaper (spec US-F1-06: solo Dni, Apellido, Pagina, TamanoPagina). Opciones: (a) agregar `validadoRenaper` al filtro del back (cambio de spec), o (b) quitar el select del diseño. Decisión del equipo.
-- **D-2. Filtro "Activo".** El back solo lista clientes activos (RN15). Un filtro "Inactivos" no tiene datos en el listado. Confirmar: ¿se necesita ver inactivos? Si no, quitar el select.
+- **D-1. Filtro "Estado Renaper". Resuelto:** no se renderiza el select, según el alcance de B-04. `ClienteFiltro` no ofrece ese parámetro. La búsqueda usa solo DNI o apellido; activar MSW no habilita este filtro.
+- **D-2. Filtro "Activo". Resuelto:** no se renderiza el select, según B-04; el endpoint lista solo activos (RN15). Consultar inactivos requeriría una ampliación del backend.
 - **D-3. Campo de búsqueda del topbar oculto.** El Figma tiene un `Search` en el topbar con `hidden="true"`. No se muestra. Confirmar que no debe aparecer (el de la búsqueda real está en los filtros).
 - **D-4. Anchos de columna.** El `Table/Header` dice "columnas de igual ancho (layoutGrow)" en la nota del componente, pero en B3 las columnas tienen anchos distintos (210, 116, 226, 124, 104, 130, 146, 40). Confirmar que el diseño es el correcto. Propuesta: usar los anchos del diseño.
 - **D-5. Tamaño de página.** El Figma muestra 10 filas ("1-10 de 128"). La spec dice `tamanoPagina` por defecto 20 y máximo 100 (US-F1-06). Propuesta: 10 por defecto, consistente con el diseño.
-- **D-6. Acciones de la fila.** El icono de tres puntos no tiene opciones en el Figma. Los endpoints de detalle, modificación y baja existen en la spec. Confirmar las opciones y si la baja necesita confirmación (la spec de US-F1-06 propone bloquear la baja si el cliente tiene póliza activa). Propuesta adicional: "Validar en Renaper" en filas `Pendiente`, que reintenta la validación caída (endpoint del PR #50).
-- **D-7. Campos de `ClienteResumenResponse`.** La spec de US-F1-06 nombra el DTO pero no define sus campos. Las columnas Vehículos, Pólizas activas y Renaper dependen de esos campos. Pedir al back la forma del resumen (sección 9).
+- **D-6. Acciones de la fila. Resuelto para B-04:** no se implementa el menú de tres puntos. El nombre enlaza a B5, donde B-08 ofrece edición, baja y reintento Renaper según el estado del detalle. El listado no tiene badge ni acción de validación Renaper.
+- **D-7. Campos de `ClienteResumenResponse`.** Resuelto el contrato base por US-F1-06/PR #58: siete campos reales en §9. La ampliación Renaper/conteos sigue pendiente PB-03. Hasta entonces, mostrar `—` en esas celdas (FB7.11), sin inventar valores.
 - **D-8. Nombre del botón de la topbar.** La capa del Figma se llama "Consultar" (heredada del componente `Button`), pero el texto visible es "Nuevo cliente". Usar el texto visible. Confirmar con diseño.
 - **D-9. Nombre completo en una columna.** El Figma muestra un solo campo "Nombre" con el nombre completo (`Tomás Iturralde`). El back tiene `nombre` y `apellido` separados. Propuesta: mostrar `nombre apellido` en una columna. Confirmar orden y si se quiere ordenar por apellido.
 - **D-10. Formato del DNI.** El Figma muestra `30.512.468` (con puntos) en la tabla y en el campo de búsqueda. El back guarda y devuelve 8 dígitos. Propuesta: mostrar con puntos y enviar sin puntos (sección 6).
 - **D-11. Estados vacío, error y carga.** No diseñados (sección 7).
-- **D-12. Opciones de los selects.** Solo se ve "Todos" (y con color de placeholder). Confirmar si "Todos" es una opción real o un placeholder.
+- **D-12. Opciones de los selects. Resuelto para B-04:** no aplica; los selects Renaper/Activo del Figma no se renderizan (D-1/D-2).
 - **D-13. Acciones y clic en fila.** No definidos (sección 8).
 
 ## 14. Referencia Figma

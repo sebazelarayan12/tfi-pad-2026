@@ -1,0 +1,1 @@
+export { inicioRoutes } from './routes';

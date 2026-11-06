@@ -1,9 +1,16 @@
+import { servidorMock } from '@nexa/api/mocks/server';
 import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { validarOrdenRutas } from './ordenRutas';
+import { Providers } from './providers';
 import { router, rutasApp } from './router';
+
+// La home pide los planes (`TablaPlanes`): se responden con el handler de MSW.
+beforeAll(() => servidorMock.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => servidorMock.resetHandlers());
+afterAll(() => servidorMock.close());
 
 function paths(rutas: RouteObject[], base = ''): string[] {
   return rutas.flatMap((ruta) => {
@@ -14,7 +21,11 @@ function paths(rutas: RouteObject[], base = ''): string[] {
 
 function montar(entrada: string) {
   const memoria = createMemoryRouter(rutasApp, { initialEntries: [entrada] });
-  render(<RouterProvider router={memoria} />);
+  render(
+    <Providers>
+      <RouterProvider router={memoria} />
+    </Providers>,
+  );
   return memoria;
 }
 
@@ -38,8 +49,13 @@ describe('router', () => {
     expect(titulo).toHaveFocus();
   });
 
-  it('/ renderiza el layout sin pantallas', () => {
+  it('/ renderiza la home dentro del layout', async () => {
     montar('/');
-    expect(screen.queryByRole('heading')).toBeNull();
+    const titulo = screen.getByRole('heading', {
+      level: 1,
+      name: 'Tu vehículo asegurado, tu póliza siempre a mano.',
+    });
+    expect(screen.getByRole('main')).toContainElement(titulo);
+    await screen.findByText('$ 12.000,00');
   });
 });

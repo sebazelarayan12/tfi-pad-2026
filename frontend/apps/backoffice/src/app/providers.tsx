@@ -1,7 +1,10 @@
+import { ApiClientProvider } from '@nexa/api';
+import { Toaster } from '@nexa/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 
 import { alCerrarSesion } from '../features/auth';
+import { apiClient } from './apiClient';
 import { queryClient } from './queryClient';
 import { router } from './router';
 
@@ -12,8 +15,11 @@ alCerrarSesion(() => queryClient.clear());
 /** `RouterProvider` va dentro de `QueryClientProvider` para poder usar TanStack Query en el layout. */
 export function ProveedoresApp() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ApiClientProvider client={apiClient}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </ApiClientProvider>
   );
 }

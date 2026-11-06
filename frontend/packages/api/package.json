@@ -7,10 +7,17 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:contract": "vitest run test/contract",
+    "test:contract:real": "cross-env CONTRACT_TARGET=real vitest run test/contract"
+  },
+  "peerDependencies": {
+    "react": "^18"
   },
   "devDependencies": {
     "@nexa/config": "*",
-    "msw": "^2.15.0"
+    "cross-env": "^10.1.0",
+    "msw": "^2.15.0",
+    "zod": "^4.6.7"
   }
 }

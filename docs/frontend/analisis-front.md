@@ -26,7 +26,7 @@ Roles por pantalla:
 
 ### 1.2 Relación con el back (una línea por frente)
 
-- **Frente 1 (clientes, usuarios, auth, consulta pública):** login, alta de usuarios y consulta pública implementados; clientes en PR #50 (sin merge); listado, detalle, modificación y baja de clientes especificados (`contratos-api/seguridad-clientes-publico.md §0`).
+- **Frente 1 (clientes, usuarios, auth, consulta pública):** login, alta de usuarios, consulta pública y endpoints de clientes implementados (`contratos-api/seguridad-clientes-publico.md §0`). Para clientes, quedan pendientes la ampliación del resumen (PB-03) y la cuenta (PB-28), no la publicación de los endpoints existentes.
 - **Frente 2 (vehículos, planes, cotizaciones):** implementado en `development`, excepto `POST /api/externo/cotizaciones` (PR #57, no usado por el front) (`contratos-api/vehiculos-planes-cotizaciones.md §10`).
 - **Frente 3 (pólizas, cuotas, Pago Fácil):** pólizas, cupón para empleados, rendiciones y base positiva implementados; el cupón público `POST /api/publico/cupon` está especificado (`contratos-api/polizas-cuotas-pagofacil.md §13`).
 - **Frente 4 (pagos y facturas):** caja, pago online, factura pública y conciliación implementados; no hay endpoint público de estado del pago ni listado de pagos (`contratos-api/pagos-facturas.md §1`, §12).
@@ -190,29 +190,29 @@ Fuentes: `pantallas/W1-inicio.md §9`, `W2 §9`, `W3 §9`, `W4 §9`, `W5 §9`, `
 | B2 | Cuotas vencidas (listado y conteo) | NO EXISTE | `inicio` / `cuotas` |
 | B2 | Tareas del día | NO EXISTE | `inicio` |
 | B2 | Rendiciones (historial para la promo) | Implementado (`GET /api/pagofacil/rendiciones`) | `pago-facil` |
-| B3 | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | Especificado (US-F1-06) | `clientes` |
-| B4 | `POST /api/clientes` | En PR #50 | `clientes` |
-| B4 | `GET /api/clientes/renaper/{dni}` | En PR #50 | `clientes` |
-| B4 | `POST /api/clientes/{id}/validar-renaper` (desde B3/B5) | En PR #50 | `clientes` |
-| B5 | `GET /api/clientes/{id}` | Especificado | `clientes` |
-| B5 | `PUT /api/clientes/{id}`, `DELETE /api/clientes/{id}` | Especificado | `clientes` |
+| B3 | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | Implementado (PR #58) | `clientes` |
+| B4 | `POST /api/clientes` | Implementado | `clientes` |
+| B4 | `GET /api/clientes/renaper/{dni}` | Implementado | `clientes` |
+| B4 | `POST /api/clientes/{id}/validar-renaper` (desde B5, B-08) | Implementado | `clientes` |
+| B5 | `GET /api/clientes/{id}` | Implementado | `clientes` |
+| B5 | `PUT /api/clientes/{id}`, `DELETE /api/clientes/{id}` | Implementado | `clientes` |
 | B5 | `GET /api/vehiculos?clienteId=` | Implementado | `vehiculos` |
 | B5 | `GET /api/polizas?clienteId=` | Implementado | `polizas` |
 | B5 | `GET /api/polizas/{id}/cuotas` (próxima cuota) | Implementado | `cuotas` |
 | B5 | Deuda consolidada del cliente para Empleado | NO EXISTE (`/api/externo/.../deuda` es solo API key) | `cuotas` |
 | B6 | `POST /api/vehiculos` | Implementado | `vehiculos` |
 | B6 | Vista previa DNRPA por patente | NO EXISTE | `vehiculos` |
-| B6 | `GET /api/clientes/{id}` | Especificado | `vehiculos` |
+| B6 | `GET /api/clientes/{id}` | Implementado | `vehiculos` |
 | B7 | `POST /api/cotizaciones` | Implementado | `cotizaciones` |
 | B7 | `GET /api/cotizaciones/{id}` | Implementado | `cotizaciones` |
 | B7 | `GET /api/planes` | Implementado | `cotizaciones` |
 | B7 | `GET /api/vehiculos/{id}` | Implementado | `cotizaciones` |
-| B7 | `GET /api/clientes/{id}` (edad del conductor) | Especificado | `cotizaciones` |
+| B7 | `GET /api/clientes/{id}` (edad del conductor) | Implementado | `cotizaciones` |
 | B8 | `POST /api/polizas` | Implementado | `polizas` |
 | B8 | `GET /api/cotizaciones/{id}`, `GET /api/vehiculos/{id}`, `GET /api/planes/{id}` | Implementado | `polizas` |
-| B8 | `GET /api/clientes/{id}` (nombre) | Especificado | `polizas` |
+| B8 | `GET /api/clientes/{id}` (nombre) | Implementado | `polizas` |
 | B9 | `GET /api/polizas` (`estado`, `clienteId`, `patente`, `pagina`, `tamano`) | Implementado | `polizas` |
-| B9 | `GET /api/clientes?dni=` (resolver DNI) | Especificado | `polizas` |
+| B9 | `GET /api/clientes?dni=` (resolver DNI) | Implementado | `polizas` |
 | B9 | Búsqueda por número de póliza o DNI directa | NO EXISTE | `polizas` |
 | B9 | `GET /api/planes`, `GET /api/vehiculos/{id}` | Implementado | `polizas` |
 | B10 | `GET /api/polizas/{id}`, `GET /api/polizas/{id}/cuotas` | Implementado | `polizas` |
@@ -242,9 +242,9 @@ Fuentes: `pantallas/B*-*.md §9` y `contratos-api/*.md`.
 
 Criterio: **lista** = todos los endpoints de la pantalla Implementados y sin dato bloqueante abierto. **Parcial** = algún dato o endpoint faltante, pero la pantalla se puede construir con lo implementado (con MSW para el resto). **Bloqueada** = el núcleo de la pantalla depende de un endpoint Especificado, en PR o inexistente.
 
-- **Listas para integrar contra el back real (2):** W2, B1.
-- **Parciales (13):** W1, W3, W4, W6, B2, B6, B7, B8, B9, B10, B12, B13, B14.
-- **Bloqueadas (5):** W5 (cupón público especificado), B3 (listado de clientes especificado), B4 (PR #50 sin merge), B5 (detalle de cliente especificado y cuenta sin endpoint), B11 (listado de pagos inexistente).
+- **Listas para integrar contra el back real (3):** W2, B1, B4.
+- **Parciales (15):** W1, W3, W4, W6, B2, B3 (campos de PB-03 no disponibles), B5 (rail Cuenta oculto por PB-28), B6, B7, B8, B9, B10, B12, B13, B14.
+- **Bloqueadas (2):** W5 (cupón público especificado), B11 (listado de pagos inexistente).
 
 Total: 20 pantallas.
 
@@ -279,9 +279,9 @@ B4 (completar DNI) → GET /api/clientes/renaper/{dni} (opcional, precarga)
 
 | Paso | Pantalla | Endpoint | Error |
 |---|---|---|---|
-| Previsualizar Renaper | B4 | `GET /api/clientes/renaper/{dni}` (PR #50) | 400 `DNI debe tener 8 dígitos`; 404 `codigo: PERSONA_NO_ENCONTRADA` → error en campo DNI; 502 Renaper caído |
-| Guardar | B4 | `POST /api/clientes` (PR #50) | 400 de validación (`errors`, mapear a campo); 400 de negocio sin `codigo` (DNI o email duplicado, menor de 18, fallecido, no figura): alerta general con `detail` sin prefijo `RNxx:`; 201 con `validadoRenaper=false` si Renaper cayó: aviso y badge "Pendiente" |
-| Reintentar validación | B3/B5 | `POST /api/clientes/{id}/validar-renaper` (PR #50) | 404 `CLIENTE_NO_ENCONTRADO`; 400 sin código; 502 |
+| Previsualizar Renaper | B4 | `GET /api/clientes/renaper/{dni}` (Implementado) | 400 `DNI debe tener 8 dígitos`; 404 `codigo: PERSONA_NO_ENCONTRADA` → error en campo DNI; 502 Renaper caído |
+| Guardar | B4 | `POST /api/clientes` (Implementado) | 400 de validación (`errors`, mapear a campo); 400 de negocio sin `codigo` (DNI o email duplicado, menor de 18, fallecido, no figura): alerta general con `detail` sin prefijo `RNxx:`; 201 con `validadoRenaper=false` si Renaper cayó: aviso y badge "Pendiente" |
+| Reintentar validación | B5 (B-08) | `POST /api/clientes/{id}/validar-renaper` (Implementado) | 404 `CLIENTE_NO_ENCONTRADO`; 400 sin código; 502 |
 
 Renaper caído en el alta devuelve **201** (no 502). La spec deja la decisión como pendiente (C8) (`pantallas/B4-nuevo-cliente.md §7, §13 D-9`).
 
@@ -385,7 +385,7 @@ Se exportan como tipos TypeScript (nombres de los DTO sin renombrar, FB3 regla 5
 
 - **Comunes:** `ProblemDetails`, `ValidationProblemDetails`, `PaginaResponse<T>` (`items`, `pagina`, `tamanoPagina`, `total`; el request usa `tamano`, el response `tamanoPagina`).
 - **Auth:** `LoginRequest`, `LoginResponse`, `RolUsuario = 'Administrador' | 'Empleado'`, `CrearUsuarioRequest`, `UsuarioResponse`.
-- **Clientes (PR #50 y especificado):** `ClienteAltaRequest`, `ClienteResponse`, `PersonaRenaperResponse`, `DomicilioRenaperResponse`, `ClienteFiltro`, `ClienteModificacionRequest`. `ClienteResumenResponse` y la respuesta de detalle son NO DEFINIDO.
+- **Clientes (implementado):** `ClienteAltaRequest`, `ClienteResponse`, `PersonaRenaperResponse`, `DomicilioRenaperResponse`, `ClienteFiltro`, `ClienteModificacionRequest` y `ClienteResumenResponse`. GET detalle devuelve `ClienteResponse`; el resumen tiene los siete campos del [contrato §3.4](contratos-api/seguridad-clientes-publico.md#34-listado-detalle-modificación-y-baja-de-clientes). PB-03 conserva solo la ampliación pendiente del resumen; `/cuenta` continúa como propuesta PB-28.
 - **Vehículos y planes:** `VehiculoAltaRequest`, `VehiculoResponse`, `ModificarUsoRequest`, `PlanRequest`, `PlanResponse`.
 - **Cotizaciones:** `CotizarVehiculoRequest`, `OpcionCotizacion`, `CotizacionResultado`, `CotizacionDto`.
 - **Pólizas:** `EmitirPolizaRequest`, `PolizaFiltroQuery`, `PolizaListItemResponse`, `PolizaDetalleResponse`, `CuotaResponse`, `CancelarPolizaRequest`.
@@ -574,7 +574,7 @@ El detalle, con un pedido por cada punto, va en `pedidos-al-back.md`.
 | R1 | Enums como número en pólizas y cuotas, y como string en otros endpoints | Mapeo frágil; errores de UI si el back cambia el orden | B2, B5, B9, B10, W3 | FB7.3, `convenciones §5` |
 | R2 | Sin endpoint público de estado del pago | W6 no puede confirmar "pago aprobado" | W6, W4 | `pagos-facturas.md §12` D1 |
 | R3 | Cupón público especificado, no implementado | W5 sin datos reales; W3 y W4 dependen | W3, W4, W5 | `polizas-cuotas-pagofacil.md §13` |
-| R4 | `ClientesController` solo en PR #50 y listado, detalle, edición y baja especificados | Bloquea B3, B4, B5 y parte de B6, B7, B8, B9 | B3..B9 | `seguridad-clientes-publico.md §0` |
+| R4 | Endpoints de clientes implementados; resumen sin Renaper/conteos y cuenta pendiente | Degrada B3 por PB-03 y B5 por PB-28; no bloquea listado, alta, detalle, edición ni baja | B3, B5 | `seguridad-clientes-publico.md §3.4`, PB-03 y PB-28 |
 | R5 | Sin listado de pagos ni cuotas vencidas globales | B11 bloqueada; widget de B2 incompleto | B2, B10, B11 | `pagos-facturas.md`; `B2 §9` |
 | R6 | Deuda del cliente para Empleado sin endpoint | Cuenta de B5 sin datos | B5 | `B5 D-B5-05` |
 | R7 | `DateTime` a veces con `Z` y a veces sin `Z` | Horas mal mostradas | Varias | `convenciones §5.3`; `polizas §1.5` D5 |
@@ -613,7 +613,7 @@ Cada item indica documento y sección de cada lado. Cuando FB (`00-decisiones-ba
 14. **Anchos de tabla.** `design-system.md §5.12` y `§9.3`: "columnas de igual ancho (layoutGrow)" vs anchos fijos (160/110/200/120/100/120/94/24). Mismo conflicto en `pantallas/B3 D-4` (210/116/226/124/104/130/146/40). Abierto.
 15. **Tamaño de página.** `pantallas/B3 D-5`: el Figma muestra 10 filas; `contratos-api/seguridad`/`clientes §3.4` y spec US-F1-06: `tamanoPagina` por defecto 20. Abierto.
 16. **Fuentes.** `design-system.md §2.1`: carga desde Google Fonts (CDN); FB7.2: `@fontsource/*` local, sin CDN. Resuelto por FB7.2.
-17. **Pantalla de éxito de cliente.** `pantallas/B4 §7`: "Cliente guardado" (propuesta) vs PR #50 con 201. Abierto (copy).
+17. **Pantalla de éxito de cliente.** `pantallas/B4 §7`: "Cliente guardado" (propuesta) vs el endpoint de alta implementado que responde 201. Abierto (copy).
 18. **Enum en request y response.** `contratos-api/vehiculos §2.1` dice `uso` numérico; los comentarios XML del back dicen "Particular, Comercial" (`convenciones §9` D15). Abierto (decisión backend).
 
 ### 11.2 Pantalla ↔ pantalla
@@ -656,15 +656,15 @@ Insumo para dividir en tareas. No se definen tareas aquí (FB5 y encargo).
 
 ### Oleada 1: pantallas con endpoints implementados (paralelo, sin dependencias entre sí)
 
-- Backoffice: B1 (login), B2 (parcial, con mocks para widgets sin endpoint), B6 (depende de B5 solo para el contexto del cliente, que va con mock), B9, B10 (parcial: lista de pagos mock), B13 (depende solo de `planes`), B14 (solo alta).
+- Backoffice: B1 (login), B2 (parcial, con mocks para widgets sin endpoint), B3 y B5 (parciales por PB-03/PB-28), B4, B6 (contexto de cliente disponible mediante T-24), B9, B10 (parcial: lista de pagos mock), B13 (depende solo de `planes`), B14 (solo alta).
 - Web pública: W1 (depende de `planes`), W2 (consulta), W3 (depende de W2 por `location.state`), W4 (depende de W3), W6 (depende de W4 por `numeroPago`).
 
-Dependencias internas de la oleada: W3 → W2; W4 → W3; W6 → W4; B8 → B7 (`cotizacionId`); B6 → cliente (mock); B10 → B8 (ver detalle de póliza).
+Dependencias internas de la oleada: W3 → W2; W4 → W3; W6 → W4; B8 → B7 (`cotizacionId`); B6 → cliente (detalle implementado); B10 → B8 (ver detalle de póliza).
 
 ### Oleada 2: dependen de PRs o especificaciones
 
-- B4 y las acciones de B3/B5 de Renaper: esperan el merge de PR #50.
-- B3, B5 y la parte de clientes de B7, B8, B9: esperan el listado y el detalle de clientes (US-F1-06).
+- Clientes: alta y Renaper ya están implementados. El reintento desde la ficha pertenece a B-08; no se ofrece desde B3.
+- Listado, detalle, edición y baja de clientes ya están publicados (US-F1-06, PR #58). Solo continúan pendientes los campos adicionales del resumen (PB-03) y la cuenta (PB-28); no son bloqueos de los endpoints publicados.
 - B11: espera el listado de pagos (`GET /api/pagos`), que no está especificado.
 - W5: espera `POST /api/publico/cupon` (especificado).
 - B12 (tabla de bases) y B2 (widgets sin endpoint): esperan decisiones y endpoints nuevos.
@@ -683,7 +683,7 @@ Oleada 0 (@nexa/config, @nexa/ui, @nexa/api, mocks, scaffolding)
  ├─ W3 ← W2 ← W4 ← W6
  ├─ B7 ← B5/B9 (acceso) ← B8 ← B10
  ├─ B6, B13, B14 (independientes)
- └─ Oleada 2: B3, B4, B5 (PR #50 y US-F1-06), B11 (listado), W5 (cupón público), B12 (tabla de bases)
+ └─ Pendientes: campos de B3 (PB-03), cuenta de B5 (PB-28), B11 (listado), W5 (cupón público), B12 (tabla de bases)
 ```
 
 Prerrequisitos de diseño antes de construir: W1 precios y matriz; B2 nombre del usuario; B5 "Cuenta"; B12 layout de Pago Fácil; W3 titular.

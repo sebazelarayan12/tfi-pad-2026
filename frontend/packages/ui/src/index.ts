@@ -9,6 +9,10 @@ export type { SelectOption, SelectProps } from './components/Select/Select';
 // US-FE-T-05: Button, Chip y Badge/Estado.
 export { Button } from './components/Button/Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button/Button';
+// US-FE-W-01: Button como enlace y el tipo `renderLink` que comparten los enlaces de @nexa/ui.
+export { ButtonLink } from './components/Button/ButtonLink';
+export type { ButtonLinkProps } from './components/Button/ButtonLink';
+export type { LinkRenderProps, RenderLink } from './components/Button/enlace';
 export { Chip } from './components/Chip/Chip';
 export type { ChipProps, ChipTipo } from './components/Chip/Chip';
 export { EstadoBadge } from './components/EstadoBadge/EstadoBadge';
@@ -37,3 +41,19 @@ export { Table } from './components/Table/Table';
 export type { TableColumn, TableProps } from './components/Table/Table';
 export { TabPanel, Tabs } from './components/Tabs/Tabs';
 export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs/Tabs';
+
+// US-FE-T-18: PublicNav y PublicFooter.
+export { PublicNav } from './components/PublicNav';
+export type { PublicNavLink, PublicNavProps } from './components/PublicNav';
+export { PublicFooter } from './components/PublicFooter';
+export type { PublicFooterContacto, PublicFooterProps } from './components/PublicFooter';
+
+// US-FE-T-15: NavItem y Sidebar.
+export { NavItem } from './components/NavItem/NavItem';
+export type { NavItemLinkProps, NavItemProps } from './components/NavItem/NavItem';
+export type { NavIcon } from './components/NavItem/iconos';
+export { Sidebar } from './components/Sidebar/Sidebar';
+export type { GrupoNav, SidebarProps, SidebarUsuario } from './components/Sidebar/Sidebar';
+
+// Avisos efímeros (toast) con Sonner.
+export { Toaster, toast } from './components/Toaster/Toaster';

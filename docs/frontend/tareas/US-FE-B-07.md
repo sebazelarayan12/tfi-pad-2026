@@ -34,7 +34,7 @@ En `/clientes/:clienteId`, el empleado o el administrador ve la ficha de un clie
 - **Oleada:** 5.
 - **Depende de:** US-FE-B-04, US-FE-T-06, US-FE-T-07, US-FE-T-09, US-FE-T-10, US-FE-T-11, US-FE-T-16, US-FE-T-19, US-FE-T-24, US-FE-T-26, US-FE-T-28.
 - **Puede empezar sin esperar a:** US-FE-B-09 (nuevo vehículo; esta ficha solo enlaza a su ruta).
-- **Bloqueada por pedidos al back:** PB-03 (MSW; la cabecera usa el mock de T-24) y PB-28 (MSW; el bloque Cuenta queda oculto).
+- **Bloqueada por pedidos al back:** PB-28 (MSW; Cuenta sigue oculto). El detalle de cliente ya existe (PR #58); PB-03 solo afecta los campos adicionales del resumen de B3.
 
 ## 4. Documentos a leer
 
@@ -92,7 +92,7 @@ Compartidos (no editar): `packages/api/**` (T-24, T-26, T-28), `packages/ui/**`,
 
 | Método y ruta | Estado | Uso en B-07 |
 |---|---|---|
-| `GET /api/clientes/{id}` | Especificado (PB-03; mock de T-24) | Cabecera. 404 si no existe o está inactivo. |
+| `GET /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | Cabecera. 404 si no existe o está inactivo. |
 | `GET /api/vehiculos?clienteId={uuid}` | Implementado | Lista de vehículos activos. Sin paginación. |
 | `GET /api/polizas?clienteId={uuid}&tamano=100` | Implementado | Pólizas del cliente (tamaño máximo 100). |
 | `GET /api/polizas/{id}/cuotas` | Implementado | Próxima cuota de cada póliza activa. Sin paginación. |
@@ -238,9 +238,9 @@ Herramientas: Vitest, Testing Library, MSW (`server.use` por caso).
 
 ## 12. Verificación manual
 
-Requiere `VITE_USE_MOCKS=true` (PB-03) o el back con esos endpoints.
+Se puede usar el backend para el detalle del cliente; con `VITE_USE_MOCKS=true`, el mock de T-24 replica ese contrato. El rail Cuenta permanece oculto en ambos modos.
 
-1. Abrir la ficha de un cliente del mock. Ver nombre, DNI con puntos, CUIL y badge.
+1. Abrir la ficha de un cliente del backend o del mock equivalente. Ver nombre, DNI con puntos, CUIL y badge.
 2. Ver la pestaña Vehículos activa y la lista. Revisar un vehículo con póliza y otro sin póliza.
 3. Hacer clic en "Cotizar" y ver la ruta de cotización (la pantalla llega con B-10).
 4. Revisar la tabla de pólizas: número, vehículo por patente, vigencia y próximo vencimiento.
@@ -286,4 +286,3 @@ Requiere `VITE_USE_MOCKS=true` (PB-03) o el back con esos endpoints.
 - ABIERTO: costo de la próxima cuota (una query por póliza activa, N+1). Motivo: no figura en REVISION.md ni en FB8; el campo `proximoVencimiento` no está pedido en PB.
 - Resuelto (RV-35): la pestaña es Vehículos y Pólizas es sección apilada (D-17); el INDEX ya lo refleja en la fila de B-07.
 - Resuelto (triage final, default de la ficha): contrato del puente con B-08 (`onEditar` y `onDarDeBaja`). Motivo: no figura en REVISION.md ni en FB8.
-

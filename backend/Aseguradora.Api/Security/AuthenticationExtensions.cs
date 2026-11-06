@@ -57,17 +57,28 @@ public static class AuthenticationExtensions
                 };
             });
 
+        services.AddSingleton<IAuthorizationHandler, PasswordVigenteHandler>();
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, ResultadoAutorizacionHandler>();
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy(Politicas.Empleado, policy => policy
                 .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser()
-                .RequireRole(Roles.Empleado, Roles.Administrador));
+                .RequireRole(Roles.Empleado, Roles.Administrador)
+                .AddRequirements(new PasswordVigenteRequirement()));
 
             options.AddPolicy(Politicas.Admin, policy => policy
                 .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser()
-                .RequireRole(Roles.Administrador));
+                .RequireRole(Roles.Administrador)
+                .AddRequirements(new PasswordVigenteRequirement()));
+
+            // Same roles without the password requirement: only the change endpoint (US-F1-09).
+            options.AddPolicy(Politicas.CambioPassword, policy => policy
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .RequireRole(Roles.Empleado, Roles.Administrador));
 
             options.AddPolicy(Politicas.ApiKey, policy => policy
                 .AddAuthenticationSchemes(ApiKeyAuthenticationHandler.Esquema)

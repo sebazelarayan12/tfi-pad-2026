@@ -59,6 +59,13 @@ describe('EstadoBadge', () => {
     ]);
   });
 
+  it('permite un texto visible distinto del token', () => {
+    render(<EstadoBadge estado="Vigente" texto="Aprobado" />);
+
+    expect(screen.getByText('Aprobado')).toBeVisible();
+    expect(screen.queryByText('Vigente')).not.toBeInTheDocument();
+  });
+
   it('no tiene ícono: solo texto', () => {
     const { container } = render(<EstadoBadge estado="Vigente" />);
     expect(container.querySelector('svg')).toBeNull();

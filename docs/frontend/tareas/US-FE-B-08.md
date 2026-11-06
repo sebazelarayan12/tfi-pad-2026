@@ -31,7 +31,7 @@ Desde la ficha de un cliente (B-07), el empleado o el administrador puede: edita
 - **Oleada:** 6.
 - **Depende de:** US-FE-B-05, US-FE-B-07, US-FE-T-04, US-FE-T-05, US-FE-T-07, US-FE-T-10, US-FE-T-11, US-FE-T-19, US-FE-T-24, US-FE-T-25.
 - **Puede empezar sin esperar a:** ninguna.
-- **Bloqueada por pedidos al back:** PB-03 (MSW; `PUT` y `DELETE` están Especificados y usan el mock de T-24).
+- **Bloqueada por pedidos al back:** ninguna para PUT/DELETE; ambos se publicaron en PR #58 y sus mocks replican el contrato real. PB-14/PB-15 conservan su tratamiento de errores.
 
 ## 4. Documentos a leer
 
@@ -41,7 +41,7 @@ Desde la ficha de un cliente (B-07), el empleado o el administrador puede: edita
 - `docs/frontend/contratos-api/seguridad-clientes-publico.md`: §3.2 (`validar-renaper`: status y `detail`), §3.4 (`PUT`, `DELETE`, reglas de la spec: email único, sin cambio de DNI, baja lógica), §1.2 (formas de error).
 - `docs/frontend/contratos-api/convenciones-transversales.md`: §3.3 y §3.4 (formas de error por campo y de negocio).
 - `docs/frontend/design-system.md`: §5.1 (Button Ghost, Secondary M), §5.2 (Input), §5.3 (Select), §8.2 y §8.3 (foco).
-- `docs/frontend/pedidos-al-back.md`: PB-03 (contrato propuesto de PUT y DELETE), PB-14, PB-15.
+- `docs/frontend/pedidos-al-back.md`: PB-03 (historial de publicación y ampliación pendiente del resumen), PB-14, PB-15.
 - `docs/frontend/tareas/INDEX.md`: FC11 (mutaciones sensibles), FC10 (errores), FC16 (accesibilidad), sección de decisiones D-15 y D-33.
 
 ## 5. Archivos a crear o modificar
@@ -82,8 +82,8 @@ Compartidos (no editar): `packages/api/**` (T-24, T-25), `packages/ui/**`, `app/
 
 | Método y ruta | Estado | Request | Response | Errores |
 |---|---|---|---|---|
-| `PUT /api/clientes/{id}` | Especificado (PB-03; mock de T-24) | `ClienteModificacionRequest` | 200 `ClienteResponse` (propuesta de PB-03; la spec no la define) | 400 con `detail` (email en uso, por ejemplo); 404; 401; 403 |
-| `DELETE /api/clientes/{id}` | Especificado (US-F1-06; mock de T-24) | sin body | 204 sin cuerpo | 400 con `detail` si la baja se bloquea (decisión pendiente); 404; 401; 403 |
+| `PUT /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | `ClienteModificacionRequest` | 200 `ClienteResponse` actualizado (contrato real) | 400 con `errors` de validación o `detail` de negocio (email en uso); 404; 401; 403 |
+| `DELETE /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | sin body | 204 sin cuerpo | 400 con `detail` si tiene póliza Pendiente, Vigente o Suspendida; 404; 401; 403 |
 | `POST /api/clientes/{id}/validar-renaper` | En PR #50 (mock de T-25) | sin body | 200 `ClienteResponse` | 400 con `detail` (no figura, fallecido, menor); 404 con `codigo: "CLIENTE_NO_ENCONTRADO"`; 502; 401; 403 |
 
 ```ts
@@ -215,7 +215,7 @@ Herramientas: Vitest, Testing Library, MSW (`server.use` por caso).
 
 ## 12. Verificación manual
 
-Requiere `VITE_USE_MOCKS=true` (PB-03, PB-14) o el back con esos endpoints.
+PUT y DELETE pueden consumir el backend real. Los tests usan sus mocks equivalentes de T-24; PB-14/PB-15 conservan su tratamiento de errores.
 
 1. Abrir la ficha de un cliente. Pulsar "Editar", cambiar el teléfono y guardar. Ver el aviso y el teléfono nuevo en la cabecera.
 2. Intentar un email que use otro cliente. Ver el mensaje del back sin prefijo y el diálogo abierto.
@@ -260,5 +260,4 @@ Requiere `VITE_USE_MOCKS=true` (PB-03, PB-14) o el back con esos endpoints.
 - Resuelto (RV-D05): el diálogo es `Dialogo` de `@nexa/ui` (T-07), no un primitivo propio de B-05.
 - Resuelto (RV-41): la clave del aviso es `location.state.aviso` en B-04, B-05 y B-08.
 - Resuelto (RV-38): el reintento de Renaper `POST .../validar-renaper` vive en esta ficha; el INDEX lo asigna a B-08.
-- ABIERTO: respuesta de `PUT`. La spec no define el cuerpo (B5 y PB-03 lo proponen). Motivo: no figura en REVISION.md ni en FB8.
-
+- Resuelto por código (US-F1-06, PR #58): PUT devuelve 200 con `ClienteResponse` actualizado. No queda como decisión pendiente.

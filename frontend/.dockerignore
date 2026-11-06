@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/coverage
+.git
+
+# Un .env real nunca entra a la imagen; solo el .env.example.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Worker de MSW: Vite lo copia de public/ a dist/. Una imagen de despliegue nunca lleva mocks.
+**/public/mockServiceWorker.js
