@@ -1,7 +1,13 @@
 import { createApiClient, type ApiClient } from '@nexa/api';
 import type { NavigateOptions } from 'react-router-dom';
 
-import { cerrarSesion, RUTA_LOGIN, sesionActual } from '../features/auth';
+import {
+  cerrarSesion,
+  exigirCambioPassword,
+  RUTA_CAMBIAR_PASSWORD,
+  RUTA_LOGIN,
+  sesionActual,
+} from '../features/auth';
 import { router } from './router';
 
 /** Origen de la API en desarrollo (`.env.example`) cuando `VITE_API_BASE_URL` no está definida. */
@@ -15,7 +21,8 @@ interface OpcionesApiClientApp {
 /**
  * Cliente HTTP de la app: manda el token de la sesión y, ante un `401` de un endpoint protegido,
  * cierra la sesión y lleva a `/login`. El cliente ya excluye el `401` de `/api/auth/login`.
- * El `403` no cierra la sesión.
+ * El `403` no cierra la sesión; el `403 PASSWORD_CAMBIO_REQUERIDO` marca la sesión y lleva a
+ * `/cambiar-password` (US-F1-09, US-FE-B-26).
  */
 export function crearApiClientApp({ baseUrl, navegar }: OpcionesApiClientApp): ApiClient {
   return createApiClient({
@@ -24,6 +31,10 @@ export function crearApiClientApp({ baseUrl, navegar }: OpcionesApiClientApp): A
     onUnauthorized: () => {
       cerrarSesion('no-autorizada');
       void navegar(RUTA_LOGIN, { replace: true });
+    },
+    onPasswordChangeRequired: () => {
+      exigirCambioPassword();
+      void navegar(RUTA_CAMBIAR_PASSWORD, { replace: true });
     },
   });
 }

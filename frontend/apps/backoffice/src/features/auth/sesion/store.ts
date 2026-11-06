@@ -46,6 +46,7 @@ export function iniciarSesion(respuesta: LoginResponse, ahoraMs: number = Date.n
     rol: respuesta.rol,
     expiraEn,
     email: leerEmailDelToken(respuesta.token),
+    debeCambiarPassword: respuesta.debeCambiarPassword === true,
   };
   if (!estaVigente(nueva, ahoraMs)) return false;
   sesion = nueva;
@@ -53,6 +54,17 @@ export function iniciarSesion(respuesta: LoginResponse, ahoraMs: number = Date.n
   programarVencimiento(nueva, ahoraMs);
   notificar();
   return true;
+}
+
+/**
+ * Marca la sesión abierta como pendiente de cambio de contraseña (403 `PASSWORD_CAMBIO_REQUERIDO`).
+ * No cierra la sesión. Sin sesión abierta no hace nada.
+ */
+export function exigirCambioPassword(): void {
+  if (sesion === null || sesion.debeCambiarPassword) return;
+  sesion = { ...sesion, debeCambiarPassword: true };
+  guardar(sesion);
+  notificar();
 }
 
 /** Cierra la sesión. Es idempotente: sin sesión abierta no hace nada. */

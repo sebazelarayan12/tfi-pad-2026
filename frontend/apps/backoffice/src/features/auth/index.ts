@@ -3,6 +3,7 @@ export {
   alCerrarSesion,
   cerrarSesion,
   emailSesion,
+  exigirCambioPassword,
   iniciarSesion,
   sesionActual,
   useRol,
@@ -11,3 +12,4 @@ export {
 export type { MotivoCierre } from './sesion/store';
 
 export const RUTA_LOGIN = '/login';
+export const RUTA_CAMBIAR_PASSWORD = '/cambiar-password';
