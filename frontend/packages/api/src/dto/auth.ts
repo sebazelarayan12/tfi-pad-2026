@@ -23,4 +23,15 @@ export interface LoginResponse {
   rol: RolUsuario;
   /** ISO 8601 con offset `+00:00`. No convertir a `Date` en el tipo. */
   expiraEn: string;
+  /** PB-31 / US-F1-09: `true` mientras la cuenta usa la contraseña temporal. Ausente = `false`. */
+  debeCambiarPassword?: boolean;
 }
+
+/** `POST /api/auth/cambiar-password` (PB-31, US-F1-09). */
+export interface CambiarPasswordRequest {
+  passwordActual: string;
+  passwordNueva: string;
+}
+
+/** Código estable del 403 de un token que debe cambiar la contraseña (`ProblemDetails.codigo`). */
+export const CODIGO_CAMBIO_PASSWORD_REQUERIDO = 'PASSWORD_CAMBIO_REQUERIDO';

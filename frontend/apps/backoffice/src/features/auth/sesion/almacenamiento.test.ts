@@ -9,6 +9,7 @@ const sesion: Sesion = {
   rol: 'Empleado',
   expiraEn: new Date(AHORA + 60_000),
   email: 'a@b.com',
+  debeCambiarPassword: false,
 };
 
 afterEach(() => {
@@ -32,6 +33,7 @@ describe('almacenamiento de la sesión', () => {
       rol: 'Empleado',
       expiraEn: '2026-11-01T08:01:00.000Z',
       email: 'a@b.com',
+      debeCambiarPassword: false,
     });
   });
 

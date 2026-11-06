@@ -9,6 +9,7 @@ const sesion: Sesion = {
   rol: 'Empleado',
   expiraEn: new Date(EXPIRA_EN),
   email: null,
+  debeCambiarPassword: false,
 };
 
 describe('estaVigente', () => {

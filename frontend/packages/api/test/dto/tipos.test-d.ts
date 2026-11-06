@@ -72,8 +72,11 @@ describe('DTO de auth', () => {
     expectTypeOf<RolUsuario>().toEqualTypeOf<'Administrador' | 'Empleado'>();
   });
 
-  it('LoginResponse tiene exactamente las claves token, rol y expiraEn', () => {
-    expectTypeOf<keyof LoginResponse>().toEqualTypeOf<'token' | 'rol' | 'expiraEn'>();
+  it('LoginResponse tiene las claves token, rol, expiraEn y debeCambiarPassword (opcional, PB-31)', () => {
+    expectTypeOf<keyof LoginResponse>().toEqualTypeOf<
+      'token' | 'rol' | 'expiraEn' | 'debeCambiarPassword'
+    >();
+    expectTypeOf<LoginResponse['debeCambiarPassword']>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<LoginResponse['token']>().toEqualTypeOf<string>();
     expectTypeOf<LoginResponse['rol']>().toEqualTypeOf<RolUsuario>();
     expectTypeOf<LoginResponse['expiraEn']>().toEqualTypeOf<string>();

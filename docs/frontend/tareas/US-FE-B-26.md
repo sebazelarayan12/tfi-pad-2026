@@ -106,7 +106,7 @@ No se edita ningún `package.json` (FC17).
    - Foco inicial en `Contraseña temporal`.
 7. Lógica de la mutación:
    - 200: `iniciarSesion(respuesta, ahoraMs)` reemplaza la sesión (token nuevo, sin la bandera), limpia el formulario y navega a `/inicio` con `replace`.
-   - 400 con `detail` (contraseña actual incorrecta, política rechazada por el back): alerta del formulario con `role="alert"`, sin marcar campo (FC10). La contraseña actual incorrecta llega como 400 y no como 401 (PB-31), así que no dispara el cierre de sesión de T-08.
+   - 400 con `detail` (contraseña actual incorrecta, política rechazada por el back): `toast.error(detail)`, sin marcar campo (FC10, FC19) y foco en `Contraseña temporal`. La contraseña actual incorrecta llega como 400 y no como 401 (PB-31), así que no dispara el cierre de sesión de T-08.
    - 400 con `errors`: mapear cada clave a un texto propio de §8; nunca el texto en inglés del back.
    - 401: lo resuelve T-08 (sesión vencida).
    - 403: texto de §8.
@@ -183,8 +183,8 @@ Sin frame en Figma (D-B26-01). Textos propuestos; la pantalla reutiliza el layou
 | Nueva igual a la temporal | `La contraseña nueva debe ser distinta de la temporal.` |
 | Enviando | Botón deshabilitado, un solo POST (FC11). |
 | 200 | Sesión reemplazada, formulario limpio, navega a `/inicio` con `replace`. |
-| 400 contraseña actual incorrecta (`detail`) | Alerta con `role="alert"`; no cierra sesión; foco en `Contraseña temporal`. |
-| 400 política rechazada por el back (`detail`) | Alerta con el texto del back tal cual. |
+| 400 contraseña actual incorrecta (`detail`) | Toast de error; no cierra sesión; foco en `Contraseña temporal`. |
+| 400 política rechazada por el back (`detail`) | Toast de error con el texto del back tal cual. |
 | 401 | Sesión vencida: lo resuelve T-08. |
 | 403 `PASSWORD_CAMBIO_REQUERIDO` en otra pantalla | Lleva a `/cambiar-password` sin cerrar la sesión. |
 | Error de red | Mensaje de §8; no se reenvía solo. |
@@ -212,7 +212,7 @@ Herramientas: Vitest, Testing Library, MSW (handlers de §6 con `server.use`), `
 9. `muestra_textos_y_foco_inicial`: título, labels, requisitos y foco en `Contraseña temporal`.
 10. `envia_el_body_con_actual_y_nueva`: MSW captura `passwordActual` y `passwordNueva` (sin `repetir`).
 11. `200_reemplaza_la_sesion_y_navega_a_inicio`: la sesión nueva no tiene bandera y la navegación es con `replace`.
-12. `400_actual_incorrecta_muestra_alerta_y_no_cierra_sesion`.
+12. `400_actual_incorrecta_muestra_toast_y_no_cierra_sesion`.
 13. `400_politica_rechazada_muestra_el_texto_del_back`.
 14. `400_errors_muestra_texto_en_espanol`: nunca el texto en inglés.
 15. `403_muestra_texto_propio`.
@@ -238,8 +238,8 @@ Herramientas: Vitest, Testing Library, MSW (handlers de §6 con `server.use`), `
 4. La nueva debe cumplir la política fuerte, coincidir con la repetición y ser distinta de la temporal (tests 1 a 6).
 5. El POST envía solo `passwordActual` y `passwordNueva` (test 10).
 6. Con 200, la sesión se reemplaza por la nueva sin bandera y se navega a `/inicio` con `replace` (test 11).
-7. La contraseña actual incorrecta (400) se muestra en la alerta sin cerrar la sesión (test 12).
-8. Los `errors` se muestran en español bajo el campo y el `detail`, en la alerta (tests 13 y 14).
+7. La contraseña actual incorrecta (400) se muestra en un toast sin cerrar la sesión (test 12).
+8. Los `errors` se muestran en español bajo el campo y el `detail`, en un toast (tests 13 y 14).
 9. Un doble clic genera un solo POST y no hay reintentos automáticos (tests 16 y 17).
 10. Ninguna contraseña queda en storage, URL ni caché (test 20).
 11. `Cerrar sesión` está disponible en la pantalla (test 19).
@@ -255,7 +255,7 @@ Con `VITE_USE_MOCKS=true`:
 2. Intentar ir a `/inicio` escribiendo la URL: verificar que vuelve a `/cambiar-password`.
 3. Escribir una nueva de 8 caracteres: verificar los requisitos `Pendiente` y el error al enviar.
 4. Escribir una repetición distinta: verificar `Las contraseñas no coinciden.`.
-5. Escribir una temporal incorrecta con una nueva válida: verificar la alerta y que la sesión sigue abierta.
+5. Escribir una temporal incorrecta con una nueva válida: verificar el toast de error y que la sesión sigue abierta.
 6. Completar bien el formulario: verificar que se entra a `/inicio` y que el botón Atrás no vuelve a la pantalla.
 7. Cerrar sesión, volver a entrar con la contraseña nueva: verificar que ya no pide el cambio.
 8. Con el back real (cuando exista US-F1-09), repetir 1 a 7 y verificar el 403 `PASSWORD_CAMBIO_REQUERIDO` con un token viejo.
@@ -265,13 +265,13 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 Todas son `[CONFIRMAR]`: el usuario decide antes de implementar cada parte afectada (regla 12 de `docs/workflow.md`). Los defaults son propuestas, no decisiones tomadas.
 
-- [CONFIRMAR] **D-B26-01: diseño de la pantalla (sin frame en Figma).** Default: reutilizar el layout, los campos y los botones del login (B1), con los textos de §8. Alternativa: pedir el frame al diseño antes de implementar.
-- [CONFIRMAR] **D-B26-02: dónde se valida la política de contraseña.** Default: el front valida los cinco requisitos para dar feedback inmediato y el back es la autoridad. Riesgo: si el back cambia la política, el front queda desfasado y el mensaje del back llega como `detail`. Alternativa: solo el back valida.
-- [CONFIRMAR] **D-B26-03: política mínima (seguridad).** Default: 12 caracteres con mayúscula, minúscula, número y símbolo (PB-31). Debe coincidir con US-F1-09. Confirmación del equipo pendiente.
-- [CONFIRMAR] **D-B26-04: botón `Cerrar sesión` en la pantalla.** Default: sí, para que la persona pueda salir sin cambiar. Alternativa: sin salida hasta que cambie.
-- [CONFIRMAR] **D-B26-05: la nueva no puede ser igual a la temporal.** Default: se rechaza en el front (y el back en US-F1-09).
-- [CONFIRMAR] **D-B26-06: cambio voluntario de contraseña ("Mi cuenta").** Default: fuera de alcance. Alternativa: tarjeta nueva con una pantalla propia que reutilice esta.
-- [CONFIRMAR] **D-B26-07: qué hace el 403 `PASSWORD_CAMBIO_REQUERIDO` en el resto de la app.** Default: lleva a `/cambiar-password` sin cerrar la sesión. Depende de que T-08 exponga el gancho.
+- **D-B26-01: diseño de la pantalla (sin frame en Figma). Decidido por el usuario (2026-11-06):** reutilizar el layout, los campos y los botones del login (B1), con los textos de §8. El ajuste fino queda para US-FE-V.
+- **D-B26-02: dónde se valida la política de contraseña. Decidido por el usuario (2026-11-06):** el front valida los cinco requisitos para dar feedback inmediato y el back es la autoridad.
+- **D-B26-03: política mínima (seguridad). Decidido por el usuario (2026-11-06):** 12 caracteres con mayúscula, minúscula, número y símbolo (coincide con US-F1-09, PR #112). Confirmación del equipo de seguridad pendiente.
+- **D-B26-04: botón `Cerrar sesión` en la pantalla. Decidido por el usuario (2026-11-06):** sí.
+- **D-B26-05: la nueva no puede ser igual a la temporal. Decidido por el usuario (2026-11-06):** se rechaza en el front y en el back (US-F1-09).
+- **D-B26-06: cambio voluntario de contraseña ("Mi cuenta"). Decidido por el usuario (2026-11-06):** fuera de alcance.
+- **D-B26-07: qué hace el 403 `PASSWORD_CAMBIO_REQUERIDO` en el resto de la app. Decidido por el usuario (2026-11-06):** lleva a `/cambiar-password` sin cerrar la sesión.
 
 ## 14. Riesgos y errores comunes
 
@@ -300,3 +300,8 @@ Todas son `[CONFIRMAR]`: el usuario decide antes de implementar cada parte afect
 - Excepciones de ownership declaradas en el INDEX: `cambiarPassword.ts`, `debeCambiarPassword` en `dto/auth.ts`, handler en `mocks/handlers/auth.ts`, `Sesion`/`iniciarSesion`/`LoginPage` y `RequireSesion`.
 - Pendiente: confirmar con T-08 si expone un gancho para el 403 `PASSWORD_CAMBIO_REQUERIDO` (D-B26-07). Si no, se agrega en la tarea dueña.
 - Pendiente de confirmación del equipo (seguridad): política de contraseña y obligatoriedad del cambio.
+
+- Implementación (2026-11-06): decididas D-B26-01 a D-B26-07 por el usuario. Los avisos de negocio (`detail` del 400, 403, red) van en toast (FC19, US-FE-T-33) y no en una alerta inline: se actualizó §6 paso 7 y §9. Los `errors` siguen bajo el campo.
+- Gancho del 403: `createApiClient` (T-08) no lo exponía. Se agregó la opción `onPasswordChangeRequired` (se dispara con 403 y `codigo: PASSWORD_CAMBIO_REQUERIDO`); `app/apiClient.ts` marca la sesión (`exigirCambioPassword`) y navega a `/cambiar-password`. Excepciones de ownership usadas además de las de §5: `packages/api/src/client/createApiClient.ts`, `app/router.tsx` (ruta con sesión fuera del layout), `features/auth/sesion/almacenamiento.ts` (persiste la bandera en `sessionStorage`, como el resto de la sesión).
+- El back de US-F1-09 (PR #112) escribe el código en la extensión `code` del `ProblemDetails`; el cliente lee `codigo`. El back debe emitir también `codigo` (ver PR #112).
+- Foco inicial en `Contraseña temporal`: se pide en el turno siguiente al montaje (RHF registra el campo al montar).

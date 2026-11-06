@@ -15,6 +15,8 @@ import {
 } from '../schemas/loginSchema';
 import { useSesion } from '../sesion/store';
 
+const RUTA_CAMBIAR_PASSWORD = '/cambiar-password';
+
 const RUTA_INICIO = '/inicio';
 const RUTA_LOGIN = '/login';
 
@@ -71,7 +73,8 @@ export function LoginPage() {
   }, [login.isPending, setFocus]);
 
   if (sesion !== null) {
-    return <Navigate to={destinoTrasLogin(estado.desde)} replace />;
+    const destino = sesion.debeCambiarPassword ? RUTA_CAMBIAR_PASSWORD : destinoTrasLogin(estado.desde);
+    return <Navigate to={destino} replace />;
   }
 
   const enviar = (valores: LoginPayload) => {

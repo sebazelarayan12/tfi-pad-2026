@@ -28,9 +28,8 @@ const dominios = {
   vehiculos,
 };
 
-// T-24, T-27, T-28, T-29, T-30 y T-31 ya publican sus handlers.
+// T-24, T-27, T-28, T-29, T-30, T-31 y B-26 (auth) ya publican sus handlers.
 const dominiosVacios = {
-  auth,
   cotizaciones,
   inicio,
   vehiculos,
