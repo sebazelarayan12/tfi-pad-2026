@@ -29,6 +29,8 @@ export function useCobrarCuotas(polizaId?: string) {
   return useMutation({
     mutationFn: (body: PagoCajaRequest) => cobrarEnCaja(cliente, body),
     retry: 0,
+    // Sin conexión falla en el momento: no queda pausado ni se envía solo al volver la red (PB-12).
+    networkMode: 'always',
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: polizasKeys.all });
       void queryClient.invalidateQueries({ queryKey: pagosKeys.all });
