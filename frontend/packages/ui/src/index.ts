@@ -50,3 +50,6 @@ export type { NavItemLinkProps, NavItemProps } from './components/NavItem/NavIte
 export type { NavIcon } from './components/NavItem/iconos';
 export { Sidebar } from './components/Sidebar/Sidebar';
 export type { GrupoNav, SidebarProps, SidebarUsuario } from './components/Sidebar/Sidebar';
+
+// Avisos efímeros (toast) con Sonner.
+export { Toaster, toast } from './components/Toaster/Toaster';
