@@ -28,15 +28,10 @@ const dominios = {
   vehiculos,
 };
 
-// T-24, T-26, T-27, T-28, T-29, T-30, T-31 y B-26 (auth) ya publican sus handlers.
-const dominiosVacios = {
-  inicio,
-};
-
 it('agrega los handlers de los doce dominios', () => {
   expect(handlers).toEqual(Object.values(dominios).flat());
 });
 
-it.each(Object.entries(dominiosVacios))('exporta un arreglo vacío para %s', (_dominio, lista) => {
-  expect(lista).toEqual([]);
+it.each(Object.entries(dominios))('registra al menos un handler para %s', (_dominio, lista) => {
+  expect(lista.length).toBeGreaterThan(0);
 });
