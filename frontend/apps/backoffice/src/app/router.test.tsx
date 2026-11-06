@@ -1,3 +1,5 @@
+import { ApiClientProvider, createApiClient } from '@nexa/api';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom';
@@ -8,7 +10,14 @@ import { validarOrdenRutas } from './ordenRutas';
 
 function montar(entrada: string) {
   const memoria = createMemoryRouter(rutasApp, { initialEntries: [entrada] });
-  render(<RouterProvider router={memoria} />);
+  const cliente = createApiClient({ baseUrl: 'https://api.test' });
+  render(
+    <ApiClientProvider client={cliente}>
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={memoria} />
+      </QueryClientProvider>
+    </ApiClientProvider>,
+  );
   return memoria;
 }
 
@@ -20,9 +29,10 @@ function paths(rutas: RouteObject[], base = ''): string[] {
 }
 
 describe('router', () => {
-  it('/ redirige a /inicio', () => {
+  it('desde / pide iniciar sesión y conserva /inicio como destino', async () => {
     const memoria = montar('/');
-    expect(memoria.state.location.pathname).toBe('/inicio');
+    expect(await screen.findByRole('heading', { name: 'Ingresar al panel' })).toBeInTheDocument();
+    expect(memoria.state.location).toMatchObject({ pathname: '/login', state: { desde: '/inicio' } });
   });
 
   it('una ruta desconocida muestra PaginaNoEncontrada', () => {
@@ -30,12 +40,13 @@ describe('router', () => {
     expect(screen.getByRole('heading', { name: 'Página no encontrada' })).toBeInTheDocument();
   });
 
-  it('el enlace "Volver al inicio" lleva a /inicio', async () => {
+  it('el enlace "Volver al inicio" pide iniciar sesión y conserva el destino', async () => {
     const memoria = montar('/cualquiera');
     const enlace = screen.getByRole('link', { name: 'Volver al inicio' });
     expect(enlace).toHaveAttribute('href', '/inicio');
     await userEvent.click(enlace);
-    expect(memoria.state.location.pathname).toBe('/inicio');
+    expect(await screen.findByRole('heading', { name: 'Ingresar al panel' })).toBeInTheDocument();
+    expect(memoria.state.location).toMatchObject({ pathname: '/login', state: { desde: '/inicio' } });
   });
 
   it('el foco de la página no encontrada queda en el h1', () => {
