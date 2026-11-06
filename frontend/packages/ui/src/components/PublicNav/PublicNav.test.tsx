@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+
+import type { LinkRenderProps } from '../Button/enlace';
 import { axe } from 'vitest-axe';
 
 import { PublicNav } from './PublicNav';
@@ -70,6 +72,35 @@ describe('PublicNav', () => {
       'NNexa Seguros',
       'Consultar póliza',
     ]);
+  });
+
+  it('el logo y el CTA usan renderLink; los links de ancla quedan como <a>', async () => {
+    const renderLink = ({ href, className, onClick, children }: LinkRenderProps) => (
+      <a href={href} className={className} onClick={onClick} data-router="">
+        {children}
+      </a>
+    );
+    render(
+      <PublicNav
+        links={links}
+        ctaLabel="Consultar póliza"
+        ctaHref="/consultar-poliza"
+        renderLink={renderLink}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Nexa Seguros' })).toHaveAttribute('data-router');
+    expect(screen.getByRole('link', { name: 'Consultar póliza' })).toHaveAttribute('data-router');
+    expect(screen.getByRole('link', { name: 'Planes' })).not.toHaveAttribute('data-router');
+  });
+
+  it('el CTA del menú mobile cierra el menú al tocarlo', async () => {
+    renderNav();
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    const menu = screen.getByRole('navigation', { name: 'Principal (móvil)' });
+    const cta = menu.querySelector('a[href="/consultar-poliza"]') as HTMLElement;
+    cta.addEventListener('click', (evento) => evento.preventDefault());
+    await userEvent.click(cta);
+    expect(screen.queryByRole('navigation', { name: 'Principal (móvil)' })).toBeNull();
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

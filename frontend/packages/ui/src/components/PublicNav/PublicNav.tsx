@@ -2,6 +2,7 @@ import { ListIcon } from '@phosphor-icons/react/dist/csr/List';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { renderAnchor, type RenderLink } from '../Button/enlace';
 import { LogoNexa } from '../LogoNexa/LogoNexa';
 
 export interface PublicNavLink {
@@ -15,6 +16,11 @@ export interface PublicNavProps {
   ctaHref: string;
   /** Destino del logo (default `/`, W1 §8). */
   logoHref?: string;
+  /**
+   * Enlace del router de la app para el logo y el CTA, que navegan entre páginas sin recargar.
+   * Los `links` son anclas de la página y quedan como `<a href>`. Por defecto `<a href>`.
+   */
+  renderLink?: RenderLink;
 }
 
 // Textos del botón mobile: NO DEFINIDOS en el Figma, default de la ficha (T-18 §13.2).
@@ -27,7 +33,13 @@ const LINK = `inline-flex min-h-11 items-center rounded-input text-body text-tex
 const CTA = `inline-flex h-10 items-center justify-center rounded-pill bg-action-primary px-sp-16 text-body text-action-on-primary ${FOCO}`;
 
 /** Barra superior de la web pública, 72 px (`design-system §5.10`). */
-export function PublicNav({ links, ctaLabel, ctaHref, logoHref = '/' }: PublicNavProps) {
+export function PublicNav({
+  links,
+  ctaLabel,
+  ctaHref,
+  logoHref = '/',
+  renderLink = renderAnchor,
+}: PublicNavProps) {
   const [abierto, setAbierto] = useState(false);
   const botonRef = useRef<HTMLButtonElement>(null);
   const idMenu = useId();
@@ -47,9 +59,7 @@ export function PublicNav({ links, ctaLabel, ctaHref, logoHref = '/' }: PublicNa
   return (
     <header>
       <div className="flex h-[72px] items-center gap-sp-32 px-sp-24">
-        <a href={logoHref} className={`rounded-input ${FOCO}`}>
-          <LogoNexa />
-        </a>
+        {renderLink({ href: logoHref, className: `rounded-input ${FOCO}`, children: <LogoNexa /> })}
         <div className="flex-1" />
         <nav aria-label="Principal" className="hidden items-center gap-sp-32 md:flex">
           {links.map((link) => (
@@ -58,9 +68,11 @@ export function PublicNav({ links, ctaLabel, ctaHref, logoHref = '/' }: PublicNa
             </a>
           ))}
         </nav>
-        <a href={ctaHref} className={`hidden md:inline-flex ${CTA}`}>
-          {ctaLabel}
-        </a>
+        {renderLink({
+          href: ctaHref,
+          className: `hidden md:inline-flex ${CTA}`,
+          children: ctaLabel,
+        })}
         <button
           ref={botonRef}
           type="button"
@@ -90,9 +102,12 @@ export function PublicNav({ links, ctaLabel, ctaHref, logoHref = '/' }: PublicNa
               {link.label}
             </a>
           ))}
-          <a href={ctaHref} className={`mt-sp-8 ${CTA}`}>
-            {ctaLabel}
-          </a>
+          {renderLink({
+            href: ctaHref,
+            className: `mt-sp-8 ${CTA}`,
+            onClick: () => setAbierto(false),
+            children: ctaLabel,
+          })}
         </nav>
       ) : null}
     </header>
