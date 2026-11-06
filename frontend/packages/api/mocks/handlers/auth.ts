@@ -1,6 +1,7 @@
 import { http, HttpResponse, passthrough, type HttpHandler } from 'msw';
 import type { CambiarPasswordRequest, LoginRequest, LoginResponse } from '../../src/dto/auth';
 import { problemaNegocio, problemaValidacion } from '../fixtures/comunes';
+import { tokensMockUsuarios } from './usuarios';
 
 // US-FE-T-32 agrega los demás handlers de este dominio.
 // US-FE-B-26 (PB-31): usuario de prueba con cambio de contraseña pendiente y su endpoint.
@@ -24,13 +25,10 @@ export function reiniciarUsuarioMockCambioPendiente(): void {
   cambioPendiente = true;
 }
 
-function tokenMock(email: string): string {
-  return `mock.${btoa(JSON.stringify({ email }))}.mock`;
-}
-
 function respuestaLogin(): LoginResponse {
   return {
-    token: tokenMock(usuarioMockCambioPendiente.email),
+    // Token que el handler de `/api/auth/yo` reconoce: con otro, ese 401 cierra la sesión.
+    token: tokensMockUsuarios.empleado,
     rol: 'Empleado',
     expiraEn: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
     debeCambiarPassword: cambioPendiente,
