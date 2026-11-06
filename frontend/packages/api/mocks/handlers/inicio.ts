@@ -1,4 +1,12 @@
-import type { HttpHandler } from 'msw';
+import { http, HttpResponse, type HttpHandler } from 'msw';
+import { problemaSinSesion } from '../fixtures/comunes';
+import { resumenInicio } from '../fixtures/inicio';
 
-// US-FE-B-03 agrega los handlers de este dominio.
-export const handlers: HttpHandler[] = [];
+export const handlers: HttpHandler[] = [
+  http.get('*/api/inicio/resumen', ({ request }) => {
+    if (!request.headers.get('Authorization')) {
+      return HttpResponse.json(problemaSinSesion(), { status: 401 });
+    }
+    return HttpResponse.json(resumenInicio);
+  }),
+];
