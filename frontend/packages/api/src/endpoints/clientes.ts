@@ -1,6 +1,8 @@
 import type { ApiClient } from '../client';
 import type {
   ClienteFiltro,
+  ClienteAltaRequest,
+  PersonaRenaperResponse,
   ClienteModificacionRequest,
   ClienteResponse,
   ClienteResumenResponse,
@@ -19,6 +21,7 @@ export const clientesKeys = {
   detalles: () => [...clientesKeys.todos, 'detalle'] as const,
   detalle: (id: string) => [...clientesKeys.detalles(), id] as const,
   cuenta: (id: string) => [...clientesKeys.todos, 'cuenta', id] as const,
+  renaper: (dni: string) => [...clientesKeys.todos, 'renaper', dni] as const,
 };
 
 export function listarClientes(
@@ -54,4 +57,17 @@ export function darDeBajaCliente(api: ApiClient, id: string): Promise<void> {
 /** SOLO MOCK: el backend no publica el endpoint de cuenta (PB-28); el panel permanece oculto. */
 export function obtenerCuentaCliente(api: ApiClient, id: string): Promise<CuentaClienteResponse> {
   return api.get<CuentaClienteResponse>(`${rutaCliente(id)}/cuenta`);
+}
+
+/** CU04: se preserva el body; el formulario normaliza DNI/CUIL antes de enviar. */
+export function crearCliente(api: ApiClient, cuerpo: ClienteAltaRequest): Promise<ClienteResponse> {
+  return api.post<ClienteResponse>(ruta, cuerpo);
+}
+
+export function previsualizarRenaper(api: ApiClient, dni: string): Promise<PersonaRenaperResponse> {
+  return api.get<PersonaRenaperResponse>(`${ruta}/renaper/${encodeURIComponent(dni)}`);
+}
+
+export function validarRenaper(api: ApiClient, id: string): Promise<ClienteResponse> {
+  return api.post<ClienteResponse>(`${rutaCliente(id)}/validar-renaper`);
 }
