@@ -1,0 +1,82 @@
+import { LockKeyIcon } from '@phosphor-icons/react/dist/csr/LockKey';
+import { Button, Input } from '@nexa/ui';
+import type { FormEventHandler } from 'react';
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
+
+import type { ConsultaFormValues } from '../schemas/consulta';
+
+export const AYUDA_DNI = 'Sin puntos ni espacios.';
+export const AYUDA_NUMERO_POLIZA = 'Los datos figuran en tu póliza.';
+export const TEXTO_PRIVACIDAD = 'Tus datos viajan cifrados y no se guardan en este dispositivo.';
+export const TEXTO_CONSULTAR = 'Consultar';
+export const TEXTO_CONSULTANDO = 'Consultando…';
+
+export interface FormularioConsultaPolizaProps {
+  register: UseFormRegister<ConsultaFormValues>;
+  errors: FieldErrors<ConsultaFormValues>;
+  enviando: boolean;
+  onSubmit: FormEventHandler<HTMLFormElement>;
+}
+
+/**
+ * Presentación de W2 (`W2-consultar-poliza.md` §3.1 y §11): card de 560 px, dos `Input` con
+ * label visible, botón full width y fila de privacidad. La validación y la mutación viven en la
+ * página; este componente solo recibe el registro de react-hook-form.
+ */
+export function FormularioConsultaPoliza({
+  register,
+  errors,
+  enviando,
+  onSubmit,
+}: FormularioConsultaPolizaProps) {
+  return (
+    <form
+      noValidate
+      autoComplete="off"
+      aria-busy={enviando}
+      onSubmit={onSubmit}
+      className="flex w-full flex-col gap-sp-20 rounded-card border border-border-hairline bg-surface-panel p-sp-24 md:w-[560px] md:p-sp-40"
+    >
+      <div className="flex flex-col gap-sp-8">
+        <h1 className="text-h1 text-text-primary">Consultá tu póliza</h1>
+        <p className="text-body text-text-secondary">
+          Ingresá tu DNI y el número de póliza para ver su estado y pagar sus cuotas.
+        </p>
+      </div>
+
+      <Input
+        label="DNI"
+        placeholder="30123456"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={8}
+        helper={errors.dni?.message ?? AYUDA_DNI}
+        error={errors.dni !== undefined}
+        {...register('dni')}
+      />
+
+      <Input
+        label="Número de póliza"
+        placeholder="POL-0000042"
+        autoComplete="off"
+        helper={errors.numeroPoliza?.message ?? AYUDA_NUMERO_POLIZA}
+        error={errors.numeroPoliza !== undefined}
+        {...register('numeroPoliza')}
+      />
+
+      <Button
+        type="submit"
+        label={enviando ? TEXTO_CONSULTANDO : TEXTO_CONSULTAR}
+        disabled={enviando}
+        className="w-full"
+      />
+
+      <p className="flex items-start gap-sp-8 text-body-sm text-text-secondary">
+        <span aria-hidden="true" className="shrink-0">
+          <LockKeyIcon size={16} weight="regular" />
+        </span>
+        {TEXTO_PRIVACIDAD}
+      </p>
+    </form>
+  );
+}
