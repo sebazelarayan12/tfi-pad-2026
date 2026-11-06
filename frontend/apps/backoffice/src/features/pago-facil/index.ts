@@ -1,0 +1,1 @@
+export { pagoFacilRoutes } from './routes';
