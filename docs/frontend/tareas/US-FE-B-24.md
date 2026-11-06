@@ -68,7 +68,7 @@ Bajo `frontend/apps/backoffice/src/features/usuarios/`. Dueño de todos: US-FE-B
 | `index.ts` | crear | Exporta `usuariosRoutes`. B-25 agrega sus exports. |
 | `pages/UsuariosPage.tsx` | crear | Topbar (`Usuarios`, `Nuevo empleado`) y las dos columnas: tabla (B-25, bloque vacío) y panel. |
 | `components/NuevoEmpleadoPanel.tsx` | crear | Formulario de alta. |
-| `components/PasswordField.tsx` | crear | `Input` de `Contraseña temporal` con el botón `Generar` (secundario S, 73 × 32 px, Figma) y el botón de mostrar u ocultar. |
+| `components/PasswordField.tsx` | crear | `Input` de `Contraseña temporal` con el botón `Generar` (secundario S, 73 × 32 px, Figma), el botón `Copiar` (D-B24-05) y el botón de mostrar u ocultar. |
 | `schemas/generarPassword.ts` | crear | `generarPasswordTemporal()`: 16 caracteres con mayúscula, minúscula, dígito y símbolo, con `crypto.getRandomValues` (D-B24-02). |
 | `components/RolSelector.tsx` | crear | `radiogroup` con dos chips. |
 | `api/useCrearUsuario.ts` | crear | `useMutation` sobre `POST /api/auth/usuarios`. `retry: 0`. |
@@ -106,6 +106,7 @@ No se editan `packages/*`. El DTO `CrearUsuarioRequest` y `UsuarioResponse` los 
 6. Crear `PasswordField`:
    - `Input` de T-04 con label `Contraseña temporal` y `type="password"`. El helper `Compartila por un canal seguro.` se muestra como en el Figma.
    - Botón `Generar` a la derecha del campo (Figma): pone la contraseña generada en el campo y la deja visible (`type="text"`) para que el administrador pueda leerla y pasarla.
+   - Botón `Copiar` (D-B24-05, decidido por el usuario): con `navigator.clipboard.writeText` copia el valor actual del campo y avisa `Contraseña copiada.` (`role="status"`). Deshabilitado si el campo está vacío. Si el portapapeles no está disponible o rechaza, muestra `No se pudo copiar. Copiala a mano.` y la contraseña sigue visible. El texto copiado no se guarda en ningún otro lado.
    - Botón de mostrar u ocultar con `aria-label` `Mostrar contraseña` / `Ocultar contraseña` (propuesta, B14 §12). Cambia `type` entre `password` y `text`.
 7. Crear `RolSelector`: `<div role="radiogroup" aria-labelledby>` con label `Rol`, y dos `<input type="radio">` estilizados como `Chip` de T-05 (`Empleado` y `Administrador`). Ninguno seleccionado al montar (D-20).
 8. Crear `NuevoEmpleadoPanel` (360 px, padding 24 px):
@@ -182,6 +183,9 @@ Textos que el Figma no define (propuesta, B14 §7 "NO DEFINIDO"):
 | Creando | `Creando usuario…` |
 | Mostrar contraseña | `Mostrar contraseña` / `Ocultar contraseña` (aria-label) |
 | Generar | `Generar` (Figma, B14 §5); `aria-label` `Generar contraseña temporal` (propuesta) |
+| Copiar | `Copiar`; `aria-label` `Copiar contraseña temporal` (propuesta) |
+| Copiado | `Contraseña copiada.` |
+| Copiado falló | `No se pudo copiar. Copiala a mano.` |
 | Rol obligatorio | `El rol es obligatorio.` (texto del DTO) |
 | Errores de `errors` | `Nombre` → `El nombre es obligatorio.` / `El nombre no puede superar los 100 caracteres.`; `Apellido` → `El apellido es obligatorio.` / `El apellido no puede superar los 100 caracteres.`; `Email` → `El email es obligatorio.` / `El email no tiene un formato válido.` / `El email no puede superar los 256 caracteres.`; `Password` → `La contraseña es obligatoria.` (vacía) o `La contraseña no cumple la política de seguridad.` (rechazo del back, propuesta); `Rol` → `El rol debe ser Administrador o Empleado.` |
 | 403 | `No tenés permiso para crear usuarios.` |
@@ -239,6 +243,8 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 14. `403_muestra_texto_propio`.
 15. `doble_clic_envia_un_post`: contador = 1.
 16. `generar_llena_el_campo_con_una_password_valida`: el campo arranca vacío; al pulsar `Generar` queda con 16 caracteres, visible, y el POST la envía tal cual.
+16a. `copiar_envia_la_password_al_portapapeles`: tras `Generar`, `Copiar` llama `navigator.clipboard.writeText` con el valor del campo y muestra `Contraseña copiada.`; con el campo vacío está deshabilitado.
+16b. `copiar_con_portapapeles_rechazado_muestra_aviso`: si `writeText` rechaza, aparece `No se pudo copiar. Copiala a mano.` y la contraseña sigue en el campo.
 17. `mostrar_ocultar_cambia_type_y_aria_label`.
 18. `cancelar_limpia_el_formulario`.
 19. `password_no_se_guarda_en_storage`: spy sobre `sessionStorage.setItem` y `localStorage.setItem` no recibe la contraseña.
@@ -257,10 +263,10 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 5. Con 201, el formulario se limpia, la contraseña se borra del estado y no queda en storage (tests 10 y 19).
 6. Los `errors` del back se muestran en español bajo el campo; nunca el texto en inglés (test 11).
 7. El `detail` (email repetido o contraseña rechazada por Identity) se muestra en la alerta del panel, sin marcar campo (tests 12 y 13).
-8. La contraseña temporal la genera el front con `crypto.getRandomValues` (16 caracteres, cuatro clases) y el front no aplica la política de Identity: la valida el back (tests 5, 5a a 5d, 6 y 16; RV-D18).
+8. La contraseña temporal la genera el front con `crypto.getRandomValues` (16 caracteres, cuatro clases) y el front no aplica la política de Identity: la valida el back (tests 5, 5a a 5d, 6 y 16; RV-D18). Un botón `Copiar` pasa la contraseña generada al portapapeles (tests 16a y 16b; D-B24-05).
 9. Un doble clic genera un solo POST (test 15).
 10. `Cancelar` limpia el formulario (test 18).
-11. Los tests 1 a 22 (incluidos 5a a 5d) están en verde, con `vitest-axe` sin violaciones.
+11. Los tests 1 a 22 (incluidos 5a a 5d, 16a y 16b) están en verde, con `vitest-axe` sin violaciones.
 12. `npm run lint`, `typecheck`, `test` y `build` están en verde en `apps/backoffice`.
 
 ## 12. Verificación manual
@@ -279,7 +285,7 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 - **D-B24-02 (RV-D18): contraseña inicial. Decidido por el usuario (2026-11-06).** El front genera la contraseña temporal con el botón `Generar` (como en el Figma). Es temporal: el empleado debe cambiarla en su primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Hasta que esas tareas existan, la temporal no vence. Pendiente de confirmación del equipo (seguridad).
 - **D-B24-03: rol por defecto (B14 §13.8).** Default: sin preselección, obligatorio (D-20).
 - **D-B24-04: texto de éxito y de estado tras crear (B14 §13.12).** Propuesta de §8.
-- [CONFIRMAR] **D-B24-05 (RV-D18): ver y copiar la contraseña generada.** Sin decidir. Propuesta: tras `Generar` la contraseña queda visible en el campo (con botón de mostrar u ocultar) para que el administrador la lea y la pase por un canal seguro, sin botón de copiar al portapapeles (el portapapeles queda fuera de nuestro control). Alternativa: agregar un botón `Copiar`. Decide el usuario antes de implementar (regla 12 de `docs/workflow.md`).
+- **D-B24-05 (RV-D18): ver y copiar la contraseña generada. Decidido por el usuario (2026-11-06).** Tras `Generar` la contraseña queda visible en el campo y hay un botón `Copiar` que la pasa al portapapeles, para que el administrador se la entregue al empleado por un canal seguro. Riesgo aceptado: la contraseña pasa por el portapapeles del sistema, fuera del control de la app; la temporal se cambia en el primer ingreso (US-FE-B-26).
 - **D-B24-06: panel fijo o modal (B14 §13.11).** Default: panel fijo, como en el Figma.
 - **D-B24-07 (RV-D24): acceso denegado.** Default: panel "sin permiso" en la misma URL (default de T-13).
 
@@ -303,4 +309,4 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 ## 16. Observaciones al índice
 
-- Resuelto (RV-D18, decidido por el usuario el 2026-11-06): el front genera la contraseña temporal (`Generar`, como en el Figma) y el empleado la cambia en el primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, ver §13). D-B24-05 sigue abierta.
+- Resuelto (RV-D18, decidido por el usuario el 2026-11-06): el front genera la contraseña temporal (`Generar`, como en el Figma) y el empleado la cambia en el primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, ver §13). D-B24-05 decidida: botón `Copiar` (usuario, 2026-11-06).
