@@ -64,7 +64,7 @@ Bajo `frontend/apps/backoffice/src/features/usuarios/`. Dueño de todos: US-FE-B
 
 | Archivo | Acción | Nota |
 |---|---|---|
-| `routes.tsx` | crear | `[{ path: '/usuarios', element: <RequireRol rol="Administrador"><UsuariosPage /></RequireRol> }]`. Reemplaza el stub de T-14 si existe. |
+| `routes.tsx` | crear | `[{ path: '/usuarios', element: <UsuariosPage />, handle: { titulo: 'Usuarios' } }]`. Reemplaza el stub de T-14. La guarda de rol vive en `UsuariosPage` con `useRol` de `features/auth`: `eslint-plugin-boundaries` prohíbe que un feature importe `app/guards/RequireRol` (FB3-4). Mismo texto y comportamiento que `RequireRol`. |
 | `index.ts` | crear | Exporta `usuariosRoutes`. B-25 agrega sus exports. |
 | `pages/UsuariosPage.tsx` | crear | Topbar (`Usuarios`, `Nuevo empleado`) y las dos columnas: tabla (B-25, bloque vacío) y panel. |
 | `components/NuevoEmpleadoPanel.tsx` | crear | Formulario de alta. |
@@ -309,4 +309,6 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 ## 16. Observaciones al índice
 
+- Corregido al implementar: la ficha pedía `RequireRol` en `routes.tsx`, pero la regla de límites de ESLint prohíbe que un feature importe el app-shell. La guarda se hizo en `UsuariosPage` con `useRol`. Si el equipo prefiere `RequireRol`, hay que envolver la ruta en `app/router.tsx` (archivo de T-14).
+- El botón `Nuevo empleado` vive en la página (columna izquierda), no en la topbar: `Topbar` es del layout y no admite acciones por ruta.
 - Resuelto (RV-D18, decidido por el usuario el 2026-11-06): el front genera la contraseña temporal (`Generar`, como en el Figma) y el empleado la cambia en el primer ingreso (US-F1-09 y US-FE-B-26, PB-31). Pendiente de confirmación del equipo (seguridad, ver §13). D-B24-05 decidida: botón `Copiar` (usuario, 2026-11-06).
