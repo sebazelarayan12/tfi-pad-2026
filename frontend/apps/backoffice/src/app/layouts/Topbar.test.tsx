@@ -5,6 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { Topbar } from './Topbar';
 
 describe('Topbar', () => {
+  it('permite ocultar el buscador y usar h1 sin alterar los defaults de otras pantallas', () => {
+    render(<Topbar titulo="Clientes" tituloPrincipal ocultarBuscador />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Clientes' })).toBeInTheDocument();
+    expect(screen.queryByRole('search')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Notificaciones' })).toBeInTheDocument();
+  });
   it('muestra el título como h2', () => {
     render(<Topbar titulo="Clientes" />);
     expect(screen.getByRole('heading', { level: 2, name: 'Clientes' })).toBeInTheDocument();
