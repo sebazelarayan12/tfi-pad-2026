@@ -83,12 +83,42 @@ public sealed class ClienteServiceConsultaTests : IDisposable
         await AgregarClienteAsync(context, "Peralta");
         var service = CrearServicio(context);
 
-        var pagina = await service.ListarAsync(new ClienteFiltro { Apellido = "pér" });
+        var pagina = await service.ListarAsync(new ClienteFiltro { Apellido = "RAL" });
 
-        // The seeded client is Pérez; Peralta does not match because of the accent.
+        var item = Assert.Single(pagina.Items);
+        Assert.Equal("Peralta", item.Apellido);
+    }
+
+    [Theory]
+    [InlineData("pe")]
+    [InlineData("perez")]
+    [InlineData("PEREZ")]
+    [InlineData("pérez")]
+    [InlineData("  pér  ")]
+    public async Task ListarAsync_apellido_no_distingue_tildes_en_el_texto_buscado(string texto)
+    {
+        await using var context = _fixture.CreateContext();
+        var service = CrearServicio(context);
+
+        var pagina = await service.ListarAsync(new ClienteFiltro { Apellido = texto });
+
         var item = Assert.Single(pagina.Items);
         Assert.Equal(SeedData.ClienteId, item.Id);
         Assert.Equal("Pérez", item.Apellido);
+    }
+
+    [Fact]
+    public async Task ListarAsync_apellido_no_distingue_tildes_en_el_dato_guardado_y_conserva_la_enie()
+    {
+        await using var context = _fixture.CreateContext();
+        await AgregarClienteAsync(context, "Peña");
+        var service = CrearServicio(context);
+
+        var conTilde = await service.ListarAsync(new ClienteFiltro { Apellido = "perez" });
+        var enie = await service.ListarAsync(new ClienteFiltro { Apellido = "pena" });
+
+        Assert.Equal(["Pérez"], conTilde.Items.Select(i => i.Apellido));
+        Assert.Empty(enie.Items);
     }
 
     [Fact]
