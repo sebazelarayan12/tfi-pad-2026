@@ -1,9 +1,18 @@
 import { Input, Select, type SelectOption } from '@nexa/ui';
+import type { ReactNode } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { enmascararCuil } from '../schemas/formatos';
 import { CampoFecha } from './CampoFecha';
-import type { PropsSeccion } from './tiposFormulario';
+import { TEXTOS_RENAPER } from './textosRenaper';
+import type { PropsSeccionRenaper } from './tiposFormulario';
+
+interface PropsDatosPersonales extends PropsSeccionRenaper {
+  /** Botón "Validar en Renaper": va en la fila del DNI (B4 §3). */
+  accionRenaper: ReactNode;
+  /** Texto del DNI cuando la consulta a Renaper lo invalida. */
+  errorDniRenaper: string | undefined;
+}
 
 // B4 D-11: Femenino (F), Masculino (M) y X.
 const OPCIONES_SEXO: readonly SelectOption<string>[] = [
@@ -12,9 +21,18 @@ const OPCIONES_SEXO: readonly SelectOption<string>[] = [
   { value: 'X', label: 'X' },
 ];
 
-export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
+export function SeccionDatosPersonales({
+  form,
+  deshabilitado,
+  esDatoRenaper,
+  accionRenaper,
+  errorDniRenaper,
+}: PropsDatosPersonales) {
   const { register, control, formState } = form;
   const { errors } = formState;
+  const leyenda = (campo: Parameters<typeof esDatoRenaper>[0]) =>
+    esDatoRenaper(campo) ? TEXTOS_RENAPER.leyenda : undefined;
+  const mensajeDni = errors.dni?.message ?? errorDniRenaper;
 
   return (
     <fieldset disabled={deshabilitado} className="flex flex-col gap-sp-16 border-0 p-0">
@@ -25,10 +43,11 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
           inputMode="numeric"
           autoComplete="off"
           maxLength={10}
-          helper={errors.dni?.message}
-          error={errors.dni !== undefined}
+          helper={mensajeDni}
+          error={mensajeDni !== undefined}
           {...register('dni')}
         />
+        {accionRenaper}
         <Controller
           control={control}
           name="sexo"
@@ -41,7 +60,7 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
-              helper={errors.sexo?.message}
+              helper={errors.sexo?.message ?? leyenda('sexo')}
               error={errors.sexo !== undefined}
             />
           )}
@@ -50,7 +69,7 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
           label="Nombre"
           autoComplete="given-name"
           maxLength={100}
-          helper={errors.nombre?.message}
+          helper={errors.nombre?.message ?? leyenda('nombre')}
           error={errors.nombre !== undefined}
           {...register('nombre')}
         />
@@ -58,7 +77,7 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
           label="Apellido"
           autoComplete="family-name"
           maxLength={100}
-          helper={errors.apellido?.message}
+          helper={errors.apellido?.message ?? leyenda('apellido')}
           error={errors.apellido !== undefined}
           {...register('apellido')}
         />
@@ -67,7 +86,7 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
           inputMode="numeric"
           autoComplete="off"
           maxLength={13}
-          helper={errors.cuil?.message}
+          helper={errors.cuil?.message ?? leyenda('cuil')}
           error={errors.cuil !== undefined}
           {...register('cuil', {
             onChange: (evento: { target: HTMLInputElement }) => {
@@ -75,7 +94,7 @@ export function SeccionDatosPersonales({ form, deshabilitado }: PropsSeccion) {
             },
           })}
         />
-        <CampoFecha form={form} deshabilitado={deshabilitado} />
+        <CampoFecha form={form} deshabilitado={deshabilitado} esDatoRenaper={esDatoRenaper} />
       </div>
     </fieldset>
   );
