@@ -454,14 +454,14 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Severidad.** Degrada (B-24 se entrega igual; hasta que exista, la contraseña temporal no vence).
 - **Workaround front.** US-FE-B-26 trabaja con MSW (`VITE_USE_MOCKS=true`): el handler de login devuelve `debeCambiarPassword: true` para un usuario de prueba y el de `POST /api/auth/cambiar-password` replica el contrato propuesto. Tarjeta del back: `US-F1-09` en `docs/tareas-divididas.md`.
 
-### PB-32. Búsqueda de clientes por apellido sin distinguir tildes
+### PB-32. Búsqueda de clientes: apellido sin tildes (resuelto) y DNI por prefijo (abierto)
 
-- **Qué pasa hoy.** `ClienteService.cs:205-208` filtra con `c.Apellido.ToLower().Contains(apellido)`. No hay collation configurada (`UseCollation` no aparece en `Aseguradora.Data`), así que rige la del servidor SQL, que por defecto distingue acentos: buscar "pe" o "perez" no devuelve a "Pérez". El filtro `dni` es de igualdad exacta (8 dígitos), no por prefijo.
-- **Qué necesita el front.** Que escribir "pe", "perez" o "pérez" encuentre al mismo cliente, y que el listado se pueda acotar mientras se escribe.
-- **Contrato mínimo propuesto.** Comparar el apellido con una collation sin acentos y sin mayúsculas (por ejemplo `Modern_Spanish_CI_AI` o `Latin1_General_CI_AI`) en el filtro de `ListarAsync`. Opcional: aceptar `dni` por prefijo desde 3 dígitos. No cambia el DTO ni los parámetros.
-- **Pantallas que desbloquea.** B3 (listado de clientes).
-- **Severidad.** Degrada.
-- **Workaround front.** El mock (`packages/api/mocks/handlers/clientes.ts`) ya ignora tildes para que el front se pruebe con el comportamiento esperado. Con el back real, hasta que se aplique, hay que escribir la tilde. El front ya espera 300 ms de inactividad antes de consultar (B-04). Un DNI de menos de 8 dígitos se busca como apellido.
+- **Qué pasaba.** `ClienteService.ListarAsync` filtraba el apellido con `ToLower().Contains(...)` y la collation por defecto de SQL Server distingue tildes: buscar "pe" o "perez" no devolvía a "Pérez".
+- **Resuelto.** PR #131 (`fix/back-busqueda-clientes-sin-acentos`): el apellido se compara sin tildes (á é í ó ú ü) y sin mayúsculas; la ñ se conserva. El mock (`packages/api/mocks/handlers/clientes.ts`) replica el mismo comportamiento.
+- **Abierto.** El filtro `dni` es de igualdad exacta (8 dígitos); el front clasifica un texto de menos de 8 dígitos como apellido, así que escribir "30" no encuentra por DNI. Si se quiere búsqueda por prefijo de DNI hace falta que el back acepte `dni` parcial (desde 3 dígitos); es un cambio de contrato a decidir con el equipo.
+- **Pantallas que toca.** B3 (listado de clientes).
+- **Severidad.** Degrada (solo el DNI parcial).
+- **Workaround front.** Escribir el DNI completo o el apellido. El front ya espera 300 ms de inactividad antes de consultar (B-04).
 
 ---
 
