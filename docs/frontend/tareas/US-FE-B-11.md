@@ -12,7 +12,7 @@ En la pantalla de cotizar (B-10) cada plan muestra la línea de cálculo `primaB
 - Línea de cálculo bajo el nombre de cada plan, solo si la opción trae `calculo` (PB-10).
 - Widget "Datos de la cotización" (`CardWidget` de T-07) en el slot `aside` que B-10 dejó vacío.
 - Filas del widget y su versión sin factores (cuando no hay `calculo`).
-- Tipos locales para `calculo`, mientras T-26 no lo incluya.
+- Tipos locales para `calculo`, mientras la API publicada no lo devuelva (PB-10).
 - Tests de la línea y del rail.
 
 **No entra**
@@ -51,7 +51,7 @@ Todos bajo `frontend/apps/backoffice/src/features/cotizaciones/` (dueño: B-10).
 | `components/PlanOpcionCard.tsx` | Modifica (dueño B-10): agrega `LineaCalculo` debajo del nombre |
 | `**/*.test.tsx` y `**/*.test.ts` | Crea |
 
-Compartidos sin editar: `packages/api/src/dto/cotizaciones.ts` (dueño T-26). Si T-26 agrega `calculo`, `types/calculo.ts` se borra y se usa el tipo de `@nexa/api`.
+Compartidos sin editar: `packages/api/src/dto/cotizaciones.ts` (dueño T-26). El mock de T-26 ya incluye `calculo` (`CalculoPrimaMock`), pero `OpcionCotizacion` real no. Cuando PB-10 publique el campo, `types/calculo.ts` se revisa.
 
 ## 6. Pasos de implementación
 
@@ -78,9 +78,9 @@ Compartidos sin editar: `packages/api/src/dto/cotizaciones.ts` (dueño T-26). Si
      factorEdad: number;
      factorUso: number;
    }
-   export type OpcionConCalculo = OpcionCotizacion & { calculo?: CalculoPrima };
+   export type OpcionConCalculo = OpcionCotizacion & { calculo?: CalculoPrima | null };
    ```
-   `CalculoPrima` sigue la propuesta de PB-10. Si T-26 lo publica, se importa desde `@nexa/api` y este archivo se borra.
+   `CalculoPrima` sigue la propuesta de PB-10. Cuando el contrato real lo publique y `@nexa/api` lo exponga, se revisa el tipo local.
 10. GREEN, luego refactor. `lint`, `typecheck`, `test` y `build` del backoffice.
 
 ## 7. Contrato con el back
@@ -98,7 +98,7 @@ interface OpcionCotizacion {
 }
 ```
 
-Hasta que el back lo publique, el front trata `calculo` como ausente (workaround del índice: no mostrar la línea; mostrar solo `primaMensual`). El mock de T-26 no lo incluye por defecto; las pruebas que lo necesitan lo agregan con `server.use`.
+La API publicada todavía no devuelve `calculo`. El mock de T-26 ya lo incluye para simular PB-10. B-11 valida el desglose antes de usarlo. Las pruebas simulan también la respuesta real sin el campo y los casos nulo e inválido.
 
 Fórmula del orden de factores (RN06, `vehiculos-planes-cotizaciones.md §5.2`): `primaBase × tipo × antigüedad × edad × uso`. Se muestra en ese orden.
 
@@ -127,7 +127,7 @@ Los números de factor usan el mismo formato que la línea (`1,10`). Ningún tex
 | `calculo` con un factor no numérico | No se muestra la línea (se trata como ausente). Sin error visible. |
 | `calculo` que no coincide con `primaMensual` | Se muestran ambos tal cual. No se corrige ni se recalcula. |
 | Sin cotización todavía (antes de Cotizar) | El rail muestra solo cliente y vehículo, sin tipo ni uso de la cotización. Sin request. |
-| Cambio de selección | La línea no cambia (es por opción, no por selección). |
+| Cambio de selección | Cada línea pertenece a su opción. El rail usa el desglose de la opción elegida y, antes de elegir, el primer desglose válido de la respuesta. |
 | Error de carga del vehículo o cliente | El rail muestra el dato como "No disponible" (FB7.11, DP-B11-03). |
 
 ## 10. Tests requeridos
@@ -163,15 +163,15 @@ Los números de factor usan el mismo formato que la línea (`1,10`). Ningún tex
 
 ## 12. Verificación manual
 
-Sin prueba manual obligatoria: el dato depende de PB-10. Para la revisión local:
-1. Con el mock sin `calculo`, abrir B-10 y verificar que no hay línea y que el rail muestra las filas reducidas.
-2. Con `VITE_USE_MOCKS=true` y un escenario que agregue `calculo` (si el mock de T-26 lo permite), verificar la línea `10.000,00 x 1,00 x 1,10 x 1,00 x 1,00`.
+Verificación local con MSW antes de abrir el PR (regla 7 del workflow). PB-10 sigue pendiente en la API real.
+1. Con `VITE_USE_MOCKS=true`, abrir la cotización de un vehículo del fixture. Antes de cotizar, verificar Cliente y Vehículo. Al cotizar, comprobar las líneas de cada opción y los factores del rail.
+2. Simular la respuesta publicada sin `calculo`. Verificar que la prima mensual permanece visible, la línea desaparece y el rail muestra Cliente, Vehículo, Tipo y Uso sin factores.
 
-## 13. Decisiones pendientes
+## 13. Decisiones confirmadas
 
-- **DP-B11-01** Línea de cálculo sin `calculo`. Default: no se muestra (índice, B-11).
-- **DP-B11-02** Antigüedad en años (`9 años`) y edad del conductor (`35 años`) del Figma. El front no conoce el año de referencia del servidor ni la edad a la fecha de cotización; calcularlo duplica RN06. Default: mostrar solo el factor. Pedido: que PB-10 agregue `antiguedadAnios` y `edadConductor` al `calculo`.
-- **DP-B11-03** Texto de dato no disponible en el rail. Default: `No disponible` (FB7.11).
+- **DP-B11-01** Línea de cálculo sin `calculo`. Confirmado: no se muestra (índice, B-11).
+- **DP-B11-02** Antigüedad en años (`9 años`) y edad del conductor (`35 años`) del Figma. El front no conoce el año de referencia del servidor ni la edad a la fecha de cotización; calcularlo duplica RN06. Confirmado: mostrar solo el factor. Pedido: que PB-10 agregue `antiguedadAnios` y `edadConductor` al `calculo`.
+- **DP-B11-03** Texto de dato no disponible en el rail. Confirmado: `No disponible` (FB7.11).
 - **D-B7-02**: el front no calcula factores (opción (a) de B7, PB-10). Se resuelve en el back.
 - **D-B7-14** (enums): se resuelve con el mapa de T-10 (D-29).
 - **D-B7-13** (edad a la fecha de hoy o de alta): sin cálculo en el front, no aplica por ahora.
@@ -196,5 +196,4 @@ Sin prueba manual obligatoria: el dato depende de PB-10. Para la revisión local
 
 - Resuelto (RV-04): la fila de B-11 declara también T-07, T-09 y T-10 (CardWidget, formato numérico y etiquetas de tipo y uso).
 - Resuelto (RV-34): el CTA "Emitir" lo implementa B-10; B-11 no lo incluye.
-- ABIERTO: PB-10 necesita que T-26 agregue `calculo` al DTO. Si ese cambio no entra en T-26, B-11 queda con el tipo local de `types/calculo.ts`. Motivo: no figura en REVISION.md ni en FB8.
-
+- ABIERTO (PB-10): el DTO del mock de T-26 ya incluye `calculo`. Hasta que se publique en la API real, B-11 usa el tipo local de `types/calculo.ts` y valida el campo opcional de la respuesta.
