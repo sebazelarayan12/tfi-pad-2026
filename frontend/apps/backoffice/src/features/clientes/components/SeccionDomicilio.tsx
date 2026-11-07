@@ -2,9 +2,12 @@ import { Input, Select } from '@nexa/ui';
 import { Controller } from 'react-hook-form';
 
 import { OPCIONES_PROVINCIA } from '../schemas/provincias';
-import type { PropsSeccion } from './tiposFormulario';
+import { TEXTOS_RENAPER } from './textosRenaper';
+import type { PropsSeccionRenaper } from './tiposFormulario';
 
-export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
+export function SeccionDomicilio({ form, deshabilitado, esDatoRenaper }: PropsSeccionRenaper) {
+  const leyenda = (campo: Parameters<typeof esDatoRenaper>[0]) =>
+    esDatoRenaper(campo) ? TEXTOS_RENAPER.leyenda : undefined;
   const { register, control, formState } = form;
   const { errors } = formState;
 
@@ -16,7 +19,7 @@ export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
           label="Calle"
           autoComplete="address-line1"
           maxLength={150}
-          helper={errors.calle?.message}
+          helper={errors.calle?.message ?? leyenda('calle')}
           error={errors.calle !== undefined}
           {...register('calle')}
         />
@@ -25,7 +28,7 @@ export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
           inputMode="numeric"
           autoComplete="off"
           maxLength={20}
-          helper={errors.numero?.message}
+          helper={errors.numero?.message ?? leyenda('numero')}
           error={errors.numero !== undefined}
           {...register('numero')}
         />
@@ -33,7 +36,7 @@ export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
           label="Localidad"
           autoComplete="address-level2"
           maxLength={100}
-          helper={errors.localidad?.message}
+          helper={errors.localidad?.message ?? leyenda('localidad')}
           error={errors.localidad !== undefined}
           {...register('localidad')}
         />
@@ -49,7 +52,7 @@ export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
-              helper={errors.provincia?.message}
+              helper={errors.provincia?.message ?? leyenda('provincia')}
               error={errors.provincia !== undefined}
             />
           )}
@@ -59,7 +62,7 @@ export function SeccionDomicilio({ form, deshabilitado }: PropsSeccion) {
           inputMode="numeric"
           autoComplete="postal-code"
           maxLength={10}
-          helper={errors.codigoPostal?.message}
+          helper={errors.codigoPostal?.message ?? leyenda('codigoPostal')}
           error={errors.codigoPostal !== undefined}
           {...register('codigoPostal')}
         />

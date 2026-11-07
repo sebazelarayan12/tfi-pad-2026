@@ -3,7 +3,8 @@ import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank'
 import { useRef } from 'react';
 
 import { deFechaIso, enmascararFecha, fechaMaximaNacimiento } from '../schemas/formatos';
-import type { PropsSeccion } from './tiposFormulario';
+import type { PropsSeccionRenaper } from './tiposFormulario';
+import { TEXTOS_RENAPER } from './textosRenaper';
 
 const AYUDA = 'Debe ser mayor de 18 años.';
 
@@ -11,7 +12,7 @@ const AYUDA = 'Debe ser mayor de 18 años.';
  * Fecha de nacimiento (D-B05-7): se escribe como `dd/mm/aaaa` o se elige en el calendario del
  * navegador, que completa el mismo campo. El calendario no deja elegir menores de 18 años.
  */
-export function CampoFecha({ form, deshabilitado }: PropsSeccion) {
+export function CampoFecha({ form, deshabilitado, esDatoRenaper }: PropsSeccionRenaper) {
   const { register, setValue, formState } = form;
   const calendario = useRef<HTMLInputElement>(null);
   const error = formState.errors.fechaNacimiento?.message;
@@ -31,7 +32,7 @@ export function CampoFecha({ form, deshabilitado }: PropsSeccion) {
         autoComplete="bday"
         maxLength={10}
         placeholder="dd/mm/aaaa"
-        helper={error ?? AYUDA}
+        helper={error ?? (esDatoRenaper('fechaNacimiento') ? TEXTOS_RENAPER.leyenda : AYUDA)}
         error={error !== undefined}
         disabled={deshabilitado}
         {...register('fechaNacimiento', {
