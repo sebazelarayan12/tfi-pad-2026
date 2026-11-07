@@ -4,7 +4,7 @@ import { ButtonLink } from '@nexa/ui';
 import { UserPlusIcon } from '@phosphor-icons/react/dist/csr/UserPlus';
 import { AltaClientePage } from './pages/AltaClientePage';
 import { ClientesPage } from './pages/ClientesPage';
-import { DestinoClientePendiente } from './pages/DestinoClientePendiente';
+import { FichaClientePage } from './pages/FichaClientePage';
 
 export const rutas: RouteObject[] = [
   {
@@ -29,10 +29,10 @@ export const rutas: RouteObject[] = [
     element: <AltaClientePage />,
     handle: { titulo: 'Nuevo cliente', tituloPrincipal: true, ocultarBuscador: true },
   },
-  // B-07 reemplaza este estado cuando integra la ficha.
+  // Dinámica después de las estáticas (FC14). El H1 de la página es el nombre del cliente.
   {
     path: '/clientes/:clienteId',
-    element: <DestinoClientePendiente mensaje="La ficha de cliente todavía no está disponible." />,
-    handle: { titulo: 'Ficha de cliente', tituloPrincipal: true, ocultarBuscador: true },
+    element: <FichaClientePage />,
+    handle: { titulo: 'Ficha de cliente', ocultarBuscador: true },
   },
 ];
