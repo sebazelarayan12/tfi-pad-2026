@@ -384,6 +384,26 @@ contratoEndpoint({
       request: () =>
         enviarAltaT25({ ...altaClienteFixture, dni: '30.123.456', cuil: '20-30123456-5' }),
     },
+    ...(
+      [
+        ['fechaNacimiento', '2026-02-30'],
+        ['sexo', 'XX'],
+      ] as const
+    ).map(([campo, valor]): CasoError => ({
+      nombre: `deserialización de ${campo}`,
+      estado: 400,
+      esquema: 'validation',
+      request: async () => {
+        const respuesta = await enviarAltaT25({ ...altaClienteFixture, [campo]: valor });
+        z.object({
+          errors: z.strictObject({
+            request: z.array(z.string()).min(1),
+            [`$.${campo}`]: z.array(z.string()).min(1),
+          }),
+        }).parse(await respuesta.clone().json());
+        return respuesta;
+      },
+    })),
     {
       nombre: 'persona desconocida (400, sin código)',
       estado: 400,

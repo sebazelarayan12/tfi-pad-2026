@@ -8,11 +8,34 @@ export const mensajeFallecido = 'RN02: La persona figura como fallecida en Renap
 export const mensajeMenor = 'RN01: El cliente debe tener 18 años o más.';
 export const mensajeNoFigura = (dni: string) => `El DNI '${dni}' no figura en Renaper.`;
 
+function esFechaCalendario(valor: unknown): boolean {
+  return (
+    typeof valor === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(valor) &&
+    valor >= '0001-01-01' &&
+    Number.isFinite(Date.parse(`${valor}T00:00:00Z`)) &&
+    new Date(`${valor}T00:00:00Z`).toISOString().slice(0, 10) === valor
+  );
+}
+
 export function validarAlta(cuerpo: unknown): Record<string, string[]> {
   const datos =
     typeof cuerpo === 'object' && cuerpo !== null && !Array.isArray(cuerpo)
       ? (cuerpo as Record<string, unknown>)
       : {};
+  // ASP.NET interrumpe la deserialización en el primer valor inválido, antes de validar el DTO.
+  for (const [campo, valor] of Object.entries(datos)) {
+    if (valor == null) continue;
+    if (
+      (campo === 'fechaNacimiento' && !esFechaCalendario(valor)) ||
+      (campo === 'sexo' && (typeof valor !== 'string' || valor.length !== 1))
+    ) {
+      return {
+        request: ['The request field is required.'],
+        [`$.${campo}`]: ['The JSON value could not be converted.'],
+      };
+    }
+  }
   const errors: Record<string, string[]> = {};
   for (const [propiedad, campo, limite] of [
     ['nombre', 'Nombre', 100],
@@ -34,18 +57,8 @@ export function validarAlta(cuerpo: unknown): Record<string, string[]> {
     else if (!patron.test(valor)) errors[campo] = [mensaje];
   }
   if (datos.sexo == null) errors.Sexo = ['The Sexo field is required.'];
-  else if (typeof datos.sexo !== 'string' || datos.sexo.length !== 1)
-    errors.Sexo = ['The JSON value could not be converted.'];
-  const fecha = datos.fechaNacimiento;
-  if (fecha == null) errors.FechaNacimiento = ['The FechaNacimiento field is required.'];
-  else if (
-    typeof fecha !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(fecha) ||
-    fecha < '0001-01-01' ||
-    !Number.isFinite(Date.parse(`${fecha}T00:00:00Z`)) ||
-    new Date(`${fecha}T00:00:00Z`).toISOString().slice(0, 10) !== fecha
-  )
-    errors.FechaNacimiento = ['The JSON value could not be converted.'];
+  if (datos.fechaNacimiento == null)
+    errors.FechaNacimiento = ['The FechaNacimiento field is required.'];
   return errors;
 }
 

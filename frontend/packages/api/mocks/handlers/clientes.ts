@@ -27,6 +27,7 @@ import {
 
 const ruta = '*/api/clientes';
 const rutaDetalle = `${ruta}/:id`;
+const altasSinRenaper = new WeakSet<Request>();
 const camposContacto = [
   ['email', 'Email', 150],
   ['calle', 'Calle', 150],
@@ -125,7 +126,10 @@ export function crearHandlersClientes(
       } catch {
         return responderProblema(request, problemaValidacion({ $: ['Invalid JSON.'] }));
       }
-      const errors = { ...validarContacto(cuerpo), ...validarAlta(cuerpo) };
+      const erroresAlta = validarAlta(cuerpo);
+      const errors = erroresAlta.request
+        ? erroresAlta
+        : { ...validarContacto(cuerpo), ...erroresAlta };
       if (Object.keys(errors).length) return responderProblema(request, problemaValidacion(errors));
       const datos = cuerpo as ClienteAltaRequest;
       if (!['M', 'F', 'X'].includes(datos.sexo.toUpperCase()))
@@ -142,13 +146,14 @@ export function crearHandlersClientes(
           request,
           problemaNegocio(`RN01: Ya existe un cliente con el email '${email}'.`),
         );
-      const persona =
-        opciones.renaperDisponible === false
-          ? undefined
-          : personasRenaperFixture.find((p) => p.dni === dni);
+      const renaperDisponible =
+        opciones.renaperDisponible !== false && !altasSinRenaper.has(request);
+      const persona = renaperDisponible
+        ? personasRenaperFixture.find((p) => p.dni === dni)
+        : undefined;
       if (persona?.estado === 'FALLECIDO')
         return responderProblema(request, problemaNegocio(mensajeFallecido));
-      if (!persona && opciones.renaperDisponible !== false)
+      if (!persona && renaperDisponible)
         return responderProblema(request, problemaNegocio(mensajeNoFigura(dni)));
       if (esMenor(persona?.fechaNacimiento ?? datos.fechaNacimiento, ahora()))
         return responderProblema(request, problemaNegocio(mensajeMenor));
@@ -340,19 +345,9 @@ export const variantesClientesAltaRenaper = {
     }),
   ),
   altaError500: variante('post', ruta, problemaErrorInesperado()),
-  // C8: esta variante es un éxito; la fábrica permite además probar la persistencia durante la caída.
-  altaRenaperCaido: http.post(ruta, async ({ request }) => {
-    const error = autorizar(request);
-    if (error) return error;
-    const cuerpo: unknown = await request.json();
-    const errors = { ...validarContacto(cuerpo), ...validarAlta(cuerpo) };
-    if (Object.keys(errors).length) return responderProblema(request, problemaValidacion(errors));
-    const datos = cuerpo as ClienteAltaRequest;
-    if (!['M', 'F', 'X'].includes(datos.sexo.toUpperCase()))
-      return responderProblema(request, problemaNegocio('El sexo debe ser M, F o X.'));
-    if (esMenor(datos.fechaNacimiento, new Date()))
-      return responderProblema(request, problemaNegocio(mensajeMenor));
-    return HttpResponse.json(clienteIngresado(datos), { status: 201 });
+  altaRenaperCaido: http.post(ruta, ({ request }) => {
+    // Sin respuesta, MSW continúa con el alta activa y conserva su estado y sus validaciones.
+    altasSinRenaper.add(request);
   }),
   renaperFallecido: http.get(
     `${ruta}/renaper/:dni`,

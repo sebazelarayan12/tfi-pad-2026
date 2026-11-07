@@ -69,13 +69,20 @@ describe('alta de clientes (T-25)', () => {
   it.each([
     [{ ...alta, dni: ' 30123456 ' }, 'Dni', 'El DNI debe tener 8 dígitos.'],
     [{ ...alta, cuil: '20-30123456-5' }, 'Cuil', 'El CUIL debe tener 11 dígitos.'],
-    [{ ...alta, fechaNacimiento: '2026-02-30' }, 'FechaNacimiento', undefined],
-    [{ ...alta, sexo: 'XX' }, 'Sexo', undefined],
     [{ ...alta, nombre: 'a'.repeat(101) }, 'Nombre', undefined],
   ])('400 preserva validaciones PascalCase %#', async (cuerpo, campo, mensaje) => {
     await expect(api.post('/api/clientes', cuerpo)).rejects.toMatchObject({
       status: 400,
       errors: { [campo]: mensaje ? [mensaje] : expect.any(Array) },
+    });
+  });
+  it.each([
+    [{ ...alta, fechaNacimiento: '2026-02-30' }, '$.fechaNacimiento'],
+    [{ ...alta, sexo: 'XX' }, '$.sexo'],
+  ])('400 de deserialización conserva request y la ruta JSON %#', async (cuerpo, campo) => {
+    await expect(api.post('/api/clientes', cuerpo)).rejects.toMatchObject({
+      status: 400,
+      errors: expect.objectContaining({ request: expect.any(Array), [campo]: expect.any(Array) }),
     });
   });
   it('campos omitidos no reciben defaults silenciosos', async () => {
@@ -155,6 +162,25 @@ describe('alta de clientes (T-25)', () => {
     expect(await validarRenaper(api, creado.id)).toMatchObject({
       validadoRenaper: true,
       fechaValidacionRenaper: ahora().toISOString(),
+    });
+  });
+  it('altaRenaperCaido conserva el registro y comprueba ambos duplicados en el estado activo', async () => {
+    servidorMock.use(variantes.altaRenaperCaido);
+    const creado = await crearCliente(api, { ...alta, dni: '99999999' });
+    expect(creado).toMatchObject({ validadoRenaper: false, fechaValidacionRenaper: null });
+    expect(await obtenerCliente(api, creado.id)).toEqual(creado);
+    expect((await listarClientes(api, { dni: creado.dni })).items).toMatchObject([
+      { id: creado.id },
+    ]);
+    await expect(
+      crearCliente(api, { ...alta, dni: creado.dni, email: 'otro@ejemplo.com' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      detail: `RN01: Ya existe un cliente con el DNI '${creado.dni}'.`,
+    });
+    await expect(crearCliente(api, { ...alta, email: creado.email })).rejects.toMatchObject({
+      status: 400,
+      detail: `RN01: Ya existe un cliente con el email '${creado.email}'.`,
     });
   });
   it.each([
