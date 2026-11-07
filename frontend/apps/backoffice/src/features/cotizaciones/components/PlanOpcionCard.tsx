@@ -1,8 +1,10 @@
-import { formatearImporte, type OpcionCotizacion } from '@nexa/api';
+import { formatearImporte } from '@nexa/api';
 import { useId } from 'react';
+import { leerCalculo, type OpcionConCalculo } from '../types/calculo';
+import { LineaCalculo } from './LineaCalculo';
 
 interface Props {
-  opcion: OpcionCotizacion;
+  opcion: OpcionConCalculo;
   descripcion?: string | undefined;
   elegida: boolean;
   onElegir: (id: string) => void;
@@ -42,6 +44,7 @@ export function PlanOpcionCard({ opcion, descripcion, elegida, onElegir }: Props
             {descripcion}
           </span>
         ) : null}
+        <LineaCalculo calculo={leerCalculo(opcion)} />
       </span>
       <span className="col-start-2 flex flex-col gap-sp-4 sm:col-auto sm:items-end">
         <span className="text-caption text-text-secondary">Prima mensual</span>
