@@ -454,6 +454,15 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Severidad.** Degrada (B-24 se entrega igual; hasta que exista, la contraseña temporal no vence).
 - **Workaround front.** US-FE-B-26 trabaja con MSW (`VITE_USE_MOCKS=true`): el handler de login devuelve `debeCambiarPassword: true` para un usuario de prueba y el de `POST /api/auth/cambiar-password` replica el contrato propuesto. Tarjeta del back: `US-F1-09` en `docs/tareas-divididas.md`.
 
+### PB-32. Búsqueda de clientes: apellido sin tildes (resuelto) y DNI por prefijo (abierto)
+
+- **Qué pasaba.** `ClienteService.ListarAsync` filtraba el apellido con `ToLower().Contains(...)` y la collation por defecto de SQL Server distingue tildes: buscar "pe" o "perez" no devolvía a "Pérez".
+- **Resuelto.** PR #131 (`fix/back-busqueda-clientes-sin-acentos`): el apellido se compara sin tildes (á é í ó ú ü) y sin mayúsculas; la ñ se conserva. El mock (`packages/api/mocks/handlers/clientes.ts`) replica el mismo comportamiento.
+- **Abierto.** El filtro `dni` es de igualdad exacta (8 dígitos); el front clasifica un texto de menos de 8 dígitos como apellido, así que escribir "30" no encuentra por DNI. Si se quiere búsqueda por prefijo de DNI hace falta que el back acepte `dni` parcial (desde 3 dígitos); es un cambio de contrato a decidir con el equipo.
+- **Pantallas que toca.** B3 (listado de clientes).
+- **Severidad.** Degrada (solo el DNI parcial).
+- **Workaround front.** Escribir el DNI completo o el apellido. El front ya espera 300 ms de inactividad antes de consultar (B-04).
+
 ---
 
 ## Afirmaciones que NO se confirmaron
