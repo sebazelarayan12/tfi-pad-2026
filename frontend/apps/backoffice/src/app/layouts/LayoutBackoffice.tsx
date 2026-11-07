@@ -95,12 +95,14 @@ export function LayoutBackoffice() {
   return (
     <Backdrop>
       <Shell>
-        <Sidebar grupos={gruposParaRol(rol)} user={usuario} menuUsuario={<MenuUsuario />} />
-        <div className="flex flex-1 flex-col gap-sp-24 p-sp-32">
-          <Topbar titulo={titulo} />
-          <main id="contenido">
-            <Outlet />
-          </main>
+        <div className="flex">
+          <Sidebar grupos={gruposParaRol(rol)} user={usuario} menuUsuario={<MenuUsuario />} />
+          <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-32">
+            <Topbar titulo={titulo} />
+            <main id="contenido">
+              <Outlet />
+            </main>
+          </div>
         </div>
       </Shell>
     </Backdrop>
