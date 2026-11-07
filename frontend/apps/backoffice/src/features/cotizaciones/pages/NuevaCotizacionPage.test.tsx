@@ -14,6 +14,8 @@ import { cerrarSesion, iniciarSesion } from '../../auth';
 import { NuevaCotizacionPage } from './NuevaCotizacionPage';
 
 const ruta = '/cotizaciones/nueva';
+const contextoPrincipal = () =>
+  within(screen.getByRole('region', { name: 'Cotización del vehículo' }));
 const endpoint = '*/api/cotizaciones';
 
 function montar(busqueda = '?vehiculoId=' + VEHICULO_ID + '&clienteId=' + CLIENTE_JUAN_ID) {
@@ -52,7 +54,7 @@ it('no cotiza al montar y bloquea Continuar sin selección', async () => {
   const post = vi.fn(() => HttpResponse.json({}));
   servidorMock.use(http.post(endpoint, post));
   montar();
-  await screen.findByText(/Toyota Corolla XEi/);
+  await contextoPrincipal().findByText(/Toyota Corolla XEi/);
   expect(post).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Continuar a emisión' })).toBeDisabled();
 });
@@ -70,7 +72,7 @@ function respuestaCotizacion(fechaVencimiento = new Date(Date.now() + 3600000).t
 }
 
 async function esperarContexto() {
-  await screen.findByText(/Toyota Corolla XEi/);
+  await contextoPrincipal().findByText(/Toyota Corolla XEi/);
   await waitFor(() => expect(botonCotizar()).toBeEnabled());
 }
 
@@ -93,7 +95,9 @@ it('envía un solo POST con el ID del vehículo, bloquea el doble clic y ordena 
   for (const radio of radios) expect(radio).not.toBeChecked();
   expect(continuar()).toBeDisabled();
   expect(post).toHaveBeenCalledTimes(1);
-  expect(container.querySelector('aside[data-slot="rail"]')).toBeEmptyDOMElement();
+  expect(container.querySelector('aside[data-slot="rail"]')).toContainElement(
+    railCotizacion().getByRole('heading'),
+  );
 });
 
 it('ofrece radios accesibles y pasa a emisión el ID de la opción elegida', async () => {
@@ -110,12 +114,7 @@ it('ofrece radios accesibles y pasa a emisión el ID de la opción elegida', asy
   expect(tc).toBeChecked();
   expect(tc).toHaveAttribute('aria-checked', 'true');
   expect(continuar()).toBeEnabled();
-  for (const texto of [
-    'Guardar cotización',
-    'Cambiar datos',
-    'Recomendado',
-    'Datos de la cotización',
-  ]) {
+  for (const texto of ['Guardar cotización', 'Cambiar datos', 'Recomendado']) {
     expect(screen.queryByText(texto)).not.toBeInTheDocument();
   }
   await expectSinViolacionesA11y(container);
@@ -198,7 +197,7 @@ it.each(['', '?vehiculoId=invalido'])(
 
 it('usa el titular informado por el vehículo cuando falta el cliente de la URL', async () => {
   montar('?vehiculoId=' + VEHICULO_ID);
-  expect(await screen.findByText('Juan Carlos Pérez')).toBeInTheDocument();
+  expect(await contextoPrincipal().findByText('Juan Carlos Pérez')).toBeInTheDocument();
   expect(screen.getByText(/30\.123\.456/)).toBeInTheDocument();
 });
 
@@ -224,7 +223,7 @@ it('al cambiar de vehículo limpia las opciones y no cotiza automáticamente', a
   await usuario.click(botonCotizar());
   await usuario.click(await screen.findByRole('radio', { name: /^TC / }));
   await act(() => router.navigate(ruta + '?vehiculoId=' + VEHICULO_BAJA_ID));
-  await screen.findByText('ABC123');
+  await contextoPrincipal().findByText('ABC123');
   expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
   expect(continuar()).toBeDisabled();
   expect(post).toHaveBeenCalledTimes(1);
@@ -234,7 +233,7 @@ it('un cliente de la URL que no coincide no reemplaza al titular del vehículo',
   const otroCliente = vi.fn(() => HttpResponse.json({}));
   servidorMock.use(http.get('*/api/clientes/' + CLIENTE_LUCIA_ID, otroCliente));
   montar('?vehiculoId=' + VEHICULO_ID + '&clienteId=' + CLIENTE_LUCIA_ID);
-  expect(await screen.findByText('Juan Carlos Pérez')).toBeInTheDocument();
+  expect(await contextoPrincipal().findByText('Juan Carlos Pérez')).toBeInTheDocument();
   expect(otroCliente).not.toHaveBeenCalled();
 });
 
@@ -248,4 +247,97 @@ it('una nueva cotización limpia la selección anterior', async () => {
   await usuario.click(botonCotizar());
   expect(await screen.findByRole('radio', { name: /^TC / })).not.toBeChecked();
   expect(continuar()).toBeDisabled();
+});
+
+const railCotizacion = () =>
+  within(screen.getByRole('complementary', { name: 'Datos de la cotización' }));
+const calculo = {
+  primaBase: 10000,
+  factorTipo: 1,
+  factorAntiguedad: 1.1,
+  factorEdad: 1,
+  factorUso: 1,
+};
+const formula = '10.000,00 x 1,00 x 1,10 x 1,00 x 1,00';
+
+it('antes de cotizar muestra solo los datos de contexto en el rail', async () => {
+  montar();
+  const rail = railCotizacion();
+  await rail.findByText('Juan Carlos Pérez');
+  expect(
+    rail.getByRole('heading', { level: 3, name: 'Datos de la cotización' }),
+  ).toBeInTheDocument();
+  expect(rail.getByText('AB123CD')).toHaveClass('font-mono');
+  expect(rail.queryByText('Tipo')).not.toBeInTheDocument();
+  expect(rail.queryByText('Uso')).not.toBeInTheDocument();
+  expect(rail.queryByText('Cambiar datos')).not.toBeInTheDocument();
+});
+
+it.each([undefined, null, { ...calculo, factorEdad: '1,00' }])(
+  'degrada sin un desglose válido (%j)',
+  async (desglose) => {
+    servidorMock.use(
+      http.post(endpoint, () =>
+        HttpResponse.json(
+          {
+            fechaVencimiento: new Date(Date.now() + 3_600_000).toISOString(),
+            opciones: [{ ...opciones[1], calculo: desglose }],
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    const { usuario } = montar();
+    await esperarContexto();
+    await usuario.click(botonCotizar());
+    await screen.findByRole('radio', { name: /^RC / });
+    const rail = railCotizacion();
+    expect(rail.getByText('Auto')).toBeInTheDocument();
+    expect(rail.getByText('Particular')).toBeInTheDocument();
+    expect(rail.queryByText('Antigüedad')).not.toBeInTheDocument();
+    expect(rail.queryByText('Conductor')).not.toBeInTheDocument();
+    expect(screen.queryByText(/\s+x\s+\d/)).not.toBeInTheDocument();
+  },
+);
+
+it('muestra factores, conserva las líneas de cada opción y actualiza el rail según el plan', async () => {
+  servidorMock.use(
+    http.post(endpoint, () =>
+      HttpResponse.json(
+        {
+          fechaVencimiento: new Date(Date.now() + 3_600_000).toISOString(),
+          opciones: [
+            { ...opciones[1], calculo },
+            { ...opciones[2], calculo: { ...calculo, primaBase: 18000, factorUso: 1.4 } },
+          ],
+        },
+        { status: 201 },
+      ),
+    ),
+  );
+  const { usuario, container } = montar();
+  await esperarContexto();
+  await usuario.click(botonCotizar());
+  expect(await screen.findByText(formula)).toBeInTheDocument();
+  const rail = railCotizacion();
+  expect(rail.getByText('Auto (1,00)')).toBeInTheDocument();
+  expect(rail.getByText('(1,10)')).toBeInTheDocument();
+  expect(rail.getByText('Particular (1,00)')).toBeInTheDocument();
+  expect(rail.getByText('Conductor')).toBeInTheDocument();
+  await usuario.click(screen.getByRole('radio', { name: /^TC / }));
+  expect(rail.getByText('Particular (1,40)')).toBeInTheDocument();
+  expect(screen.getByText(formula)).toBeInTheDocument();
+  expect(screen.getByText('18.000,00 x 1,00 x 1,10 x 1,00 x 1,40')).toBeInTheDocument();
+  await expectSinViolacionesA11y(container);
+});
+
+it.each(['clientes', 'vehiculos'])('muestra No disponible ante un error de %s', async (recurso) => {
+  servidorMock.use(
+    http.get('*/api/' + recurso + '/:id', () =>
+      HttpResponse.json({ status: 404, title: 'No encontrado' }, { status: 404 }),
+    ),
+  );
+  montar();
+  await screen.findByRole('alert');
+  expect(railCotizacion().getAllByText('No disponible').length).toBeGreaterThan(0);
 });

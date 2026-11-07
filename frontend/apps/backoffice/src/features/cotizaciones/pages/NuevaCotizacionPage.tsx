@@ -9,6 +9,7 @@ import { useCotizar } from '../api/useCotizar';
 import { usePlanesCatalogo } from '../api/usePlanesCatalogo';
 import { useVehiculoContexto } from '../api/useVehiculoContexto';
 import { BotonCotizar, ContinuarAEmision } from '../components/AccionesCotizacion';
+import { DatosCotizacionWidget } from '../components/DatosCotizacionWidget';
 import { PlanesCompatibles } from '../components/PlanesCompatibles';
 import { VigenciaCotizacion } from '../components/VigenciaCotizacion';
 import { estaVigente, useCotizacionVigente } from '../hooks/useCotizacionVigente';
@@ -113,7 +114,18 @@ function CotizacionDelVehiculo({ vehiculoId }: { vehiculoId: string }) {
           }}
         />
       </section>
-      <aside data-slot="rail" className="empty:hidden" />
+      <aside
+        data-slot="rail"
+        aria-label="Datos de la cotización"
+        className="w-full xl:w-[300px] xl:shrink-0"
+      >
+        <DatosCotizacionWidget
+          cliente={cliente.data}
+          vehiculo={vehiculo.data}
+          opciones={resultado?.opciones}
+          elegida={elegida}
+        />
+      </aside>
     </div>
   );
 }
