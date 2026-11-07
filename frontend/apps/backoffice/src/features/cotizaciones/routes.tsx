@@ -1,4 +1,10 @@
 import type { RouteObject } from 'react-router-dom';
+import { NuevaCotizacionPage } from './pages/NuevaCotizacionPage';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+export const rutas: RouteObject[] = [
+  {
+    path: '/cotizaciones/nueva',
+    element: <NuevaCotizacionPage />,
+    handle: { titulo: 'Nueva cotización', tituloPrincipal: true, ocultarBuscador: true },
+  },
+];
