@@ -305,7 +305,7 @@ Todos los endpoints de clientes requieren `Politicas.Empleado` (rol Empleado o A
 
 #### `POST /api/clientes`
 
-- **Estado:** En PR #50 (`feat(backend): US-F1-05 alta de cliente con validación en Renaper`, rama `feature/US-F1-05-clientes-alta-renaper`, base `development`).
+- **Estado:** Implementado en `development` (US-F1-05, PR #50 mergeada).
 - **Política:** `Politicas.Empleado` (PR #50 `ClientesController.cs:16`).
 - **Propósito:** dar de alta un cliente. Si Renaper conoce el DNI, sus datos pisan los cargados a mano (RN02).
 
@@ -436,7 +436,7 @@ Orden de evaluación en `ClienteService.AltaAsync` (`ClienteService.cs:49-81`, P
 
 **Nota sobre el paso 1:** la comparación es sobre `request.Dni.Trim()` (`ClienteService.cs:53`), pero el regex del DTO no hace trim. Un DNI con espacios al costado da 400 por el DTO con el mensaje del regex (`errors.Dni`), antes de llegar al service.
 
-**Estados de error sin cuerpo que no cambian:** 401 (token ausente) y 403 (no aplica: Empleado y Administrador pasan la misma política).
+**Estados de error sin cuerpo que no cambian:** 401 (token ausente o inválido) y 403 (token sin rol Empleado ni Administrador).
 
 **Notas para el front**
 - Los cuatro 400 de negocio (pasos 4 a 8) son `detail` sin `codigo`. Para mostrar el mensaje en el campo correcto hay que comparar texto (Dudas D2).
@@ -447,7 +447,7 @@ Orden de evaluación en `ClienteService.AltaAsync` (`ClienteService.cs:49-81`, P
 
 #### `POST /api/clientes/{id}/validar-renaper`
 
-- **Estado:** En PR #50 (`ClientesController.cs:39-46`).
+- **Estado:** Implementado en `development` (`ClientesController.ValidarRenaper`).
 - **Política:** `Politicas.Empleado`.
 - **Request:** sin cuerpo. `id` en la ruta, tipo `Guid` (`{id:guid}`; un valor que no es Guid no llega al service y responde 404 del routing).
 - **Response 200:** `ClienteResponse` (sección 3.1).
@@ -468,7 +468,7 @@ Orden de evaluación en `ClienteService.AltaAsync` (`ClienteService.cs:49-81`, P
 
 #### `GET /api/clientes/renaper/{dni}`
 
-- **Estado:** En PR #50 (`ClientesController.cs:52-59`).
+- **Estado:** Implementado en `development` (`ClientesController.PreviewRenaper`).
 - **Política:** `Politicas.Empleado`.
 - **Request:** sin cuerpo. `dni` en la ruta; el back valida 8 dígitos ASCII después del trim (`ClienteService.cs:161-163`, no con regex ni atributo de ruta).
 - **Propósito:** cargar el formulario de alta con los datos de Renaper antes de guardar (CU04).
@@ -834,10 +834,10 @@ Ninguna de estas bloquea el contrato documentado. Cada una dice qué asume el fr
 - **D8. Formato de `fechaValidacionRenaper` (UTC).** `DateTime?` sin conversor en `backend/Aseguradora.Data` (búsqueda sin resultados). La spec pide UTC (RN16). **NO DEFINIDO** si sale con `Z` o sin sufijo. *Asunción:* parsear sin confiar en el sufijo; mostrar en zona de Argentina con una función de `@nexa/api`.
 - **D9. Consulta pública no filtra clientes inactivos.** `VerificadorPublico.cs:45` no mira `Activo`. Un cliente dado de baja (RN15) podría consultar su póliza. *Asunción:* el back lo permite hoy; la spec no lo prohíbe explícitamente.
 - **D10. Estado de cuotas puede estar desactualizado.** La consulta muestra el valor guardado; el job de vencimientos (frente 3) lo cambia (`tareas-divididas.md:916`). *Asunción:* el front muestra el estado tal cual y no recalcula vencimiento ni recargo.
-- **D11. Sin `ClienteResumenResponse` definido.** La spec nombra el tipo del listado (`tareas-divididas.md:786`) sin campos. **NO DEFINIDO.** Bloquea el listado de clientes hasta definirlo.
+- **D11. Resumen de clientes definido.** US-F1-06 publica siete campos: `id`, `dni`, `nombre`, `apellido`, `email`, `telefono` y `activo`. Los campos adicionales de Renaper y conteos siguen en PB-03; no bloquean el consumo del resumen real.
 - **D12. Renaper caído en el alta devuelve 201.** El front sólo sabe por `validadoRenaper: false`. No hay campo de aviso. *Asunción:* mostrar un aviso cuando `validadoRenaper` sea `false` y ofrecer el reintento.
 - **D13. `GET renaper/{dni}` con DNI en la URL.** Dato personal en la URL. Es decisión de la PR #50, distinta de la consulta pública (que usa POST). *Asunción:* aceptado, pero conviene confirmarlo con el equipo.
-- **D14. Fuente de PR #50.** El contrato de clientes sale de una PR abierta. Puede cambiar antes del merge. *Asunción:* revalidar este documento al mergear.
+- **D14. Contrato publicado de US-F1-05.** PR #50 está mergeada. Los tres endpoints se verifican contra `ClientesController`, `ClienteService` y los DTO actuales; T-25 agrega pruebas de contrato MSW y reales.
 - **D15. Consulta: `cuotas` y `recargo` con importes del seed.** El ejemplo usa `12000.00` del seed (`SeedData.cs`), no un cálculo real. *Asunción:* ningún dato del ejemplo es normativo.
 
 ---

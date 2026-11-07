@@ -6,7 +6,7 @@ Tipo T · Oleada 3 · Tamaño S · Rama sugerida `feature/US-FE-T-25-api-cliente
 
 Dejar tipados, con función de request, clave de caché y handler MSW, los tres endpoints de alta de cliente con Renaper: `POST /api/clientes`, `GET /api/clientes/renaper/{dni}` y `POST /api/clientes/{id}/validar-renaper`. Quien los usa son los empleados de B-05 (alta) y B-06 (validación Renaper).
 
-Los tres están **En PR #50** (no mergeada). Hasta que se mergee, todo se trabaja contra MSW (FB7.7, `VITE_USE_MOCKS=true`). El código de feature nunca lee el flag (FC3).
+Los tres están **Implementados en development** (US-F1-05, PR #50 mergeada). MSW replica el contrato publicado y el harness T-23 permite verificarlo contra el backend real. El código de feature nunca lee el flag (FC3).
 
 ## 2. Alcance
 
@@ -29,7 +29,7 @@ Los tres están **En PR #50** (no mergeada). Hasta que se mergee, todo se trabaj
 - **Oleada:** 3.
 - **Puede empezar sin esperar a:** US-FE-B-05.
 - **Bloqueada por pedidos al back:** PB-14 (códigos estables en 400 de negocio; hoy se compara `detail`), PB-15 (mensajes de validación en inglés), PB-29 (CUIL sin dígito verificador, DNI de 7 dígitos).
-- **Workaround MSW (FB7.7):** handler con el contrato mínimo de PR #50 (`contratos-api/seguridad-clientes-publico.md` §3.1 a §3.3). Sin código en el 400 de negocio: se usa `detail` tal cual.
+- **Workaround MSW (FB7.7):** handler equivalente al contrato publicado de US-F1-05 (`contratos-api/seguridad-clientes-publico.md` §3.1 a §3.3). Sin código en el 400 de negocio: se usa `detail` tal cual.
 
 ## 4. Documentos a leer
 
@@ -39,7 +39,7 @@ Los tres están **En PR #50** (no mergeada). Hasta que se mergee, todo se trabaj
 - `pedidos-al-back.md` PB-14, PB-15, PB-29.
 - `00-decisiones-base.md` FB4, FB7.6, FB7.7, FB7.9.
 - `tareas/INDEX.md` FC2, FC3, FC4, FC5, FC10, FC11, FC13; decisión D-16 (Renaper caído).
-- Código del back: `backend/Aseguradora.Api/Controllers/` no tiene `ClientesController` en `development`. La verificación es contra el contrato (cita del PR #50). Re-verificar al mergear (D14).
+- Código del back: `backend/Aseguradora.Api/Controllers/ClientesController.cs`, `backend/Aseguradora.Application/Clientes/ClienteService.cs` y `Clientes/DTOs/{ClienteAltaRequest,ClienteResponse,PersonaRenaperResponse}.cs`. El código publicado manda sobre las referencias históricas al PR #50.
 
 ## 5. Archivos a crear o modificar
 
@@ -69,11 +69,11 @@ No se edita ningún `package.json`, ni `apps/*`, ni `.github/workflows/*` (FC17)
 
 ## 7. Contrato con el back
 
-Estado de los tres endpoints: **En PR #50** (`feat(backend): US-F1-05 alta de cliente con validación en Renaper`). Política: `Politicas.Empleado` (rol Empleado o Administrador). Sin token: 401.
+Estado de los tres endpoints: **Implementados en development** (`feat(backend): US-F1-05 alta de cliente con validación en Renaper`). Política: `Politicas.Empleado` (rol Empleado o Administrador). Sin token: 401.
 
 ### 7.1 `POST /api/clientes`
 
-- **Estado:** En PR #50. **Auth:** Empleado. **Request:** JSON. **Response:** 201 con `ClienteResponse` (el `Location` no es legible desde el navegador, PB-17: usar `id` del body).
+- **Estado:** Implementado. **Auth:** Empleado. **Request:** JSON. **Response:** 201 con `ClienteResponse` (el `Location` no es legible desde el navegador, PB-17: usar `id` del body).
 - **Función:** `crearCliente(body: ClienteAltaRequest): Promise<ClienteResponse>`.
 - **Clave:** no aplica para lectura. Al éxito se invalidan `clientesKeys.listas()` (T-24).
 - **Hook (lo escribe B-05, FC2):** `useCrearCliente()`, `useMutation`, con `retry: 0` (FB7.9, FC11). El botón se deshabilita mientras corre.
@@ -138,7 +138,7 @@ No hay 409 ni 422 en este grupo (contrato §1.3). Renaper caído **no es error**
 
 ### 7.2 `GET /api/clientes/renaper/{dni}`
 
-- **Estado:** En PR #50. **Auth:** Empleado. **Request:** `dni` en la ruta (8 dígitos). **Response:** 200 con `PersonaRenaperResponse`.
+- **Estado:** Implementado. **Auth:** Empleado. **Request:** `dni` en la ruta (8 dígitos). **Response:** 200 con `PersonaRenaperResponse`.
 - **Función:** `previsualizarRenaper(dni: string): Promise<PersonaRenaperResponse>`.
 - **Clave:** `clientesKeys.renaper(dni)`.
 - **Hook (lo escribe B-06):** `useRenaperPreview(dni)`, `useQuery`, `enabled: false` hasta que el empleado pide la consulta (no en el montaje). Reintentos: no reintenta errores 4xx (D-25-2).
@@ -182,7 +182,7 @@ Nota: un fallecido **no** es error en esta consulta: llega como `estado: 'FALLEC
 
 ### 7.3 `POST /api/clientes/{id}/validar-renaper`
 
-- **Estado:** En PR #50. **Auth:** Empleado. **Request:** sin body. `id` es `Guid` en la ruta. **Response:** 200 con `ClienteResponse` actualizado.
+- **Estado:** Implementado. **Auth:** Empleado. **Request:** sin body. `id` es `Guid` en la ruta. **Response:** 200 con `ClienteResponse` actualizado.
 - **Función:** `validarRenaper(id: string): Promise<ClienteResponse>`.
 - **Clave al éxito:** `clientesKeys.detalle(id)` y `clientesKeys.listas()` (T-24).
 - **Hook (lo escribe B-06 o B-08):** `useValidarRenaper(id)`, `useMutation`, `retry: 0`. No se dispara al montar.
@@ -267,35 +267,35 @@ Herramienta: Vitest con MSW (`setupServer` de `mocks/server.ts`, T-11). Un test 
 9. El barrel `packages/api/src/index.ts` exporta el bloque de T-25 sin tocar el de T-24.
 10. `lint`, `typecheck`, `test` y `build` de `@nexa/api` están en verde.
 11. La tabla de errores de §7 coincide con `contratos-api/seguridad-clientes-publico.md` §3.1.1 y §3.2 y §3.3.
-12. Se registra en §16 que el endpoint está en PR #50 y se re-verifica al mergearla.
+12. Se registra en §16 la re-verificación del contrato publicado de US-F1-05; se agregan contratos T-23 ejecutables contra MSW y el backend real.
 
 ## 12. Verificación manual
 
 Sin prueba manual de UI en esta tarjeta: no hay pantalla. Las funciones se prueban con los tests de §10.
 
-Contra el back: PR #50 no está mergeada en `development`, así que no hay prueba contra el back local. Al mergearla, correr `VITE_API_BASE_URL=http://localhost:8080` con el harness de T-23 y confirmar los tests de contrato.
+Contra el back: usar el harness de T-23 con `CONTRACT_TARGET=real`, `VITE_API_BASE_URL` y credenciales locales. Los POST requieren `CONTRACT_ALLOW_WRITES=true` y datos de prueba seleccionados. Para el alta, elegir una persona adulta conocida por Renaper cuyo DNI y email no estén registrados. No borrar ni modificar clientes de uso habitual para repetir la prueba; preparar un entorno aislado. Los escenarios de caída se verifican con MSW o con un servicio externo de prueba controlado.
 
-## 13. Decisiones pendientes
+## 13. Decisiones confirmadas por Lucas
 
-- **D-25-1 (PR #50 puede cambiar):** default: MSW según el contrato actual. Al mergear PR #50, revalidar §7 (contrato D14).
-- **D-25-2 (reintento de la consulta Renaper):** default (RV-D23): no reintentar errores 4xx; permitir 1 reintento ante 502.
-- **D-25-3 (texto del 502 de Renaper):** default: mostrar el `detail` si llega; si no, un texto genérico que define diseño. No se inventa texto aquí.
-- **D-25-4 (recorte de DNI y CUIL):** default: B-05 recorta espacios antes de llamar. La función envía el body tal cual.
-- **D-25-5 (marcar el campo DNI con 404):** default (RV-D23): B-06 marca el campo DNI con `codigo === 'PERSONA_NO_ENCONTRADA'`, no con el texto. Es la excepción documentada en FC10.
-- **D-25-6 (Location):** default: usar `id` del body (PB-17).
-- **D-API-1 (hooks):** default (RV-44, FB3, FC2): FC2 manda. Los hooks viven en `features/clientes/api/` de B-05 y B-06; `@nexa/api` solo exporta funciones de request, tipos y claves.
-- **D-API-2 (dueño de `dto/clientes.ts`, `endpoints/clientes.ts`, `handlers/clientes.ts`):** default (RV-15): T-24 los crea, T-25 agrega su bloque y mergea después.
+- **D-25-1 (contrato publicado):** se sigue el backend ya mergeado, con MSW equivalente y contratos reales; la referencia a PR #50 abierta queda resuelta.
+- **D-25-2 (reintento de la consulta Renaper):** confirmado (RV-D23): no reintentar errores 4xx; permitir 1 reintento ante 502.
+- **D-25-3 (texto del 502 de Renaper):** confirmado para T-25: entregar `detail` sin transformar ni asumir un texto fijo. El copy de fallback pertenece a B-06 y se define con diseño; esta API card no introduce textos de pantalla.
+- **D-25-4 (recorte de DNI y CUIL):** confirmado: B-05 recorta espacios antes de llamar. La función envía el body tal cual.
+- **D-25-5 (marcar el campo DNI con 404):** confirmado (RV-D23): B-06 marca el campo DNI con `codigo === 'PERSONA_NO_ENCONTRADA'`, no con el texto. Es la excepción documentada en FC10.
+- **D-25-6 (Location):** confirmado: usar `id` del body (PB-17).
+- **D-API-1 (hooks):** confirmado (RV-44, FB3, FC2): FC2 manda. Los hooks viven en `features/clientes/api/` de B-05 y B-06; `@nexa/api` solo exporta funciones de request, tipos y claves.
+- **D-API-2 (dueño de `dto/clientes.ts`, `endpoints/clientes.ts`, `handlers/clientes.ts`):** confirmado (RV-15): T-24 los crea, T-25 agrega su bloque y mergea después.
 
 ## 14. Riesgos y errores comunes
 
-- **Contrato en PR abierta:** PR #50 puede cambiar antes del merge. Mitigación: MSW con el contrato de §7, revalidar al mergear (D-25-1).
+- **Deriva del contrato:** si cambia el backend publicado, actualizar DTO, MSW y pruebas de contrato en conjunto (D-25-1).
 - **Textos en inglés en `errors`:** mostrar `errors[...][0]` tal cual deja mensajes en inglés (PB-15). Mitigación: mapear por clave a un texto propio.
 - **Renaper caído en el alta es 201:** si la UI solo mira el status, el aviso no aparece. Mitigación: leer `validadoRenaper`.
 - **Comparar texto para detectar duplicados:** el back no manda código (PB-14, D2). Si se compara `detail`, se rompe ante cualquier cambio de redacción. Mitigación: mostrar `detail`; no comparar.
 - **Fecha sin formato definido:** `fechaValidacionRenaper` puede venir con o sin `Z` (D8). Mitigación: parseo de T-09.
 - **DNI con espacios:** el DTO no hace trim y da 400. Mitigación: D-25-4.
 - **Doble clic en el alta:** el back rechaza el duplicado con 400, pero el empleado ve un error falso. Mitigación: botón deshabilitado (FC11).
-- **Mock que no coincide con el back:** si el handler devuelve 200 donde el back da 404, la pantalla pasa las pruebas y falla en real. Mitigación: los tests de contrato de §10 se corren contra el back cuando se mergee.
+- **Mock que no coincide con el back:** si el handler devuelve 200 donde el back da 404, la pantalla pasa las pruebas y falla en real. Mitigación: los tests de contrato de §10 se corren también contra el backend publicado.
 
 ## 15. Definición de terminado
 
@@ -305,6 +305,8 @@ Contra el back: PR #50 no está mergeada en `development`, así que no hay prueb
 - Los 12 criterios de §11 con evidencia observada (salida de los tests), no tildados sin prueba.
 
 ## 16. Observaciones al índice
+
+- Contrato re-verificado contra el backend publicado de US-F1-05: alta 201, consulta Renaper 200/400/404/502 y validación explícita 200/400/404/502. El alta tolera la caída con 201 sin validar; los requests no reintentan. Los tipos ya presentes de T-24 se reutilizan sin duplicarlos.
 
 - Resuelto (RV-15 / D-API-2): `dto/clientes.ts`, `endpoints/clientes.ts` y `handlers/clientes.ts` los crea T-24 y T-25 agrega su bloque; mergean en serie.
 - Resuelto (RV-04): T-23 y T-24 figuran en "Depende de" de la fila del INDEX y de §3.
