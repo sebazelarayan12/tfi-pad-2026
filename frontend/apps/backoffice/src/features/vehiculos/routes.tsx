@@ -1,4 +1,6 @@
 import type { RouteObject } from 'react-router-dom';
+import { NuevoVehiculoPage } from './pages/NuevoVehiculoPage';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+export const rutas: RouteObject[] = [
+  { path: '/clientes/:clienteId/vehiculos/nuevo', element: <NuevoVehiculoPage /> },
+];
