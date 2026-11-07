@@ -12,7 +12,7 @@ En la pantalla de cotizar (B-10) cada plan muestra la línea de cálculo `primaB
 - Línea de cálculo bajo el nombre de cada plan, solo si la opción trae `calculo` (PB-10).
 - Widget "Datos de la cotización" (`CardWidget` de T-07) en el slot `aside` que B-10 dejó vacío.
 - Filas del widget y su versión sin factores (cuando no hay `calculo`).
-- Tipos locales para `calculo`, mientras T-26 no lo incluya.
+- Tipos locales para `calculo`, mientras la API publicada no lo devuelva (PB-10).
 - Tests de la línea y del rail.
 
 **No entra**
@@ -51,7 +51,7 @@ Todos bajo `frontend/apps/backoffice/src/features/cotizaciones/` (dueño: B-10).
 | `components/PlanOpcionCard.tsx` | Modifica (dueño B-10): agrega `LineaCalculo` debajo del nombre |
 | `**/*.test.tsx` y `**/*.test.ts` | Crea |
 
-Compartidos sin editar: `packages/api/src/dto/cotizaciones.ts` (dueño T-26). Si T-26 agrega `calculo`, `types/calculo.ts` se borra y se usa el tipo de `@nexa/api`.
+Compartidos sin editar: `packages/api/src/dto/cotizaciones.ts` (dueño T-26). El mock de T-26 ya incluye `calculo` (`CalculoPrimaMock`), pero `OpcionCotizacion` real no. Cuando PB-10 publique el campo, `types/calculo.ts` se revisa.
 
 ## 6. Pasos de implementación
 
