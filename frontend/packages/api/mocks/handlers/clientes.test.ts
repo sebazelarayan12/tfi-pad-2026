@@ -68,6 +68,17 @@ describe('listado', () => {
     expect((await listarClientes(api, { dni: '45123456', apellido: 'Pérez' })).total).toBe(0);
   });
 
+  it('el apellido se busca sin distinguir tildes: "pe" y "perez" encuentran a Pérez', async () => {
+    for (const apellido of ['pe', 'perez', 'PEREZ', 'pér']) {
+      expect((await listarClientes(api, { apellido })).items.map((c) => c.apellido)).toContain(
+        'Pérez',
+      );
+    }
+    expect(
+      (await listarClientes(api, { apellido: 'fernandez' })).items.map((c) => c.apellido),
+    ).toEqual(['Fernández']);
+  });
+
   it('pagina=2 y tamanoPagina=1 devuelve el segundo y total correcto', async () => {
     const pagina = await listarClientes(api, { pagina: 2, tamanoPagina: 1 });
     expect(pagina).toMatchObject({ pagina: 2, tamanoPagina: 1, total: 2 });

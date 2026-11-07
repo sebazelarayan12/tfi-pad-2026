@@ -87,6 +87,15 @@ function leerEntero(valor: string | null, defecto: number, maximo: number): numb
 }
 
 /** Cada fábrica aísla el estado para que las bajas y ediciones no se filtren entre pruebas. */
+/** Minúsculas y sin tildes: el listado real debe encontrar "Perez" al buscar "pe" (PB-32). */
+function sinAcentos(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('es-AR');
+}
+
 export function crearHandlersClientes(
   semillas: readonly ClienteFixture[] = clientesFixture,
   opciones: { renaperDisponible?: boolean; ahora?: () => Date } = {},
@@ -204,14 +213,14 @@ export function crearHandlersClientes(
         return responderProblema(request, problemaValidacion(errors));
       }
       const dni = params.get('dni')?.trim();
-      const apellido = params.get('apellido')?.trim().toLocaleLowerCase('es-AR');
+      const apellido = sinAcentos(params.get('apellido') ?? '');
       const coincidencias = registros
         .map(({ cliente }) => cliente)
         .filter(
           (cliente) =>
             cliente.activo &&
             (!dni || cliente.dni === dni) &&
-            (!apellido || cliente.apellido.toLocaleLowerCase('es-AR').includes(apellido)),
+            (!apellido || sinAcentos(cliente.apellido).includes(apellido)),
         )
         .sort(
           (a, b) =>
