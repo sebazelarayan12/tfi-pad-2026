@@ -50,7 +50,7 @@ Bajo `frontend/apps/backoffice/src/features/clientes/`:
 
 | Archivo | Dueño | Notas |
 |---|---|---|
-| `Dialogo` de `@nexa/ui` | US-FE-T-07 (RV-D05) | No se crea aquí. Se importa `Dialogo` (`role="dialog"` o `alertdialog`, Escape, foco inicial y devolución de foco). |
+| `Dialogo` de `@nexa/ui` | US-FE-T-07 (RV-D05) | B-08 amplía el componente compartido con modalidad optativa, Escape y devolución de foco. |
 | `components/EditarContactoDomicilio.tsx` | US-FE-B-08 | Formulario de contacto y domicilio dentro de `Dialogo` de `@nexa/ui`. |
 | `components/ConfirmarBajaCliente.tsx` | US-FE-B-08 | `alertdialog` de baja. |
 | `components/ReintentarRenaperBoton.tsx` | US-FE-B-08 | Botón y mensaje junto al badge `Pendiente`. |
@@ -62,7 +62,7 @@ Bajo `frontend/apps/backoffice/src/features/clientes/`:
 | `components/ClienteEncabezado.tsx` | US-FE-B-07 | **Modificación**: muestra los botones Editar y Dar de baja solo si llegan los callbacks. |
 | `components/*.test.tsx`, `api/*.test.ts`, `pages/FichaClientePage.test.tsx` | US-FE-B-08 | Tests de §10. |
 
-Compartidos (no editar): `packages/api/**` (T-24, T-25), `packages/ui/**`, `app/**`.
+Compartidos: `packages/api/**` (T-24, T-25) y `app/**` quedan fuera del alcance. En `packages/ui/**` solo se amplía `Dialogo` según D-B08-8.
 
 ## 6. Pasos de implementación
 
@@ -84,7 +84,7 @@ Compartidos (no editar): `packages/api/**` (T-24, T-25), `packages/ui/**`, `app/
 |---|---|---|---|---|
 | `PUT /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | `ClienteModificacionRequest` | 200 `ClienteResponse` actualizado (contrato real) | 400 con `errors` de validación o `detail` de negocio (email en uso); 404; 401; 403 |
 | `DELETE /api/clientes/{id}` | Implementado (US-F1-06, PR #58) | sin body | 204 sin cuerpo | 400 con `detail` si tiene póliza Pendiente, Vigente o Suspendida; 404; 401; 403 |
-| `POST /api/clientes/{id}/validar-renaper` | En PR #50 (mock de T-25) | sin body | 200 `ClienteResponse` | 400 con `detail` (no figura, fallecido, menor); 404 con `codigo: "CLIENTE_NO_ENCONTRADO"`; 502; 401; 403 |
+| `POST /api/clientes/{id}/validar-renaper` | Implementado (US-F1-05, mock de T-25) | sin body | 200 `ClienteResponse` | 400 con `detail` (no figura, fallecido, menor); 404 con `codigo: "CLIENTE_NO_ENCONTRADO"`; 502; 401; 403 |
 
 ```ts
 // Tipos en @nexa/api (dueño US-FE-T-24 para PUT y DELETE; US-FE-T-25 para validar-renaper)
@@ -97,7 +97,7 @@ export interface ClienteModificacionRequest {
   provincia: string;         // máx. 100
   codigoPostal: string;      // máx. 10
 }
-// Respuesta de PUT: ClienteResponse (propuesta; ver sección 16).
+// Respuesta de PUT: ClienteResponse actualizado (US-F1-06).
 // Respuesta de DELETE: sin cuerpo (204).
 // Respuesta de validar-renaper: ClienteResponse con validadoRenaper=true y fechaValidacionRenaper en UTC.
 ```
@@ -144,7 +144,7 @@ Textos de B5 §5 y §8, y copy propuesto (marcado) para lo que el diseño no def
 | Edición: valores iniciales | Vienen de `useCliente`; el formulario no se reinicia si el detalle se refresca mientras está abierto. |
 | Edición: campo inválido | Mensaje debajo del campo; sin llamada a la API. |
 | Edición: guardando | Botones y campos deshabilitados; `aria-busy` en "Guardar cambios"; un solo `PUT`. |
-| Edición: 200 | Cierra el diálogo, actualiza la cabecera y muestra "Datos actualizados.". |
+| Edición: 200 | Cierra el diálogo, actualiza la ficha y muestra "Datos actualizados.". |
 | Edición: 400 `detail` | Alerta dentro del diálogo; datos conservados; no marca campos. |
 | Edición: 404 | "Cliente no encontrado." y cierra el diálogo. |
 | Baja: foco inicial | En "Cancelar". |
@@ -198,7 +198,7 @@ Herramientas: Vitest, Testing Library, MSW (`server.use` por caso).
 1. "Editar" abre el diálogo con email, teléfono, calle, número, localidad, provincia y código postal precargados.
 2. El diálogo no permite cambiar DNI, nombre, apellido, CUIL, fecha de nacimiento ni sexo.
 3. El `PUT` envía exactamente los campos de `ClienteModificacionRequest`, con un solo envío aunque haya doble clic.
-4. 200 cierra el diálogo, actualiza la cabecera y muestra "Datos actualizados.".
+4. 200 cierra el diálogo, actualiza la ficha y muestra "Datos actualizados.".
 5. 400 con `detail` muestra el texto sin prefijo `RNxx:`, deja el diálogo abierto y no marca campos.
 6. 404 en el `PUT` muestra "Cliente no encontrado.".
 7. "Dar de baja" abre un `alertdialog` con foco inicial en "Cancelar" y Escape lo cierra sin enviar nada.
@@ -217,23 +217,23 @@ Herramientas: Vitest, Testing Library, MSW (`server.use` por caso).
 
 PUT y DELETE pueden consumir el backend real. Los tests usan sus mocks equivalentes de T-24; PB-14/PB-15 conservan su tratamiento de errores.
 
-1. Abrir la ficha de un cliente. Pulsar "Editar", cambiar el teléfono y guardar. Ver el aviso y el teléfono nuevo en la cabecera.
+1. Abrir la ficha de un cliente. Pulsar "Editar", cambiar el teléfono y guardar. Ver el aviso y el teléfono nuevo en la pestaña «Datos».
 2. Intentar un email que use otro cliente. Ver el mensaje del back sin prefijo y el diálogo abierto.
 3. Pulsar "Dar de baja". Ver el foco en "Cancelar". Pulsar Escape y comprobar que no pasó nada.
 4. Confirmar la baja. Ver `/clientes` con el aviso y el cliente fuera del listado.
 5. Abrir un cliente con badge `Pendiente`, pulsar "Validar en Renaper" y ver el cambio a `Validado` (o el mensaje de Renaper caído).
 6. Confirmar con la persona responsable los pasos 1 a 5 antes del PR (workflow regla 7).
 
-## 13. Decisiones pendientes (con default)
+## 13. Decisiones confirmadas
 
-- **D-B08-1. Destino de Editar (B5 D-B5-02).** Default: diálogo modal con contacto y domicilio (opción a). Alternativa: reutilizar el alta en modo edición; se descarta porque mezcla flujos.
-- **D-B08-2. Baja con pólizas activas (B5 D-B5-08, spec US-F1-06).** Default: se envía `DELETE` y se muestra el `detail` del 400 que devuelva el back (D-15 del índice). La spec propone bloquear; el diseño no decide. Confirmar. Si el back bloquea, la UI no cambia.
-- **D-B08-3. Confirmación de la baja (B5 §7, sin diseño).** Default: el texto de §8 (propuesta).
-- **D-B08-4. Variante de peligro del botón (B5 D-B5-08).** Default: Ghost con color `status/cancelada/text`.
-- **D-B08-5. Respuesta de PUT.** Default: se espera `ClienteResponse`; si no llega, se invalida y se vuelve a pedir el detalle.
-- **D-B08-6. Aviso de baja en el listado.** Default: el aviso viaja en `location.state.aviso` (RV-41, misma clave que B-04 y B-05).
-- **D-B08-7. Reintento de Renaper desde la ficha.** Default: se ofrece solo con `validadoRenaper` en `false`, como en B5 §7 y el INDEX de B-08.
-- **D-B08-8. Diálogo.** Default: `Dialogo` de `@nexa/ui` (T-07, RV-D05; D-37 del INDEX).
+- **D-B08-1. Edición.** Abrir un diálogo modal con los campos de contacto y domicilio (B5 D-B5-02).
+- **D-B08-2. Baja con pólizas activas.** Enviar `DELETE` tras confirmar. Si el backend rechaza la baja por una póliza Pendiente, Vigente o Suspendida, mostrar el `detail` dentro del diálogo y mantenerlo abierto (D-15).
+- **D-B08-3. Confirmación.** Usar el título, texto y acciones de §8.
+- **D-B08-4. Botón de baja.** Usar Ghost con el color `status-cancelada-text`.
+- **D-B08-5. Respuesta de PUT.** Aplicar el `ClienteResponse` actualizado. Si falta el detalle completo, volver a consultarlo.
+- **D-B08-6. Aviso de baja.** Pasar «Cliente dado de baja.» al listado mediante `location.state.aviso` (RV-41).
+- **D-B08-7. Reintento de Renaper.** Ofrecerlo solo cuando `validadoRenaper` sea `false`.
+- **D-B08-8. Diálogos.** Usar `Dialogo` de `@nexa/ui` para ambos flujos. Se confirmó ampliarlo de forma compatible para incorporar modalidad, Escape y devolución de foco. En la baja, el foco inicial va a «Cancelar».
 
 ## 14. Riesgos y errores comunes
 
