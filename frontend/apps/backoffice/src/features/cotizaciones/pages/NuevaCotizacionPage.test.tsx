@@ -156,6 +156,13 @@ it.each([
   [400, 'Ningún plan es compatible con el vehículo.', 'Ningún plan es compatible con el vehículo.'],
   [404, 'El vehículo no existe.', 'El vehículo no existe.'],
   [500, undefined, 'No se pudo cotizar el vehículo. Intentá de nuevo.'],
+  [400, 'RN05: Ningún plan es compatible.', 'RN05: Ningún plan es compatible.'],
+  [
+    404,
+    'VEHICULO_NO_ENCONTRADO: El vehículo no existe.',
+    'VEHICULO_NO_ENCONTRADO: El vehículo no existe.',
+  ],
+  [500, '   ', 'No se pudo cotizar el vehículo. Intentá de nuevo.'],
 ])(
   'muestra el error de cotización %s y deja que el usuario decida si vuelve a intentar',
   async (status, detail, mensaje) => {

@@ -1,10 +1,4 @@
-import {
-  ApiError,
-  cotizacionesKeys,
-  cotizarVehiculo,
-  leerMensajeDetalle,
-  useApiClient,
-} from '@nexa/api';
+import { ApiError, cotizacionesKeys, cotizarVehiculo, useApiClient } from '@nexa/api';
 import { toast } from '@nexa/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
@@ -29,7 +23,7 @@ export function useCotizar() {
       if (error instanceof ApiError && error.status === 401) return;
       const mensaje =
         error instanceof ApiError && error.detail?.trim()
-          ? leerMensajeDetalle(error).mensaje
+          ? error.detail
           : 'No se pudo cotizar el vehículo. Intentá de nuevo.';
       toast.error(mensaje);
     },
