@@ -72,16 +72,21 @@ it('B-05: Nuevo cliente abre el formulario de alta y el enlace Clientes vuelve a
   expect(await screen.findByText('2 clientes')).toBeInTheDocument();
 });
 
-it('permite volver al listado desde el destino pendiente de la ficha', async () => {
+it('B-07: el nombre del listado abre la ficha y el enlace Clientes vuelve al listado', async () => {
   const usuario = userEvent.setup();
   montar(true);
   await usuario.click(await screen.findByRole('link', { name: 'Juan Carlos Pérez' }));
 
-  const encabezado = await screen.findByRole('heading', { level: 1, name: 'Ficha de cliente' });
-  expect(encabezado).toHaveFocus();
-  expect(screen.getByText('La ficha de cliente todavía no está disponible.')).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Juan Carlos Pérez' }),
+  ).toBeInTheDocument();
+  expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
 
-  await usuario.click(screen.getByRole('link', { name: 'Volver al listado' }));
+  await usuario.click(
+    within(screen.getByRole('region', { name: 'Ficha de cliente' })).getByRole('link', {
+      name: 'Clientes',
+    }),
+  );
   expect(await screen.findByRole('heading', { level: 1, name: 'Clientes' })).toBeInTheDocument();
   expect(await screen.findByText('2 clientes')).toBeInTheDocument();
 });
