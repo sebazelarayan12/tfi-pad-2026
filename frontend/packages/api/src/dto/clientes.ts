@@ -1,4 +1,5 @@
 import type { CuotaResponse } from './polizas';
+import type { ProblemDetails } from './comunes';
 
 export type SexoCliente = 'M' | 'F' | 'X';
 
@@ -60,4 +61,41 @@ export interface CuentaClienteResponse {
   deudaVencida: number;
   cuotaVencidaConRecargo: CuotaCuentaCliente | null;
   proximaCuota: CuotaCuentaCliente | null;
+}
+
+/** CU04: los datos oficiales de Renaper reemplazan identidad y domicilio al validar. */
+export interface ClienteAltaRequest extends ClienteModificacionRequest {
+  dni: string;
+  nombre: string;
+  apellido: string;
+  cuil: string;
+  fechaNacimiento: string;
+  sexo: SexoCliente;
+}
+
+export interface DomicilioRenaperResponse {
+  calle: string;
+  numero: string;
+  piso: string | null;
+  depto: string | null;
+  localidad: string;
+  provincia: string;
+  codigoPostal: string;
+}
+
+export interface PersonaRenaperResponse {
+  dni: string;
+  cuil: string;
+  nombre: string;
+  apellido: string;
+  fechaNacimiento: string;
+  sexo: SexoCliente;
+  domicilio: DomicilioRenaperResponse;
+  estado: 'VIGENTE' | 'FALLECIDO';
+  fechaFallecimiento: string | null;
+}
+
+export type ErrorClienteCodigo = 'CLIENTE_NO_ENCONTRADO' | 'PERSONA_NO_ENCONTRADA';
+export interface ProblemDetailsConCodigo extends ProblemDetails {
+  codigo?: ErrorClienteCodigo;
 }
