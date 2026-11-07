@@ -59,7 +59,7 @@ Bajo `frontend/apps/backoffice/src/features/clientes/` (dueño B-04):
 | `components/TablaClientes.tsx` | Usa `Table` de `@nexa/ui`. Columnas de §8. |
 | `components/BadgeRenaper.tsx` | Fuera del alcance actual del listado: no crear mientras el resumen no publique ese campo. La celda muestra `—`. |
 | `components/PaginacionTabla.tsx` | "1-10 de N", Anterior y Siguiente en `<nav aria-label="Paginación">`. Si se reutiliza en B2 o B11, pasa a `shared/`. |
-| `components/AvisoAlta.tsx` | Banner del aviso que llega por `location.state`. |
+| `components/AvisoAlta.tsx` | Toast (FC19) con el aviso que llega por `location.state`; no renderiza nada. |
 | `schemas/busquedaClientes.ts` | Esquema zod de la búsqueda y normalización. |
 | `api/useClientes.ts` | `useQuery` sobre la request de T-24, con `clientesKeys.lista(filtro)`. |
 | `pages/ClientesPage.test.tsx`, `components/*.test.tsx`, `schemas/busquedaClientes.test.ts` | Tests de §10. |
@@ -161,7 +161,7 @@ Textos literales de B3 §5. Los de "muestra" no se escriben.
 | Búsqueda de 8 dígitos con puntos | Se envía sin puntos como `dni`. |
 | Búsqueda de 3 a 7 dígitos | Se envía como `apellido` (propuesta B3 §6). |
 | Teléfono vacío | `—`. |
-| Aviso de alta presente | Banner arriba de la tabla; desaparece al navegar. |
+| Aviso de alta presente | Toast al entrar (FC19); no se repite al paginar ni al volver Atrás. |
 | Foco | Anillo de foco en el enlace del nombre, en los botones y en los campos. |
 
 ## 10. Tests requeridos

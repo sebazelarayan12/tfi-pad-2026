@@ -1,9 +1,13 @@
 import type { RolUsuario } from '@nexa/api';
 import type { GrupoNav } from '@nexa/ui';
+import type { ReactNode } from 'react';
 
 /** Título de la pantalla, declarado por cada ruta en su `handle`. */
 export interface HandleRuta {
   titulo: string;
+  accion?: ReactNode;
+  ocultarBuscador?: boolean;
+  tituloPrincipal?: boolean;
 }
 
 // Vehículos y Cotizaciones no tienen pantalla todavía (DP-1): sin `href` quedan no interactivos.

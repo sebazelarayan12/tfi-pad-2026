@@ -79,7 +79,7 @@ Compartidos (no editar): `packages/api/**` (T-25), `packages/ui/**` (T-05, T-07)
 
 | Método y ruta | Estado | Request | Response 200 | Errores |
 |---|---|---|---|---|
-| `GET /api/clientes/renaper/{dni}` | En PR #50 (no mergeado; MSW de T-25) | Path `dni` (8 dígitos) | `PersonaRenaperResponse` | 400 (`detail`); 404 con `codigo: "PERSONA_NO_ENCONTRADA"`; 401; 403; 502 |
+| `GET /api/clientes/renaper/{dni}` | Implementado (PR #50 mergeado); MSW de T-25 | Path `dni` (8 dígitos) | `PersonaRenaperResponse` | 400 (`detail`); 404 con `codigo: "PERSONA_NO_ENCONTRADA"`; 401; 403; 502 |
 
 ```ts
 // Tipos en @nexa/api (dueño US-FE-T-25). No redefinir.
@@ -211,17 +211,19 @@ Requiere el back con PR #50 o `VITE_USE_MOCKS=true` (T-25).
 6. Simular Renaper caído (mock de 502 o red cortada). Ver el aviso y que se puede guardar.
 7. Confirmar con la persona responsable los pasos 2 a 5 antes del PR (workflow regla 7).
 
-## 13. Decisiones pendientes (con default)
+## 13. Decisiones tomadas
 
-- **D-B06-1. Reintento de validación (INDEX B-06 y B-08).** Default: no hay reintento en el alta. El endpoint `POST /api/clientes/{id}/validar-renaper` necesita un `id` y el alta redirige en el 201. El reintento lo hace B-08 desde la ficha. Corregido en el INDEX (RV-38).
-- **D-B06-2. Fecha de validación antes de guardar (B4 D-4).** Default: `Sin guardar`. La fecha existe solo después del alta.
-- **D-B06-3. Piso y departamento (B4 D-17).** Default: se ignoran en el alta. Si el equipo quiere conservarlos, hay que agregarlos al contrato de alta y al diseño.
-- **D-B06-4. 404 y "Guardar cliente" (B4 §7; RV-D23, excepción de FC10).** Default: "Guardar cliente" sigue habilitado; el back decide con su 400 de "no figura en Renaper". Alternativa: deshabilitarlo, como en fallecido.
-- **D-B06-5. Precarga sobre datos cargados a mano (B4 D-5).** Default: la precarga reemplaza los seis grupos de campos y los marca. Confirmar con el equipo, porque RN02 dice que Renaper pisa al guardar de todos modos.
-- **D-B06-6. Texto del estado inicial (B4 D-14).** Default: el de §8.
-- **D-B06-7. Texto de Renaper caído (B4 §7).** Default: el de §8 (propuesta).
-- **D-B06-8. Caja de error o campo (B4 D-3).** Default: los dos, con el mismo texto del diseño.
-- **D-B06-9. Aviso después de guardar.** No lo implementa esta tarea. Lo produce B-05 en el 201 (`validadoRenaper=false` → aviso de advertencia, §8 de B-05) y lo muestra B-04.
+Decididas por Sebastián el 2026-11-07 (regla 12): aceptó todas las opciones por defecto, una a una, tras verlas en una tabla con sus alternativas.
+
+- **D-B06-1. Reintento de validación (INDEX B-06 y B-08).** No hay reintento en el alta. El reintento lo hace B-08 desde la ficha (RV-38).
+- **D-B06-2. Fecha de validación antes de guardar (B4 D-4).** `Sin guardar`.
+- **D-B06-3. Piso y departamento (B4 D-17).** Se ignoran en el alta.
+- **D-B06-4. 404 y "Guardar cliente" (B4 §7; RV-D23, excepción de FC10).** "Guardar cliente" sigue habilitado; el back decide con su 400 de "no figura en Renaper".
+- **D-B06-5. Precarga sobre datos cargados a mano (B4 D-5).** La precarga reemplaza los diez campos de identidad y domicilio y los marca. RN02 dice que Renaper pisa al guardar de todos modos.
+- **D-B06-6. Texto del estado inicial (B4 D-14).** El de §8.
+- **D-B06-7. Texto de Renaper caído (B4 §7).** El de §8.
+- **D-B06-8. Caja de error o campo (B4 D-3).** Los dos, con el mismo texto del diseño.
+- **D-B06-9. Aviso después de guardar.** No lo implementa esta tarea. Lo produce B-05 en el 201 y lo muestra B-04.
 
 ## 14. Riesgos y errores comunes
 
@@ -247,4 +249,8 @@ Requiere el back con PR #50 o `VITE_USE_MOCKS=true` (T-25).
 - Resuelto (RV-38): el timeout de cliente y el reintento ante 502 los define T-25 (D-25-2).
 - Resuelto (triage final, default de la ficha): merge después de B-05, porque esta tarea modifica `AltaClientePage.tsx` y `FormularioAltaCliente.tsx`. Motivo: no figura en REVISION.md ni en FB8; la dependencia ya está en el INDEX.
 - Resuelto (triage final, default de la ficha): el helper de error del campo DNI en `Input` (T-04). Motivo: no figura en REVISION.md ni en FB8; design-system §5.2 ya lo prevé.
-
+- Implementación: el rail y el bloqueo de guardar viven en `FormularioAltaCliente` (junto al `<form>`, en un `aside`), no en `AltaClientePage`: el rail necesita el DNI y el resultado de la consulta, que son estado del formulario. La página no cambió.
+- Implementación: la consulta usa `gcTime: 0` y la clave lleva el DNI; cambiar el DNI descarta el resultado anterior y el rail vuelve al estado inicial sin efectos. Las marcas "Dato de Renaper" se derivan: un campo la conserva mientras su valor sea el de Renaper para el DNI consultado.
+- Implementación: un 404 sin `codigo`, un 403 u otro error muestran la alerta de Renaper caído (no hay copy propio en el diseño). Un 400 de formato escribe `El DNI debe tener 8 dígitos.` en el DNI y en el rail.
+- Implementación: el estado Fallecido usa el badge del token de error (`Cancelada`) con el texto `Fallecido`, porque el design system no define un badge propio.
+- Interacción con B-05 (D-B05-8, número y código postal solo dígitos): si Renaper devuelve un número con letras o `S/N`, o un CPA, la precarga lo carga y el formulario lo marca como inválido al guardar. Una provincia que no está en la lista de 24 se precarga vacía.

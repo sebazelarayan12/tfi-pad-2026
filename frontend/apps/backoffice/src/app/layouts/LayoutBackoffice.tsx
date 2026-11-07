@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { Outlet, useMatches, useNavigate } from 'react-router-dom';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Link, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { Backdrop, Shell, Sidebar } from '@nexa/ui';
 import { cerrarSesion, useSesion } from '../../features/auth';
 import { gruposParaRol, type HandleRuta } from './navegacionBackoffice';
@@ -7,7 +7,14 @@ import { Topbar } from './Topbar';
 
 function DotsThreeIcon() {
   return (
-    <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 256 256" fill="currentColor">
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="18"
+      height="18"
+      viewBox="0 0 256 256"
+      fill="currentColor"
+    >
       <path d="M140 128a12 12 0 1 1-12-12 12 12 0 0 1 12 12Zm56-12a12 12 0 1 0 12 12 12 12 0 0 0-12-12Zm-136 0a12 12 0 1 0 12 12 12 12 0 0 0-12-12Z" />
     </svg>
   );
@@ -72,19 +79,37 @@ function MenuUsuario() {
   );
 }
 
-function tituloDeRuta(matches: ReturnType<typeof useMatches>): string | undefined {
+function encabezadoDeRuta(matches: ReturnType<typeof useMatches>): Partial<HandleRuta> | undefined {
   for (let i = matches.length - 1; i >= 0; i -= 1) {
     const handle = matches[i]?.handle as Partial<HandleRuta> | undefined;
-    if (handle?.titulo) return handle.titulo;
+    if (handle?.titulo) return handle;
   }
   return undefined;
 }
 
 export function LayoutBackoffice() {
   const sesion = useSesion();
-  const titulo = tituloDeRuta(useMatches());
+  const encabezado = encabezadoDeRuta(useMatches());
+  const { pathname } = useLocation();
   const rol = sesion?.rol ?? null;
   const email = sesion?.email ?? null;
+  const grupos = gruposParaRol(rol).map((grupo) => ({
+    ...grupo,
+    items: grupo.items.map((item) => {
+      const href = item.href;
+      return href
+        ? {
+            ...item,
+            active: pathname === href || pathname.startsWith(`${href}/`),
+            renderLink: (props: {
+              className: string;
+              'aria-current'?: 'page';
+              children: ReactNode;
+            }) => <Link to={href} {...props} />,
+          }
+        : item;
+    }),
+  }));
 
   const usuario = {
     initials: email ? email.charAt(0).toUpperCase() : '',
@@ -94,17 +119,22 @@ export function LayoutBackoffice() {
 
   return (
     <Backdrop>
-      <Shell>
-        <div className="flex">
-          <Sidebar grupos={gruposParaRol(rol)} user={usuario} menuUsuario={<MenuUsuario />} />
-          <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-32">
-            <Topbar titulo={titulo} />
-            <main id="contenido">
-              <Outlet />
-            </main>
+      <div className="min-w-[1280px] p-sp-24">
+        <Shell>
+          {/* T-16: el Shell es presentacional; la app dispone sidebar y contenido en una fila. */}
+          <div className="flex min-h-[calc(100dvh-48px)] overflow-hidden rounded-shell">
+            <div className="shrink-0 bg-surface-sidebar">
+              <Sidebar grupos={grupos} user={usuario} menuUsuario={<MenuUsuario />} />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-32">
+              <Topbar {...encabezado} />
+              <main id="contenido">
+                <Outlet />
+              </main>
+            </div>
           </div>
-        </div>
-      </Shell>
+        </Shell>
+      </div>
     </Backdrop>
   );
 }

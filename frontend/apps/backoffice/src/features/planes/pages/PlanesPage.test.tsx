@@ -3,7 +3,7 @@ import { servidorMock } from '@nexa/api/mocks/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { delay, http, HttpResponse } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { cerrarSesion, iniciarSesion } from '../../auth';
@@ -207,13 +207,21 @@ it('cancela y restablece sin enviar cambios', async () => {
 });
 
 it('envía un solo PUT con doble clic', async () => {
+  let responder = () => {};
+  const respuesta = new Promise<void>((resolve) => {
+    responder = resolve;
+  });
   actualizar.mockImplementationOnce(async () => {
-    await delay(100);
+    await respuesta;
     return HttpResponse.json(tr);
   });
   const { usuario } = await editar();
-  await usuario.dblClick(guardar());
-  expect(await screen.findByRole('button', { name: 'Guardando…' })).toBeDisabled();
+  try {
+    await usuario.dblClick(guardar());
+    expect(await screen.findByRole('button', { name: 'Guardando…' })).toBeDisabled();
+  } finally {
+    responder();
+  }
   await screen.findByText('Cambios guardados.');
   expect(actualizar).toHaveBeenCalledTimes(1);
 });
