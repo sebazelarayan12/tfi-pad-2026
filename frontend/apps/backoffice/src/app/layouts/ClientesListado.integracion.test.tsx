@@ -1,7 +1,7 @@
 import { ApiClientProvider, createApiClient } from '@nexa/api';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, expect, it } from 'vitest';
@@ -54,17 +54,32 @@ it('B-04 usa la acción del layout, un único h1 y oculta el buscador global', a
   expect(screen.getByRole('searchbox', { name: 'Buscar por DNI o apellido' })).toBeInTheDocument();
   await expectSinViolacionesA11y(container);
 });
-it.each([
-  ['Nuevo cliente', 'Nuevo cliente', 'El alta de clientes todavía no está disponible.'],
-  ['Juan Carlos Pérez', 'Ficha de cliente', 'La ficha de cliente todavía no está disponible.'],
-])('permite volver al listado desde el destino pendiente de %s', async (enlace, titulo, aviso) => {
+it('B-05: Nuevo cliente abre el formulario de alta y el enlace Clientes vuelve al listado', async () => {
   const usuario = userEvent.setup();
   montar(true);
-  await usuario.click(await screen.findByRole('link', { name: enlace }));
+  await usuario.click(await screen.findByRole('link', { name: 'Nuevo cliente' }));
 
-  const encabezado = await screen.findByRole('heading', { level: 1, name: titulo });
+  const encabezado = await screen.findByRole('heading', { level: 1, name: 'Nuevo cliente' });
   expect(encabezado).toHaveFocus();
-  expect(screen.getByText(aviso)).toBeInTheDocument();
+  expect(screen.getByRole('form', { name: 'Nuevo cliente' })).toBeInTheDocument();
+
+  await usuario.click(
+    within(screen.getByRole('region', { name: 'Alta de cliente' })).getByRole('link', {
+      name: 'Clientes',
+    }),
+  );
+  expect(await screen.findByRole('heading', { level: 1, name: 'Clientes' })).toBeInTheDocument();
+  expect(await screen.findByText('2 clientes')).toBeInTheDocument();
+});
+
+it('permite volver al listado desde el destino pendiente de la ficha', async () => {
+  const usuario = userEvent.setup();
+  montar(true);
+  await usuario.click(await screen.findByRole('link', { name: 'Juan Carlos Pérez' }));
+
+  const encabezado = await screen.findByRole('heading', { level: 1, name: 'Ficha de cliente' });
+  expect(encabezado).toHaveFocus();
+  expect(screen.getByText('La ficha de cliente todavía no está disponible.')).toBeInTheDocument();
 
   await usuario.click(screen.getByRole('link', { name: 'Volver al listado' }));
   expect(await screen.findByRole('heading', { level: 1, name: 'Clientes' })).toBeInTheDocument();
