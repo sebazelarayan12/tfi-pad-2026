@@ -204,8 +204,14 @@ public sealed class ClienteService(
 
         if (!string.IsNullOrWhiteSpace(filtro.Apellido))
         {
-            var apellido = filtro.Apellido.Trim().ToLowerInvariant();
-            consulta = consulta.Where(c => c.Apellido.ToLower().Contains(apellido));
+            // Both sides drop the acute accent and the diaeresis (á é í ó ú ü) so "perez" finds "Pérez".
+            // The ñ is a different letter in Spanish and is kept. The REPLACE chain translates on SQL Server and
+            // SQLite, so no provider-specific collation is needed and the schema does not change.
+            var apellido = SinTildes(filtro.Apellido.Trim().ToLowerInvariant());
+            consulta = consulta.Where(c => c.Apellido.ToLower()
+                .Replace("á", "a").Replace("é", "e").Replace("í", "i")
+                .Replace("ó", "o").Replace("ú", "u").Replace("ü", "u")
+                .Contains(apellido));
         }
 
         var total = consulta.Count();
@@ -360,6 +366,11 @@ public sealed class ClienteService(
     }
 
     private static bool EsDniValido(string dni) => dni.Length == 8 && dni.All(char.IsAsciiDigit);
+
+    /// <summary>Lowercase text without acute accents or diaeresis; must match the REPLACE chain in <see cref="ListarAsync"/>.</summary>
+    private static string SinTildes(string textoEnMinusculas) => textoEnMinusculas
+        .Replace('á', 'a').Replace('é', 'e').Replace('í', 'i')
+        .Replace('ó', 'o').Replace('ú', 'u').Replace('ü', 'u');
 
     private static void AplicarDatosRenaper(Cliente cliente, PersonaRenaper persona)
     {

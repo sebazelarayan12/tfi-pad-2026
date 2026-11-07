@@ -77,14 +77,14 @@ public sealed class ClientesControllerConsultaTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_FiltraPorApellidoParcialSinDistinguirMayusculas()
+    public async Task Get_FiltraPorApellidoParcialSinDistinguirMayusculasNiTildes()
     {
         await AgregarClienteAsync("Peralta");
         await using var factory = CrearFactory();
         var empleado = factory.CrearCliente(Roles.Empleado);
 
         var pagina = await empleado.GetFromJsonAsync<PaginaResponse<ClienteResumenResponse>>(
-            $"{RutaClientes}?apellido={Uri.EscapeDataString("pér")}", Json);
+            $"{RutaClientes}?apellido={Uri.EscapeDataString("PEREZ")}", Json);
 
         Assert.NotNull(pagina);
         var item = Assert.Single(pagina.Items);
