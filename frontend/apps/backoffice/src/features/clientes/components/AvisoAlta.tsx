@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { toast } from '@nexa/ui';
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+const ID_AVISO = 'aviso-alta-cliente';
 
 function leerAviso(state: unknown) {
   if (typeof state !== 'object' || state === null || !('aviso' in state)) return null;
@@ -16,38 +19,25 @@ function leerAviso(state: unknown) {
   return { tipo: aviso.tipo, texto: aviso.texto };
 }
 
-/** Se captura al entrar: un cambio de ubicación descarta el aviso y evita repetirlo al paginar. */
+/**
+ * Muestra con toast (FC19) el aviso que llega por `location.state.aviso` y lo consume del
+ * historial: paginar, salir de la pantalla y volver Atrás no lo repiten.
+ */
 export function AvisoAlta() {
   const ubicacion = useLocation();
   const navegar = useNavigate();
-  const ruta = `${ubicacion.pathname}${ubicacion.search}${ubicacion.hash}`;
-  const [entrada, setEntrada] = useState(() => ({
-    ruta,
-    aviso: leerAviso(ubicacion.state),
-  }));
   useEffect(() => {
-    if (!leerAviso(ubicacion.state)) return;
+    const aviso = leerAviso(ubicacion.state);
+    if (!aviso) return;
+    // El id evita el toast doble del doble efecto de StrictMode.
+    if (aviso.tipo === 'exito') toast.success(aviso.texto, { id: ID_AVISO });
+    else toast.warning(aviso.texto, { id: ID_AVISO });
     const estado: Record<string, unknown> = { ...ubicacion.state };
     delete estado.aviso;
-    // Se consume el aviso del historial: salir de la pantalla y volver tampoco lo repite.
     void navegar(
       { pathname: ubicacion.pathname, search: ubicacion.search, hash: ubicacion.hash },
       { replace: true, state: estado, preventScrollReset: true },
     );
   }, [ubicacion, navegar]);
-  // Al cambiar la entrada se descarta el aviso; volver Atrás no lo resucita.
-  if (entrada.ruta !== ruta) {
-    setEntrada({ ruta, aviso: null });
-    return null;
-  }
-  if (!entrada.aviso) return null;
-  const clases =
-    entrada.aviso.tipo === 'exito'
-      ? 'bg-status-vigente-bg text-status-vigente-text'
-      : 'bg-status-pendiente-bg text-status-pendiente-text';
-  return (
-    <div role="alert" className={`rounded-card px-sp-16 py-sp-12 text-body-sm ${clases}`}>
-      {entrada.aviso.texto}
-    </div>
-  );
+  return null;
 }

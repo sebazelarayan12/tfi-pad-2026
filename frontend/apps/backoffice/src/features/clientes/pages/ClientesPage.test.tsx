@@ -1,6 +1,7 @@
 import { ApiClientProvider, createApiClient, type ClienteResumenResponse } from '@nexa/api';
 import { servidorMock } from '@nexa/api/mocks/server';
 import { clientesFixture } from '@nexa/api/mocks/fixtures/clientes';
+import { Toaster } from '@nexa/ui';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -68,6 +69,7 @@ function montar(entrada = '/clientes', state?: unknown) {
   const vista = render(
     <ApiClientProvider client={cliente}>
       <QueryClientProvider client={queryClient}>
+        <Toaster />
         <RouterProvider router={router} />
       </QueryClientProvider>
     </ApiClientProvider>,
@@ -210,17 +212,18 @@ describe('ClientesPage', () => {
     await screen.findByText('1 cliente');
   });
   it.each(['exito', 'advertencia'])(
-    'aviso %s aparece al entrar y no vuelve al paginar o navegar Atrás',
+    'aviso %s sale como toast al entrar y no vuelve al paginar o navegar Atrás',
     async (tipo) => {
       servir();
       const { router } = montar('/clientes', { aviso: { tipo, texto: 'Cliente guardado.' } });
-      expect(screen.getByRole('alert')).toHaveTextContent('Cliente guardado.');
+      expect(await screen.findByText('Cliente guardado.')).toBeInTheDocument();
       await screen.findByText('21 clientes');
       await act(() => router.navigate('/clientes?pagina=2'));
       await screen.findByText('11-20 de 21');
-      expect(screen.queryByRole('alert')).toBeNull();
       await act(() => router.navigate(-1));
-      expect(screen.queryByRole('alert')).toBeNull();
+      await screen.findByText('21 clientes');
+      expect(screen.getAllByText('Cliente guardado.')).toHaveLength(1);
+      expect(router.state.location.state).toEqual({});
     },
   );
   it('ignora avisos malformados y no muestra datos fijos del Figma', async () => {
@@ -228,6 +231,7 @@ describe('ClientesPage', () => {
     montar('/clientes', { aviso: { tipo: 'otro', texto: { dato: 'inválido' } } });
     await screen.findByText('21 clientes');
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/inválido/)).toBeNull();
     expect(screen.queryByText(/Tomás|128 clientes/)).toBeNull();
     expect(screen.queryByText('30.512.468')).toBeNull();
   });
@@ -239,12 +243,12 @@ describe('ClientesPage', () => {
     });
     await screen.findByText('21 clientes');
     expect(router.state.location.state).toEqual({ conservar: true });
-    expect(screen.getByRole('alert')).toHaveTextContent('Cliente guardado.');
+    expect(await screen.findByText('Cliente guardado.')).toBeInTheDocument();
     await act(() => router.navigate(`/clientes/${filas[0]!.id}`));
     await screen.findByRole('heading', { name: 'Ficha de cliente' });
     await act(() => router.navigate(-1));
     await screen.findByText('21 clientes');
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByText('Cliente guardado.')).toHaveLength(1);
   });
   it('nombre enlaza a la ficha y no hay errores de accesibilidad', async () => {
     servir(() => HttpResponse.json({ items: [filas[0]], pagina: 1, tamanoPagina: 10, total: 1 }));
