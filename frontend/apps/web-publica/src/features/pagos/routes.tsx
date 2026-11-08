@@ -1,4 +1,8 @@
 import type { RouteObject } from 'react-router-dom';
 
-// Stub de US-FE-T-17: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+import { MedioDePagoPage } from './pages/MedioDePagoPage';
+
+/** Rutas del feature `pagos` de la web: W4 (W-06). W-08 agrega `/pago/exito`. */
+export const rutas: RouteObject[] = [
+  { path: '/poliza/pagar/medio-de-pago', element: <MedioDePagoPage /> },
+];
