@@ -11,6 +11,9 @@ export const TEXTO_PRIVACIDAD = 'Tus datos viajan cifrados y no se guardan en es
 export const TEXTO_CONSULTAR = 'Consultar';
 export const TEXTO_CONSULTANDO = 'Consultando…';
 
+// El Figma escribe el DNI y el número de póliza en Nexa/Mono 13/18 (nodos I18:108;11:49 e I18:113;11:49).
+const CAMPO_MONO = 'font-mono text-mono';
+
 export interface FormularioConsultaPolizaProps {
   register: UseFormRegister<ConsultaFormValues>;
   errors: FieldErrors<ConsultaFormValues>;
@@ -19,8 +22,8 @@ export interface FormularioConsultaPolizaProps {
 }
 
 /**
- * Presentación de W2 (`W2-consultar-poliza.md` §3.1 y §11): card de 560 px, dos `Input` con
- * label visible, botón full width y fila de privacidad. La validación y la mutación viven en la
+ * Presentación de W2 (`W2-consultar-poliza.md` §3.1 y §11): card de 560 px en desktop (sin card en
+ * mobile, como W2m), dos `Input` con label visible, botón full width y fila de privacidad. La validación y la mutación viven en la
  * página; este componente solo recibe el registro de react-hook-form.
  */
 export function FormularioConsultaPoliza({
@@ -35,14 +38,12 @@ export function FormularioConsultaPoliza({
       autoComplete="off"
       aria-busy={enviando}
       onSubmit={onSubmit}
-      className="flex w-full flex-col gap-sp-20 rounded-card border border-border-hairline bg-surface-panel p-sp-24 md:w-[560px] md:p-sp-40"
+      className="flex w-full flex-col gap-sp-16 md:w-[560px] md:gap-sp-20 md:rounded-card md:border md:border-border-hairline md:bg-surface-panel md:p-sp-40"
     >
-      <div className="flex flex-col gap-sp-8">
-        <h1 className="text-h1 text-text-primary">Consultá tu póliza</h1>
-        <p className="text-body text-text-secondary">
-          Ingresá tu DNI y el número de póliza para ver su estado y pagar sus cuotas.
-        </p>
-      </div>
+      <h1 className="text-h1 text-text-primary">Consultá tu póliza</h1>
+      <p className="text-body text-text-secondary">
+        Ingresá tu DNI y el número de póliza para ver su estado y pagar sus cuotas.
+      </p>
 
       <Input
         label="DNI"
@@ -50,6 +51,7 @@ export function FormularioConsultaPoliza({
         inputMode="numeric"
         autoComplete="off"
         maxLength={8}
+        className={CAMPO_MONO}
         helper={errors.dni?.message ?? AYUDA_DNI}
         error={errors.dni !== undefined}
         {...register('dni')}
@@ -59,6 +61,7 @@ export function FormularioConsultaPoliza({
         label="Número de póliza"
         placeholder="POL-0000042"
         autoComplete="off"
+        className={CAMPO_MONO}
         helper={errors.numeroPoliza?.message ?? AYUDA_NUMERO_POLIZA}
         error={errors.numeroPoliza !== undefined}
         {...register('numeroPoliza')}

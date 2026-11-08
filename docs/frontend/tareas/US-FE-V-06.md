@@ -100,7 +100,37 @@ La persona responsable abre la app con MSW, recorre cada pantalla del grupo con 
 - **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
 - **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+Decisiones DP-1, DP-2 y DP-3: se aplican los tres defaults, elegidos por Martin el 2026-11-08 (regla 12).
+
+### 13.1 Diferencias corregidas
+
+| Pantalla | Diferencia | Corrección |
+|---|---|---|
+| W1, W2 | El `PublicLayout` sumaba 24 px entre la nav, el contenido y el pie; el Figma no tiene esa separación (en W1 el hero arranca a 48 px de la nav por su propio padding). | Sin `gap` en el layout (T-18). |
+| W2 | El Shell medía lo que el contenido; en el Figma ocupa el alto de la ventana menos el margen (976 px en 1024) y el pie queda abajo. | `Shell` acepta `className` (T-07) y el layout lo estira con `min-h-dvh`; `main` crece. |
+| W2 | La card y las alertas quedaban alineadas arriba; el Figma las centra en vertical en el cuerpo. | `md:flex-1 md:items-center` en la página (W-03). |
+| W2, W2m | Título y bajada iban juntos con 8 px; en el Figma son hijos directos de la card con su gap (20 px desktop, 16 px mobile). | Sin grupo intermedio (W-03). |
+| W2, W2m | DNI y número de póliza se escribían en Plus Jakarta 14/20; el Figma usa Nexa/Mono 13/18. | `font-mono text-mono` en los dos `Input` (W-03). |
+| W2m | En mobile el formulario iba dentro de una card con borde; W2m no tiene card. | Card solo desde `md` (W-03). |
+| W2, W2m | Las alertas de 404 y 429 usaban Body-sm 13/18 y radio 16; el Figma usa 14/20 y radio 12. | `text-body` y `rounded-input` (W-03). |
+| W1 | El chip "Valores de referencia" quedaba arriba; en el Figma está centrado en vertical con el título y el subtítulo. | `md:items-center` en el encabezado de Planes (W-01). |
+
+### 13.2 Excepciones aceptadas (no se corrigen)
+
+| Pantalla | Diferencia | Motivo |
+|---|---|---|
+| W1 | Importes RC $ 12.000 / TR $ 30.000 en lugar de $ 10.000 / $ 27.500. | DP-1: manda el back (`GET /api/planes`); D-07 y DN-W1-5 cerrados por Martin el 2026-11-08. |
+| W1 | La tabla de planes no tiene columna "Cobertura" ni filas con tildes; las tres columnas de plan reparten el ancho. | D-08: la matriz de coberturas está fuera de alcance (W-02 §13). |
+| W1 | La tarjeta "Efectivo con Pago Fácil" no muestra "Ver ejemplo de cupón". | DN-W1-1 (RV-D21). |
+| W1 | Marcador "Foto: auto y moto" en lugar de una foto. | DN-W1-2: diseño no entregó la imagen. |
+| W1 | La bajada del hero va en Body 14/20; el Figma la dibuja en Regular 16/20. | El Figma no le asigna un estilo con nombre (W1 §3) y el design system no tiene un token 16/20 regular; no se agregan valores sueltos. Se avisa a diseño. |
+| W2, W2m | No se muestran las etiquetas "Estado: póliza no encontrada" / "Estado: demasiados intentos" ni las dos alertas a la vez. | DN-W3-2: son anotaciones de diseño; la app muestra solo la alerta del error que ocurrió. |
+| W2m | La nav y el pie mobile no siguen W2m (márgenes, alto de la nav, pie sin fondo y apilado). | DP-3: los frames mobile del Figma no coinciden entre sí. W2m: margen 16, nav de 72 px con padding 20 y pie sin fondo (label primario, valor Body-sm secundario). W3m: margen 12, nav de 60 px con padding 16 y pie con fondo `surface-subtle` (label secundario, valor Body primario). No se inventa uno; se reporta a diseño y se registra en `pantallas/W2-consultar-poliza.md` §13 en un PR `docs/` aparte. |
+| W2 | En el Figma la nav de W2 arranca pegada al borde superior del Shell (sin padding arriba) y en W1 a 24 px. | DP-3: inconsistencia del Figma. La app usa el mismo padding en todas las pantallas (el de W1). |
+| W1 mobile | No hay frame mobile de W1. | W1 §11; se verificó solo que no haya scroll horizontal y que quede en una columna. |
+| Todas | Contrastes ya registrados en `design-system.md` §9. | DP-2 (FB7): no se cambian. |
+
+Efecto fuera del grupo: sacar el `gap` del layout acerca 24 px el contenido de W3 a W7 a la nav; esas pantallas se verifican en US-FE-V-07.
 
 ## 14. Riesgos y errores comunes
 
