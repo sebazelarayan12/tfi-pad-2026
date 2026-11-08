@@ -240,6 +240,7 @@ Cada punto es una pregunta para el equipo o para el back. No resolver por suposi
 10. **Datos de contacto del footer.** Dice "A confirmar" en todos los campos y "Lunes a viernes, horario a confirmar". Son textos provisionales que el Figma y `AnalisisBack.md` §7 dejan como texto fijo del front. ¿Cuál es el dato final? NO DEFINIDO.
 11. **Copy de la marca.** "Nexa Seguros" aparece como marca. Confirmar que es el nombre de la empresa en la versión final.
 12. **Enlaces de "Cómo pagar" con cuenta.** "Pagá con tarjeta o dinero en cuenta" menciona "dinero en cuenta", que no aparece en el back. Es el medio que ofrece la pasarela. Confirmar con el equipo de pagos (CU15). NO DEFINIDO.
+13. **Bajada del hero sin estilo de texto** (detectado en US-FE-V-06). El Figma la dibuja en Plus Jakarta Sans Regular 16/20 sin estilo con nombre, y el design system no tiene un token 16/20 regular. La app usa `Nexa/Body` 14/20 (el token más cercano) para no agregar valores sueltos. Pregunta a diseño: ¿se crea un estilo (por ejemplo `Nexa/Lead` 16/20) o la bajada pasa a `Nexa/Body`? NO DEFINIDO.
 
 ## 14. Referencia Figma
 
