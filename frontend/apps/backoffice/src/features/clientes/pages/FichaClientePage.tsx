@@ -8,6 +8,7 @@ import { usePolizasDelCliente } from '../api/usePolizasDelCliente';
 import { useProximasCuotas } from '../api/useProximasCuotas';
 import { useVehiculosDelCliente } from '../api/useVehiculosDelCliente';
 import { AccionesRapidas } from '../components/AccionesRapidas';
+import { AccionesFichaCliente } from '../components/AccionesFichaCliente';
 import { ClienteEncabezado } from '../components/ClienteEncabezado';
 import { ClienteTabs } from '../components/ClienteTabs';
 import { DatosClienteLectura } from '../components/DatosClienteLectura';
@@ -52,17 +53,7 @@ function EsqueletoFicha() {
   );
 }
 
-export interface FichaClientePageProps {
-  /** Los provee B-08; sin ellos los botones no se muestran. */
-  onEditar?: () => void;
-  onDarDeBaja?: () => void;
-}
-
-function FichaCargada({
-  cliente,
-  onEditar,
-  onDarDeBaja,
-}: FichaClientePageProps & { cliente: ClienteResponse }) {
+function FichaCargada({ cliente }: { cliente: ClienteResponse }) {
   const vehiculos = useVehiculosDelCliente(cliente.id, true);
   const polizas = usePolizasDelCliente(cliente.id, true);
   const proximos = useProximasCuotas(polizas.data?.items ?? []);
@@ -73,20 +64,13 @@ function FichaCargada({
       ? 'listo'
       : 'cargando';
 
-  const acciones =
-    onEditar || onDarDeBaja ? (
-      <>
-        {onEditar ? <Button label="Editar" variant="secondary" onClick={onEditar} /> : null}
-        {onDarDeBaja ? (
-          <Button label="Dar de baja" variant="secondary" onClick={onDarDeBaja} />
-        ) : null}
-      </>
-    ) : undefined;
-
   return (
     <div className="flex flex-col gap-sp-32 xl:flex-row xl:items-start">
       <div className="flex min-w-0 flex-1 flex-col gap-sp-24">
-        <ClienteEncabezado cliente={cliente} acciones={acciones} />
+        <ClienteEncabezado
+          cliente={cliente}
+          acciones={<AccionesFichaCliente cliente={cliente} />}
+        />
         <ClienteTabs
           vehiculos={
             <>
@@ -120,7 +104,7 @@ function FichaCargada({
 }
 
 /** `/clientes/:clienteId`: ficha con encabezado, pestañas, vehículos, pólizas y rail (B5). */
-export function FichaClientePage({ onEditar, onDarDeBaja }: FichaClientePageProps) {
+export function FichaClientePage() {
   const { clienteId = '' } = useParams();
   const cliente = useCliente(clienteId);
   const datos = cliente.data;
@@ -140,9 +124,7 @@ export function FichaClientePage({ onEditar, onDarDeBaja }: FichaClientePageProp
           <Button label="Reintentar" variant="secondary" onClick={() => void cliente.refetch()} />
         </div>
       ) : null}
-      {datos?.activo ? (
-        <FichaCargada cliente={datos} onEditar={onEditar} onDarDeBaja={onDarDeBaja} />
-      ) : null}
+      {!noEncontrado && datos?.activo ? <FichaCargada key={datos.id} cliente={datos} /> : null}
     </section>
   );
 }

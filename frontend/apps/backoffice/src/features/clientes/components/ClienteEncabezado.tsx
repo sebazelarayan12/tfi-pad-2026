@@ -1,6 +1,7 @@
 import { formatearDni, type ClienteResponse } from '@nexa/api';
 import { EstadoBadge } from '@nexa/ui';
 import type { ReactNode } from 'react';
+import { ReintentarRenaperBoton } from './ReintentarRenaperBoton';
 
 /** Iniciales de nombre y apellido (B5 §9): se derivan en el front, no vienen del back. */
 function iniciales(nombre: string, apellido: string): string {
@@ -41,9 +42,12 @@ export function ClienteEncabezado({ cliente, acciones }: ClienteEncabezadoProps)
             Renaper
             <EstadoBadge estado={cliente.validadoRenaper ? 'Validado' : 'Pendiente'} />
           </p>
+          {cliente.validadoRenaper === false ? (
+            <ReintentarRenaperBoton clienteId={cliente.id} />
+          ) : null}
         </div>
       </div>
-      {acciones ? <div className="flex gap-sp-12">{acciones}</div> : null}
+      {acciones ? <div className="flex flex-wrap gap-sp-12">{acciones}</div> : null}
     </header>
   );
 }
