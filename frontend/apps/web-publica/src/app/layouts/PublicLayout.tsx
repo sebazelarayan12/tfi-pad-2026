@@ -12,20 +12,24 @@ const LINKS_PUBLICOS = [
 const CTA_LABEL = 'Consultar póliza';
 const CTA_HREF = '/consultar-poliza';
 
-/** Marco de la web pública: Backdrop, Shell, nav, contenido de la ruta y pie. */
+/**
+ * Marco de la web pública: Backdrop, Shell, nav, contenido de la ruta y pie.
+ * Como en el Figma (W1 18:201, W2 18:90), el Shell ocupa al menos el alto de la ventana, el
+ * contenido crece entre la nav y el pie, y no hay separación extra entre ellos (V-06).
+ */
 export function PublicLayout() {
   return (
     <Backdrop>
-      <div className="p-sp-16 md:p-sp-24">
-        <Shell>
-          <div className="flex flex-col gap-sp-24 p-sp-16 md:p-sp-24">
+      <div className="flex min-h-dvh flex-col p-sp-16 md:p-sp-24">
+        <Shell className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col p-sp-16 md:p-sp-24">
             <PublicNav
               links={LINKS_PUBLICOS}
               ctaLabel={CTA_LABEL}
               ctaHref={CTA_HREF}
               renderLink={renderLinkRouter}
             />
-            <main id="contenido">
+            <main id="contenido" className="flex flex-1 flex-col">
               <Outlet />
             </main>
             <PublicFooter id="contacto" contacto={CONTACTO_PUBLICO} copyright={COPYRIGHT_PUBLICO} />

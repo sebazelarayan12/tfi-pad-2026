@@ -103,7 +103,7 @@ export function ConsultarPolizaPage() {
   };
 
   return (
-    <div className="flex flex-col gap-sp-24 py-sp-24 md:flex-row md:items-start md:justify-center md:gap-20 md:py-sp-40">
+    <div className="flex flex-col gap-sp-24 py-sp-24 md:flex-1 md:flex-row md:items-center md:justify-center md:gap-20 md:py-sp-40">
       <FormularioConsultaPoliza
         register={register}
         errors={errors}
