@@ -110,8 +110,11 @@ export interface PagoPublicoResponse {
 }
 
 export interface PublicoFacturaRequest {
-  /** `^\d{8}$`. */
-  dni: string;
+  /**
+   * `^\d{8}$`. Opcional por DB-W8-1 opción A (RV-D17): W-08 manda solo `numeroPago` porque la web
+   * no guarda el DNI (FC12). El back hoy lo exige; PB-01 le pide aceptar el pedido sin DNI.
+   */
+  dni?: string;
   /** Máximo 20 caracteres. */
   numeroPago: string;
 }
@@ -134,8 +137,11 @@ export interface CuponPublicoRespuestaMock extends CuponPagoFacilResponse {
 
 /** MOCK (PB-01): `POST /api/publico/pagos/estado` no existe en el back. */
 export interface ConsultaEstadoPagoRequest {
-  /** Viaja en el cuerpo, nunca en la URL. */
-  dni: string;
+  /**
+   * Viaja en el cuerpo, nunca en la URL. Opcional por DB-W8-1 opción A (RV-D17): W-08 manda solo
+   * `numeroPago` (PB-01).
+   */
+  dni?: string;
   numeroPago: string;
 }
 
