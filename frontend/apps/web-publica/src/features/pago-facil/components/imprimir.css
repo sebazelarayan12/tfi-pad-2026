@@ -1,0 +1,8 @@
+/* W-07 §6 paso 6: al imprimir W5 solo quedan los cupones. Se limita a la página del cupón con
+   :has() para no ocultar la barra ni el pie al imprimir otras pantallas de la web. */
+@media print {
+  body:has([data-pagina='cupon-pago-facil']) header,
+  body:has([data-pagina='cupon-pago-facil']) footer {
+    display: none !important;
+  }
+}
