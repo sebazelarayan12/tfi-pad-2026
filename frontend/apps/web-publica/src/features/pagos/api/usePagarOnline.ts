@@ -1,5 +1,5 @@
-import { crearPagoPublico, useApiClient, type PagoPublicoRequest } from '@nexa/api';
-import { useMutation } from '@tanstack/react-query';
+import { crearPagoPublico, publicoKeys, useApiClient, type PagoPublicoRequest } from '@nexa/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
 import { guardarNumeroPagoEnCurso } from './almacenamientoPago';
@@ -12,12 +12,16 @@ import { redirigirA } from './redireccion';
  */
 export function usePagarOnline() {
   const cliente = useApiClient();
+  const queryClient = useQueryClient();
   const enCurso = useRef(false);
 
   const mutacion = useMutation({
     mutationFn: (body: PagoPublicoRequest) => crearPagoPublico(cliente, body),
-    onSuccess: (pago) => {
+    onSuccess: async (pago) => {
       guardarNumeroPagoEnCurso(pago.numeroPago);
+      // Las cuotas elegidas quedan con un pago en curso: si el cliente vuelve con "Atrás", ningún
+      // dato público cacheado (cupón, medios de pago) debe mostrarse como antes del pago.
+      await queryClient.invalidateQueries({ queryKey: publicoKeys.all });
       redirigirA(pago.urlPago);
     },
     // Con éxito el ref queda tomado: el navegador ya está saliendo a la pasarela.

@@ -1,6 +1,7 @@
 import {
   ApiClientProvider,
   createApiClient,
+  publicoKeys,
   type ConsultaPublicaResponse,
   type CuotaPublica,
   type PagoPublicoResponse,
@@ -312,6 +313,19 @@ describe('MedioDePagoPage: envío', () => {
     await waitFor(() => expect(redirigirA).toHaveBeenCalledWith(PAGO_CREADO.urlPago));
     expect(sessionStorage.length).toBe(1);
     expect(sessionStorage.getItem(CLAVE_NUMERO_PAGO)).toBe('PAG-6f1c2a');
+  });
+
+  it('201 invalida la caché pública antes de redirigir', async () => {
+    const invalidar = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+    renderizar();
+
+    await elegirYContinuar('Pasarela A');
+
+    await waitFor(() => expect(redirigirA).toHaveBeenCalled());
+    expect(invalidar).toHaveBeenCalledWith({ queryKey: publicoKeys.all });
+    expect(invalidar.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(redirigirA).mock.invocationCallOrder[0] ?? 0,
+    );
   });
 
   it('el DNI no se guarda en storage', async () => {
