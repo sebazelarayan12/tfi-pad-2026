@@ -1,6 +1,6 @@
 import { crearPagoPublico, publicoKeys, useApiClient, type PagoPublicoRequest } from '@nexa/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { guardarNumeroPagoEnCurso } from './almacenamientoPago';
 import { redirigirA } from './redireccion';
@@ -30,6 +30,19 @@ export function usePagarOnline() {
     },
     retry: 0,
   });
+
+  // Al volver con "Atrás" el navegador puede restaurar la página desde su caché con el estado
+  // anterior (pago enviado, botón deshabilitado): se limpia para poder elegir otro medio.
+  const { reset } = mutacion;
+  useEffect(() => {
+    function alMostrarPagina(evento: PageTransitionEvent) {
+      if (!evento.persisted) return;
+      enCurso.current = false;
+      reset();
+    }
+    window.addEventListener('pageshow', alMostrarPagina);
+    return () => window.removeEventListener('pageshow', alMostrarPagina);
+  }, [reset]);
 
   function pagar(body: PagoPublicoRequest) {
     if (enCurso.current) return;

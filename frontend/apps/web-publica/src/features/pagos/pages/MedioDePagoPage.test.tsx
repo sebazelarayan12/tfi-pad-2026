@@ -10,7 +10,7 @@ import { variantesPublico } from '@nexa/api/mocks/handlers/publico';
 import { servidorMock } from '@nexa/api/mocks/server';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -373,6 +373,33 @@ describe('MedioDePagoPage: envío', () => {
     await waitFor(() => expect(redirigirA).toHaveBeenCalled());
     expect(pagos.cantidad()).toBe(1);
     pagos.soltar();
+  });
+
+  it('al volver desde la pasarela con la página restaurada del caché, se puede elegir de nuevo', async () => {
+    servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
+    renderizar();
+    await elegirYContinuar('Pasarela A');
+    await waitFor(() => expect(botonContinuar()).toBeDisabled());
+
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+
+    await waitFor(() => expect(botonContinuar()).toBeEnabled());
+    for (const radio of screen.getAllByRole('radio')) expect(radio).toBeEnabled();
+  });
+
+  it('un pageshow sin restaurar del caché no cambia el estado de envío', async () => {
+    servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
+    renderizar();
+    await elegirYContinuar('Pasarela A');
+    await waitFor(() => expect(botonContinuar()).toBeDisabled());
+
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    });
+
+    expect(botonContinuar()).toBeDisabled();
   });
 
   it('mientras envía, el botón está deshabilitado y aria-busy', async () => {
