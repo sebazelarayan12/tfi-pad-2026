@@ -15,10 +15,12 @@
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "format:check": "prettier --check .",
+    "e2e": "playwright test",
     "test:contract": "npm run test:contract --workspace=@nexa/api",
     "test:contract:real": "npm run test:contract:real --workspace=@nexa/api"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
