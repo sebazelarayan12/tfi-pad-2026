@@ -152,6 +152,8 @@ Confirmar el resultado con el equipo antes del PR (`docs/workflow.md`, regla 7).
 3. **Credenciales de login para el smoke:** NO DEFINIDO en el back. Default: fixture de MSW de T-11; sin credenciales reales en el repo (RV-D28).
 4. **Inclusión en CI:** NO DEFINIDO. Default (RV-D28): E2E fuera de CI por ahora; no se agrega al job `frontend` en esta tarea; se decide aparte.
 
+Decididas por el usuario el 2026-11-08, antes de implementar (regla 12): se confirmaron los cuatro defaults (Playwright, devDependency con Chromium instalado aparte, fixture de MSW de T-11 sin credenciales reales y E2E fuera de CI).
+
 ## 14. Riesgos y errores comunes
 
 - **Selectores que dependen del texto dinámico:** el H1 de `/inicio` cambia con el nombre. Usar solo el rol y el nivel.
@@ -174,3 +176,7 @@ Confirmar el resultado con el equipo antes del PR (`docs/workflow.md`, regla 7).
 - Resuelto (RV-05): se agrega US-FE-B-01 (el flujo 1 empieza en `/login`). Deps finales: B-01, B-03, T-11, T-31, W-03, W-04 (fila del INDEX).
 - Resuelto (RV-D01 / D-43): el mensaje de login es el del Figma; esta tarea no asserta el texto de error (lo decide US-FE-B-01).
 - Resuelto (RV-53): la fila del INDEX menciona que el smoke usa login (B-01) y que Playwright es excepción de FC17.
+- Desvío al implementar (login): el único usuario que el MSW de login acepta (`cambio.pendiente@example.test`) devuelve `debeCambiarPassword: true` (US-FE-B-26), así que el login no llega a `/inicio` sino a `/cambiar-password`. Decidido por el usuario el 2026-11-08: el spec completa el cambio forzado de contraseña y recién ahí verifica `/inicio`. Usa el fixture `usuarioMockCambioPendiente` y una contraseña nueva ficticia que solo existe en el MSW del navegador. No se agregó un segundo usuario al handler para no tocar `packages/`.
+- Desvío al implementar (consulta): el handler de `POST /api/publico/consulta` devuelve siempre la póliza `POL-0000001`, no la `POL-0000042` de la ficha. El spec consulta y verifica `POL-0000001`.
+- La web pública necesita el arranque de MSW en `main.tsx` (lo agregó US-FE-W-06, #142): sin él el flujo 2 falla con el error de red. T-21 se toma después de ese PR.
+- `outputDir` apunta a `node_modules/.cache` para que las trazas no ensucien git sin tocar `.gitignore` (dueño T-01). Se agregó `e2e/tsconfig.json` para tipar los specs; `npm run typecheck` no lo recorre (solo recorre los workspaces).
