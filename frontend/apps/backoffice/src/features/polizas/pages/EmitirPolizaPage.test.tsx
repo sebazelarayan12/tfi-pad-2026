@@ -16,7 +16,7 @@ const ruta = '/polizas/nueva';
 const apiCotizacion = '*/api/cotizaciones/:id';
 const apiPolizas = '*/api/polizas';
 const planId = 'a1000000-0000-0000-0000-000000000002';
-const polizaId = 'd1000000-0000-0000-0000-000000000011';
+const polizaId = 'd1000000-0000-0000-0000-000000000001';
 const vencida = 'La cotización está vencida (RN06).';
 
 function prepararCotizacion(cambios: Partial<CotizacionDto> = {}) {
@@ -49,12 +49,9 @@ function montar(id = COTIZACION_ID) {
   });
   const api = createApiClient({ baseUrl: 'https://api.test', getToken: () => 'mock' });
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const router = createMemoryRouter(
-    [...rutas, { path: '/polizas/:id', element: <h1>Detalle</h1> }],
-    {
-      initialEntries: [ruta + '?cotizacionId=' + id],
-    },
-  );
+  const router = createMemoryRouter(rutas, {
+    initialEntries: [ruta + '?cotizacionId=' + id],
+  });
   const vista = render(
     <ApiClientProvider client={api}>
       <QueryClientProvider client={cache}>
@@ -110,7 +107,7 @@ it('envía una sola emisión con la vigencia numérica y navega usando el id del
   await usuario.dblClick(botonEmitir());
   expect(botonEmitir()).toBeDisabled();
   expect(screen.getByText('Emitiendo póliza…')).toBeInTheDocument();
-  await screen.findByRole('heading', { name: 'Detalle' });
+  await screen.findByRole('heading', { name: 'POL-0000001' });
   expect(cuerpos).toEqual([{ cotizacionId: COTIZACION_ID, vigenciaMeses: 6 }]);
   expect(router.state.location.pathname).toBe('/polizas/' + polizaId);
   expect(router.state.location.state).toEqual({

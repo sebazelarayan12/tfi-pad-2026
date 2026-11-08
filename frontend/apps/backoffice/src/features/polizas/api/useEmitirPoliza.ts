@@ -8,8 +8,7 @@ export function useEmitirPoliza() {
     mutationFn: (body: EmitirPolizaRequest) => emitirPoliza(api, body),
     retry: 0,
     networkMode: 'always',
-    onSuccess: (poliza) => {
-      cache.setQueryData(polizasKeys.detalle(poliza.id), poliza);
+    onSuccess: () => {
       void cache.invalidateQueries({ queryKey: [...polizasKeys.all, 'lista'] });
     },
   });

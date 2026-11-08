@@ -11,6 +11,7 @@ import {
 } from '@nexa/api/mocks/fixtures/clientes';
 import { VEHICULO_ID } from '@nexa/api/mocks/fixtures/vehiculos';
 import { servidorMock } from '@nexa/api/mocks/server';
+import { Toaster } from '@nexa/ui';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -19,7 +20,7 @@ import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import { FichaClientePage, type FichaClientePageProps } from './FichaClientePage';
+import { FichaClientePage } from './FichaClientePage';
 
 const juan = clientesFixture[0]!.cliente;
 
@@ -35,12 +36,12 @@ const POLIZA: PolizaListItemResponse = {
   estado: ESTADO_POLIZA_NUMERO.Vigente,
 };
 
-function montar(ruta = `/clientes/${CLIENTE_JUAN_ID}`, props: FichaClientePageProps = {}) {
+function montar(ruta = `/clientes/${CLIENTE_JUAN_ID}`) {
   const cliente = createApiClient({ baseUrl: 'https://api.test', getToken: () => 'mock' });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const router = createMemoryRouter(
     [
-      { path: '/clientes/:clienteId', element: <FichaClientePage {...props} /> },
+      { path: '/clientes/:clienteId', element: <FichaClientePage /> },
       { path: '/clientes', element: <h1>Listado</h1> },
     ],
     { initialEntries: [ruta] },
@@ -49,6 +50,7 @@ function montar(ruta = `/clientes/${CLIENTE_JUAN_ID}`, props: FichaClientePagePr
     <ApiClientProvider client={cliente}>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>
     </ApiClientProvider>,
   );
@@ -84,6 +86,278 @@ const regionVehiculos = () => screen.getByRole('region', { name: 'Vehículos del
 const regionPolizas = () => screen.getByRole('region', { name: 'Pólizas del cliente' });
 const esperarFicha = () => screen.findByRole('heading', { level: 1, name: 'Juan Carlos Pérez' });
 
+const endpointCliente = '*/api/clientes/' + CLIENTE_JUAN_ID;
+const problema = (status: number, detail: string) => HttpResponse.json({ detail }, { status });
+
+async function abrirEdicion() {
+  const usuario = userEvent.setup();
+  const vista = montar(`/clientes/${CLIENTE_JUAN_ID}?tab=datos`);
+  await usuario.click(await screen.findByRole('button', { name: 'Editar' }));
+  const dialogo = screen.getByRole('dialog', { name: 'Editar contacto y domicilio' });
+  return { ...vista, usuario, dialogo };
+}
+
+async function abrirBaja() {
+  const usuario = userEvent.setup();
+  const vista = montar();
+  const boton = await screen.findByRole('button', { name: 'Dar de baja' });
+  await usuario.click(boton);
+  const dialogo = screen.getByRole('alertdialog', { name: '¿Dar de baja a Juan Carlos Pérez?' });
+  return { ...vista, usuario, dialogo, boton };
+}
+
+describe('B-08 · edición de contacto y domicilio', () => {
+  it('precarga los siete campos, deja afuera la identidad y pasa axe', async () => {
+    const { dialogo, usuario } = await abrirEdicion();
+    const dentro = within(dialogo);
+    for (const [etiqueta, valor] of [
+      ['Email', juan.email],
+      ['Teléfono', juan.telefono ?? ''],
+      ['Calle', juan.calle],
+      ['Número', juan.numero],
+      ['Localidad', juan.localidad],
+      ['Provincia', juan.provincia],
+      ['Código postal', juan.codigoPostal],
+    ]) {
+      expect(dentro.getByLabelText(etiqueta)).toHaveValue(valor);
+    }
+    expect(dentro.queryByLabelText(/DNI|Nombre|Apellido|CUIL|Nacimiento|Sexo/i)).toBeNull();
+    expect(dentro.getByLabelText('Email')).toHaveFocus();
+    await expectSinViolacionesA11y(dialogo);
+    await usuario.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'Editar' })).toHaveFocus();
+  });
+
+  it.each([
+    ['Email', 'incorrecto', 'El email no tiene un formato válido.'],
+    ['Código postal', '12345678901', 'Usá hasta 10 caracteres.'],
+  ])('valida %s antes de enviar', async (campo, valor, mensaje) => {
+    let pedidos = 0;
+    servidorMock.use(
+      http.put(endpointCliente, () => {
+        pedidos++;
+        return HttpResponse.json(juan);
+      }),
+    );
+    const { dialogo, usuario } = await abrirEdicion();
+    const dentro = within(dialogo);
+    const control = dentro.getByLabelText(campo);
+    await usuario.clear(control);
+    await usuario.type(control, valor);
+    await usuario.click(dentro.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await dentro.findByText(mensaje)).toBeInTheDocument();
+    expect(control).toHaveAttribute('aria-invalid', 'true');
+    expect(pedidos).toBe(0);
+  });
+
+  it('envía exactamente siete campos una vez y actualiza la ficha al guardar', async () => {
+    let actual = juan;
+    const cuerpos: unknown[] = [];
+    let responder!: () => void;
+    const espera = new Promise<void>((resolver) => {
+      responder = resolver;
+    });
+    servidorMock.use(
+      http.get(endpointCliente, () => HttpResponse.json(actual)),
+      http.put(endpointCliente, async ({ request }) => {
+        cuerpos.push(await request.json());
+        await espera;
+        actual = { ...juan, telefono: '1133334444' };
+        return HttpResponse.json(actual);
+      }),
+    );
+    const { dialogo, usuario } = await abrirEdicion();
+    const dentro = within(dialogo);
+    const telefono = dentro.getByLabelText('Teléfono');
+    await usuario.clear(telefono);
+    await usuario.type(telefono, '1133334444');
+    const guardar = dentro.getByRole('button', { name: 'Guardar cambios' });
+    await usuario.dblClick(guardar);
+    try {
+      expect(guardar).toHaveAttribute('aria-busy', 'true');
+      expect(telefono).toBeDisabled();
+      await usuario.keyboard('{Escape}');
+      expect(dialogo).toBeInTheDocument();
+      await waitFor(() =>
+        expect(cuerpos).toEqual([
+          {
+            email: juan.email,
+            telefono: '1133334444',
+            calle: juan.calle,
+            numero: juan.numero,
+            localidad: juan.localidad,
+            provincia: juan.provincia,
+            codigoPostal: juan.codigoPostal,
+          },
+        ]),
+      );
+    } finally {
+      responder();
+    }
+    expect(await screen.findByText('Datos actualizados.')).toBeInTheDocument();
+    expect(screen.getByText('1133334444')).toBeInTheDocument();
+    expect(dialogo).not.toBeInTheDocument();
+  });
+
+  it('muestra el detalle del 400 sin prefijo ni campo marcado', async () => {
+    servidorMock.use(
+      http.put(endpointCliente, () => problema(400, 'RN01: El email ya está en uso.')),
+    );
+    const { dialogo, usuario } = await abrirEdicion();
+    const dentro = within(dialogo);
+    await usuario.click(dentro.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await dentro.findByRole('alert')).toHaveTextContent(/^El email ya está en uso\.$/);
+    expect(dentro.getByLabelText('Email')).toHaveValue(juan.email);
+    expect(dentro.getByLabelText('Email')).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('vuelve a consultar el detalle si la respuesta del PUT es parcial', async () => {
+    let actual = juan;
+    servidorMock.use(
+      http.get(endpointCliente, () => HttpResponse.json(actual)),
+      http.put(endpointCliente, () => {
+        actual = { ...juan, telefono: '1133334444' };
+        return HttpResponse.json({ id: juan.id });
+      }),
+    );
+    const { dialogo, usuario } = await abrirEdicion();
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByText('1133334444')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Juan Carlos Pérez' })).toBeInTheDocument();
+    expect(dialogo).not.toBeInTheDocument();
+  });
+
+  it('cierra la edición si el cliente dejó de existir', async () => {
+    servidorMock.use(http.put(endpointCliente, () => problema(404, 'Ya no existe.')));
+    const { dialogo, usuario } = await abrirEdicion();
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByText('Cliente no encontrado.')).toBeInTheDocument();
+    expect(dialogo).not.toBeInTheDocument();
+  });
+});
+
+describe('B-08 · baja', () => {
+  it('enfoca Cancelar y Escape devuelve el foco sin enviar', async () => {
+    let pedidos = 0;
+    servidorMock.use(
+      http.delete(endpointCliente, () => {
+        pedidos++;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { dialogo, usuario, boton } = await abrirBaja();
+    expect(within(dialogo).getByRole('button', { name: 'Cancelar' })).toHaveFocus();
+    await expectSinViolacionesA11y(dialogo);
+    await usuario.keyboard('{Escape}');
+    expect(dialogo).not.toBeInTheDocument();
+    expect(boton).toHaveFocus();
+    expect(pedidos).toBe(0);
+  });
+
+  it.each([
+    [204, 'exito', 'Cliente dado de baja.'],
+    [404, 'advertencia', 'Cliente no encontrado.'],
+  ])('con %s vuelve al listado con aviso y un solo DELETE', async (status, tipo, texto) => {
+    let pedidos = 0;
+    servidorMock.use(
+      http.delete(endpointCliente, () => {
+        pedidos++;
+        return status === 204 ? new HttpResponse(null, { status }) : problema(status, texto);
+      }),
+    );
+    const { dialogo, usuario, router } = await abrirBaja();
+    await usuario.dblClick(within(dialogo).getByRole('button', { name: 'Dar de baja' }));
+    await screen.findByRole('heading', { name: 'Listado' });
+    expect(router.state.location.state).toEqual({ aviso: { tipo, texto } });
+    expect(pedidos).toBe(1);
+  });
+
+  it.each([
+    [400, 'El cliente tiene una póliza activa.'],
+    [500, 'No pudimos dar de baja al cliente. Probá de nuevo.'],
+    [0, 'No pudimos dar de baja al cliente. Probá de nuevo.'],
+  ])('con error %s muestra el mensaje en el diálogo sin reintentar', async (status, texto) => {
+    let pedidos = 0;
+    servidorMock.use(
+      http.delete(endpointCliente, () => {
+        pedidos++;
+        return status
+          ? problema(status, 'RN15: El cliente tiene una póliza activa.')
+          : HttpResponse.error();
+      }),
+    );
+    const { dialogo, usuario } = await abrirBaja();
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Dar de baja' }));
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent(texto);
+    expect(pedidos).toBe(1);
+  });
+});
+
+describe('B-08 · reintento de Renaper', () => {
+  const endpoint = endpointCliente + '/validar-renaper';
+
+  function clientePendiente() {
+    servidorMock.use(
+      http.get(endpointCliente, () =>
+        HttpResponse.json({ ...juan, validadoRenaper: false, fechaValidacionRenaper: null }),
+      ),
+    );
+  }
+
+  it('ofrece el botón solo si el cliente está pendiente y actualiza el badge al validar', async () => {
+    clientePendiente();
+    let responder!: () => void;
+    const espera = new Promise<void>((resolver) => {
+      responder = resolver;
+    });
+    servidorMock.use(
+      http.post(endpoint, async () => {
+        await espera;
+        return HttpResponse.json({ ...juan, validadoRenaper: true });
+      }),
+    );
+    const usuario = userEvent.setup();
+    montar();
+    const boton = await screen.findByRole('button', { name: 'Validar en Renaper' });
+    await usuario.click(boton);
+    try {
+      expect(boton).toBeDisabled();
+      expect(boton).toHaveAttribute('aria-busy', 'true');
+    } finally {
+      responder();
+    }
+    expect(await screen.findByText('Cliente validado en Renaper.')).toBeInTheDocument();
+    const renaper = screen.getByText('Renaper').closest('p')!;
+    expect(within(renaper).getByText('Validado')).toBeInTheDocument();
+    expect(boton).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [400, 'La persona no figura en Renaper.'],
+    [404, 'Cliente no encontrado.'],
+    [502, 'Renaper no responde. Probá de nuevo más tarde.'],
+    [0, 'Renaper no responde. Probá de nuevo más tarde.'],
+  ])('con error %s muestra el mensaje y permite otro intento manual', async (status, texto) => {
+    clientePendiente();
+    let pedidos = 0;
+    servidorMock.use(
+      http.post(endpoint, () => {
+        pedidos++;
+        return status
+          ? problema(status, 'RN02: La persona no figura en Renaper.')
+          : HttpResponse.error();
+      }),
+    );
+    const usuario = userEvent.setup();
+    montar();
+    const boton = await screen.findByRole('button', { name: 'Validar en Renaper' });
+    await usuario.click(boton);
+    expect(await screen.findByText(texto)).toBeInTheDocument();
+    expect(boton).toBeEnabled();
+    expect(pedidos).toBe(1);
+  });
+});
+
 describe('FichaClientePage: encabezado', () => {
   it('muestra el nombre como H1, el DNI con puntos y el CUIL tal cual', async () => {
     montar();
@@ -103,6 +377,7 @@ describe('FichaClientePage: encabezado', () => {
     await esperarFicha();
     const renaper = screen.getByText('Renaper').closest('p')!;
     expect(within(renaper).getByText('Validado')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Validar en Renaper' })).not.toBeInTheDocument();
   });
 
   it('muestra el badge Pendiente si no está validado', async () => {
@@ -117,18 +392,8 @@ describe('FichaClientePage: encabezado', () => {
     expect(within(renaper).getByText('Pendiente')).toBeInTheDocument();
   });
 
-  it('no muestra Editar ni Dar de baja sin los callbacks de B-08', async () => {
+  it('ofrece Editar y Dar de baja en la ficha cargada', async () => {
     montar();
-    await esperarFicha();
-    expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Dar de baja' })).toBeNull();
-  });
-
-  it('con los callbacks de B-08 muestra los botones', async () => {
-    montar(`/clientes/${CLIENTE_JUAN_ID}`, {
-      onEditar: () => undefined,
-      onDarDeBaja: () => undefined,
-    });
     await esperarFicha();
     expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Dar de baja' })).toBeInTheDocument();
