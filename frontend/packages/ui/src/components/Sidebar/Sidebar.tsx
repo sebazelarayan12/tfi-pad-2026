@@ -89,7 +89,7 @@ export function Sidebar({ grupos, user, onSearch, menuUsuario }: SidebarProps) {
           <span title={user.name} className="truncate text-body-sm text-text-primary">
             {user.name}
           </span>
-          <span className="text-caption text-text-tertiary">{user.role}</span>
+          <span className="text-caption text-text-secondary">{user.role}</span>
         </div>
         {menuUsuario ?? null}
       </div>

@@ -36,7 +36,7 @@ export function FieldFrame({ id, label, helper, state, children }: FieldFramePro
       {helper ? (
         <p
           id={helperId}
-          className={`text-label ${state === 'error' ? 'text-status-cancelada-text' : 'text-text-tertiary'}`}
+          className={`text-label ${state === 'error' ? 'text-status-cancelada-text' : 'text-text-secondary'}`}
         >
           {helper}
         </p>
@@ -57,7 +57,7 @@ export function resolveFieldState(
 }
 
 const CAMPO_BASE =
-  'box-border h-10 w-full rounded-input border bg-surface-panel px-sp-12 text-body text-text-primary placeholder:text-text-tertiary focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-inset focus:ring-action-primary';
+  'box-border h-10 w-full rounded-input border bg-surface-panel px-sp-12 text-body text-text-primary placeholder:text-text-secondary focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-inset focus:ring-action-primary';
 
 const CAMPO_POR_ESTADO: Record<FieldState, string> = {
   default: 'border-border-strong',

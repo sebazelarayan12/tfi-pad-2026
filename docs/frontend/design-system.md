@@ -54,7 +54,7 @@ Todos los tokens son variables de Figma. Las variables CSS usan el nombre exacto
 | `status/vigente/bg` | `#E3F4EA` | `--nexa-status-vigente-bg` | `bg-status-vigente-bg` | Badge Vigente, Pagada, Validado |
 | `status/pendiente/text` | `#5A5F8C` | `--nexa-status-pendiente-text` | `text-status-pendiente-text` | Badge Pendiente |
 | `status/pendiente/bg` | `#ECEDF7` | `--nexa-status-pendiente-bg` | `bg-status-pendiente-bg` | Badge Pendiente |
-| `status/suspendida/text` | `#9A6400` | `--nexa-status-suspendida-text` | `text-status-suspendida-text` | Badge Suspendida, Pendiente CAE |
+| `status/suspendida/text` | `#956100` | `--nexa-status-suspendida-text` | `text-status-suspendida-text` | Badge Suspendida, Pendiente CAE |
 | `status/suspendida/bg` | `#FBF0D6` | `--nexa-status-suspendida-bg` | `bg-status-suspendida-bg` | Badge Suspendida, Pendiente CAE |
 | `status/cancelada/text` | `#B03A2E` | `--nexa-status-cancelada-text` | `text-status-cancelada-text` | Badge Cancelada. También color de borde y helper de error de input/select. |
 | `status/cancelada/bg` | `#FBE5E2` | `--nexa-status-cancelada-bg` | `bg-status-cancelada-bg` | Badge Cancelada |
@@ -69,11 +69,11 @@ Ratios calculados con la fórmula WCAG 2.x sobre los hex de Figma. "AA texto nor
 |---|---|---|---|---|
 | Vigente | `#1F7A4D` | `#E3F4EA` | 4.66 | Cumple |
 | Pendiente | `#5A5F8C` | `#ECEDF7` | 5.22 | Cumple |
-| Suspendida | `#9A6400` | `#FBF0D6` | **4.42** | **No cumple** (faltan 0.08) |
+| Suspendida | `#956100` | `#FBF0D6` | 4.65 | Cumple (antes `#9A6400`, 4.42; corregido en US-FE-V-01) |
 | Cancelada | `#B03A2E` | `#FBE5E2` | 4.99 | Cumple |
 | Vencida / Anulada | `#5C6066` | `#EEEFEC` | 5.48 | Cumple |
 | Pagada / Validado | igual a Vigente | igual a Vigente | 4.66 | Cumple |
-| Pendiente CAE | igual a Suspendida | igual a Suspendida | 4.42 | **No cumple** |
+| Pendiente CAE | igual a Suspendida | igual a Suspendida | 4.65 | Cumple |
 
 Ratios sobre `surface/panel` (#FFFFFF), para los textos de estado usados sin fondo:
 
@@ -1011,7 +1011,7 @@ Cada duda indica qué se midió, qué no se pudo confirmar y quién debe resolve
 8. **Pedidos de contraste a diseño (registro de US-FE-T-19, FB7.8, RV-D25).** Se implementan los tokens como están en el Figma; nadie cambia colores por su cuenta. Pedidos abiertos a diseño:
    - P-C1. `text/tertiary` (#8A8E93) sobre `surface/panel`: 3.30, no cumple AA (4.5). Pedido: `text/secondary` (6.33) para texto informativo. Estado: pendiente de diseño.
    - P-C2. `text/tertiary` sobre `surface/sidebar` (rol "Empleado" en el Sidebar): 3.02. Pedido: `text/secondary` (5.79). Estado: pendiente de diseño.
-   - P-C3. `status/suspendida/text` sobre `status/suspendida/bg` (Badge Suspendida y Pendiente CAE): 4.42. Pedido: oscurecer hasta ≥4.5 sobre #FBF0D6. Estado: pendiente de diseño.
+   - P-C3. `status/suspendida/text` sobre `status/suspendida/bg` (Badge Suspendida y Pendiente CAE): 4.42. Pedido: oscurecer hasta ≥4.5 sobre #FBF0D6. Estado: **resuelto** en US-FE-V-01 (`#956100`, 4.65).
    - P-C4. `border/strong` (#D3D5CE) sobre panel (borde de Input y Select): 1.48, no cumple 1.4.11. Pedido: token de borde ≥3:1 o fondo distinto. Estado: pendiente de diseño.
    - Sin acción: texto tertiary deshabilitado (2.93, exento), `border/hairline` decorativo (1.23), foco de Input/Select (17.61), error (6.02), Chip Destacado (13.54) y botón primario (17.61).
 

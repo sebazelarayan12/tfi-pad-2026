@@ -11,6 +11,7 @@ const columnas: ReadonlyArray<TableColumn<CuotaListItemMock>> = [
   {
     key: 'clienteNombre',
     header: 'Cliente',
+    width: 160,
     render: ({ clienteNombre, clienteApellido }) => {
       const nombre = `${clienteNombre} ${clienteApellido}`.trim();
       return (
@@ -23,6 +24,7 @@ const columnas: ReadonlyArray<TableColumn<CuotaListItemMock>> = [
   {
     key: 'numeroPoliza',
     header: 'Póliza',
+    width: 130,
     mono: true,
     render: ({ polizaId, numeroPoliza }) => (
       <Link
@@ -36,6 +38,7 @@ const columnas: ReadonlyArray<TableColumn<CuotaListItemMock>> = [
   {
     key: 'numeroCuota',
     header: 'Cuota y vencimiento',
+    width: 200,
     render: ({ numeroCuota, fechaVencimiento }) => (
       <>
         Cuota {numeroCuota} · {formatearFechaCalendario(fechaVencimiento)}
@@ -45,6 +48,7 @@ const columnas: ReadonlyArray<TableColumn<CuotaListItemMock>> = [
   {
     key: 'importe',
     header: 'Importe',
+    width: 100,
     render: ({ importe, recargo }) => formatearImporte(importe + recargo),
   },
   {

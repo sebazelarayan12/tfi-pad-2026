@@ -73,7 +73,9 @@ export function LoginPage() {
   }, [login.isPending, setFocus]);
 
   if (sesion !== null) {
-    const destino = sesion.debeCambiarPassword ? RUTA_CAMBIAR_PASSWORD : destinoTrasLogin(estado.desde);
+    const destino = sesion.debeCambiarPassword
+      ? RUTA_CAMBIAR_PASSWORD
+      : destinoTrasLogin(estado.desde);
     return <Navigate to={destino} replace />;
   }
 
@@ -114,7 +116,7 @@ export function LoginPage() {
           {estado.motivo === 'sesionVencida' ? (
             <AlertaError>{MENSAJE_SESION_VENCIDA}</AlertaError>
           ) : null}
-          <div className="flex flex-col gap-sp-16">
+          <div className="flex flex-col gap-sp-24">
             <Input
               label="Email"
               type="email"
@@ -124,7 +126,7 @@ export function LoginPage() {
               {...(errors.email?.message ? { helper: errors.email.message } : {})}
               {...register('email')}
             />
-            <div className={errors.password ? undefined : '[&_p]:text-right'}>
+            <div className={errors.password ? undefined : '[&_p]:mt-sp-16 [&_p]:text-right'}>
               <CampoContrasena
                 label="Contraseña"
                 autoComplete="current-password"
