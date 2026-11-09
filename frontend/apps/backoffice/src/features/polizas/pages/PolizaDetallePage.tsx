@@ -12,6 +12,7 @@ import { CuotasTabla } from '../components/CuotasTabla';
 import { PolizaAcciones } from '../components/PolizaAcciones';
 import { PolizaDatos } from '../components/PolizaDatos';
 import { PolizaEncabezado } from '../components/PolizaEncabezado';
+import { PolizaRail } from '../components/PolizaRail';
 import { cicloDeVida } from '../lib/cicloDeVida';
 import {
   ETIQUETA_COLUMNA_DERECHA,
@@ -68,11 +69,10 @@ function DetalleCargado({ poliza }: { poliza: PolizaDetalleResponse }) {
         <PolizaDatos poliza={poliza} cliente={cliente.data} anio={vehiculo.data?.anio} />
         <CuotasTabla cuotas={poliza.cuotas} vigenciaMeses={poliza.vigenciaMeses} />
       </div>
-      {/* Slot de la columna derecha: B-18 agrega deuda y pagos. */}
-      <aside
-        aria-label={ETIQUETA_COLUMNA_DERECHA}
-        className="w-full empty:hidden xl:w-[300px] xl:shrink-0"
-      />
+      {/* Columna derecha (B-18): deuda vencida y pagos. */}
+      <aside aria-label={ETIQUETA_COLUMNA_DERECHA} className="w-full xl:w-[300px] xl:shrink-0">
+        <PolizaRail polizaId={poliza.id} cuotas={poliza.cuotas} />
+      </aside>
     </div>
   );
 }
