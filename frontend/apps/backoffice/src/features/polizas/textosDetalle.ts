@@ -16,3 +16,27 @@ export const TEXTO_SIN_PERMISO = 'No tenés permiso para ver esta póliza.';
 export const NOTA_AL_PAGAR_VENCIDAS = 'Al pagar las vencidas';
 
 export const mensajeNoExiste = (id: string) => `La póliza ${id} no existe.`;
+
+/** Acciones de B-16 (ficha US-FE-B-16 §8 y §13, defaults DP-B16-01 a DP-B16-08). */
+export const TEXTO_CUPON = 'Cupón Pago Fácil';
+export const TEXTO_CANCELAR_POLIZA = 'Cancelar póliza';
+export const TITULO_DIALOGO_CANCELAR = (numero: string) => `Cancelar póliza ${numero}`;
+export const TEXTO_DIALOGO_CANCELAR =
+  'Esta acción anula las cuotas no pagadas y no se puede deshacer.';
+export const LABEL_MOTIVO = 'Motivo de cancelación';
+export const contadorMotivo = (n: number) => `${n} de 200`;
+export const TEXTO_CONFIRMAR_CANCELACION = 'Confirmar cancelación';
+export const TEXTO_VOLVER = 'Volver';
+export const TEXTO_EXITO_CANCELACION = 'Póliza cancelada.';
+export const TEXTO_ERROR_RED_CANCELAR =
+  'No se pudo confirmar la cancelación. Recargá la póliza para ver su estado.';
+export const TEXTO_CANCELANDO = 'Cancelando la póliza…';
+export const TITULO_CUPON = 'Cupón de Pago Fácil';
+export const tituloCuota = (numero: number, total: number) => `Cuota ${numero} de ${total}`;
+export const ETIQUETA_PRIMER_VENCIMIENTO = 'Primer vencimiento';
+export const ETIQUETA_SEGUNDO_VENCIMIENTO = 'Segundo vencimiento';
+export const ETIQUETA_CODIGO_BARRAS = 'Código de barras';
+export const TEXTO_COPIAR_CODIGO = 'Copiar código';
+export const TEXTO_CODIGO_COPIADO = 'Código copiado.';
+export const TEXTO_ERROR_COPIAR = 'No se pudo copiar. Seleccionalo y copialo a mano.';
+export const TEXTO_CARGANDO_CUPON = 'Generando el cupón…';

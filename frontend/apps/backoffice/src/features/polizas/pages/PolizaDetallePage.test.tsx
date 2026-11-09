@@ -7,7 +7,7 @@ import {
 import { servidorMock } from '@nexa/api/mocks/server';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -206,15 +206,52 @@ describe('PolizaDetallePage', () => {
     expect(lista.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('slots: las acciones y la columna derecha existen vacías, sin botones de otras tareas', async () => {
+  it('acciones: la barra tiene los tres botones y la columna derecha sigue vacía (B-18)', async () => {
     servir();
     renderizar();
     await screen.findByRole('heading', { level: 1, name: 'POL-0000057' });
-    expect(screen.getByRole('group', { name: 'Acciones de la póliza' })).toBeEmptyDOMElement();
-    expect(screen.getByRole('complementary', { name: 'Resumen de la póliza' })).toBeEmptyDOMElement();
-    for (const nombre of [/Cancelar/, /Cupón/, /Registrar pago/]) {
-      expect(screen.queryByRole('button', { name: nombre })).not.toBeInTheDocument();
-    }
+    const grupo = screen.getByRole('group', { name: 'Acciones de la póliza' });
+    expect(
+      within(grupo)
+        .getAllByRole('button')
+        .map((boton) => boton.textContent),
+    ).toEqual(['Registrar pago en caja', 'Cupón Pago Fácil', 'Cancelar póliza']);
+    expect(
+      screen.getByRole('complementary', { name: 'Resumen de la póliza' }),
+    ).toBeEmptyDOMElement();
+  });
+
+  it('cancelar: al confirmar recarga el detalle y queda Cancelada con las cuotas Anuladas', async () => {
+    const usuario = userEvent.setup();
+    let cancelada = false;
+    servir();
+    servidorMock.use(
+      http.get('*/api/polizas/:id', () =>
+        HttpResponse.json(
+          cancelada
+            ? poliza({
+                estado: 3,
+                cuotas: [cuota(1, { estado: 2 }), cuota(2, { estado: 3 }), cuota(3, { estado: 3 })],
+              })
+            : poliza(),
+        ),
+      ),
+      http.post('*/api/polizas/:id/cancelar', () => {
+        cancelada = true;
+        return HttpResponse.json(poliza({ estado: 3 }));
+      }),
+    );
+    renderizar();
+    await usuario.click(await screen.findByRole('button', { name: 'Cancelar póliza' }));
+    await usuario.type(screen.getByLabelText('Motivo de cancelación'), 'Motivo');
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar cancelación' }));
+    const titulo = await screen.findByRole('heading', { level: 1, name: 'POL-0000057' });
+    await waitFor(() => expect(titulo.parentElement).toHaveTextContent('Cancelada'));
+    expect(screen.getAllByText('Anulada')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Cancelar póliza' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('404: muestra el detail del back y un enlace a Pólizas', async () => {
