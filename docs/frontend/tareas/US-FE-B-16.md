@@ -277,6 +277,7 @@ Confirmar al responsable antes del PR. Esta acción es irreversible en el sistem
 - **DP-B16-07** Texto del botón de copiar y de su fallo. Default: `Copiar código`; si el navegador no permite copiar: `No se pudo copiar. Seleccionalo y copialo a mano.`
 - **DP-B16-08** Etiquetas del cupón. NO DEFINIDO. Default: las de §8.
 - **DP-B16-09** (RV-D10): el botón "Registrar pago en caja" del encabezado lo coloca esta tarea con `CobrarVencidasButton` de B-17. Texto y habilitación son los de B-17 (D-B18-03).
+- **Resolución de DP-B16-01 a DP-B16-09 (2026-11-09):** el usuario confirmó explícitamente, decisión por decisión, los defaults de arriba. En DP-B16-02 preguntó si el cupón podía cubrir más de una cuota: el contrato del back (`GET /api/pagofacil/cuotas/{cuotaId}/cupon`) genera un cupón por cuota, así que decidió dejar una sola cuota (la de menor número, visible en el panel). Pagar varias cuotas a la vez se hace con el cobro en caja (B-17).
 - **D4** (B10): el cupón se muestra en pantalla. Implementado con este default; descargar o imprimir queda para una tarea aparte.
 - **D6** (B10): simbología del código de barras. No se dibuja código gráfico; solo el texto de 42 dígitos (contrato §6.3).
 - **PB-18** (degrada): importes altos. Se muestra el `detail` del back.
