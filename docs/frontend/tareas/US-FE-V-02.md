@@ -96,13 +96,27 @@ No se agregan tests nuevos de comportamiento. Si una corrección cambia el DOM, 
 
 La persona responsable abre la app con MSW, recorre cada pantalla del grupo con el Figma al lado y confirma que se ven iguales (regla 7 de `docs/workflow.md`). Pasos: login (si es backoffice), navegar a cada pantalla, probar los estados de la sección 9 y el ancho móvil si aplica.
 
-## 13. Decisiones pendientes con su default
+## 13. Verificación visual
 
-- **DP-1 Diferencia por dato del back.** Default: manda el back; se documenta como excepción aceptada.
-- **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
-- **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
+Se confirmaron DP-1, DP-2 y DP-3. Se compararon B3, B4, B5 y B6 con la app en MSW a 1440 px. El diseño de estas pantallas tiene frames de escritorio. Las capturas para el PR se guardan fuera del repositorio.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+| Pantalla | Diferencia corregida |
+|---|---|
+| B4 | El formulario aprovecha el ancho disponible y separa datos, contacto y domicilio. El panel de Renaper queda separado, con el badge compacto y los datos uno debajo del otro. |
+| B5 | El avatar usa el fondo lima. Las filas de vehículos tienen separadores y el icono en un fondo neutro. El panel de acciones se separa de la columna principal. |
+| B6 | El encabezado de la ruta muestra Nuevo vehículo y oculta el buscador global. Uso queda debajo de Patente y el panel de reglas se separa de la columna del formulario. |
+
+| Pantalla | Diferencia aceptada | Motivo |
+|---|---|---|
+| B3 | Se muestran los filtros DNI y Apellido, sin filtros Renaper o Activo ni menú por fila. Los recuentos muestran «—». | Decisiones de B-04 y PB-03. |
+| B3 | El total, los nombres y la paginación reflejan la cantidad real devuelta por la consulta. | DP-1. La captura muestra los datos de MSW. |
+| B4 | Se conservan la ayuda para la fecha, el origen de los datos y los rótulos de Sexo. La fecha de validación muestra «Sin guardar» antes del alta. | B-05 y B-06 definen los controles y los estados de Renaper. Los mensajes de error se muestran cuando se produce el error. |
+| B5 | Las pestañas son Datos y Vehículos. Pólizas se muestra en la sección de vehículos. El panel ofrece Agregar vehículo y oculta Cuenta y pago en caja. | Decisiones de B-07 y PB-28. La edición, baja y reintento de Renaper se rigen por B-08. |
+| B6 | No hay consulta previa ni vista de DNRPA, y se omite el bloque de ejemplo de error. Uso arranca en Particular. | PB-23 y decisiones de B-09. DNRPA se consulta en el alta. |
+| Todas | Los datos y mensajes que dependen de la consulta varían con los datos de MSW. | DP-1. |
+| Todas | El menú lateral y la barra superior conservan el layout compartido. Los contrastes ya registrados se mantienen. | V-01 para el layout y DP-2, FB7 y design-system §9 para los contrastes. |
+
+En Edge con MSW se verificó el listado, el acceso a la ficha, el alta de un vehículo con regreso a la ficha y la consulta de Renaper desde Nuevo cliente.
 
 ## 14. Riesgos y errores comunes
 

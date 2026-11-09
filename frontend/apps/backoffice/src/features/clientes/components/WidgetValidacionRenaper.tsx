@@ -6,18 +6,22 @@ import { mensajeDniRenaper, TEXTOS_RENAPER, type ResultadoRenaper } from './text
 
 function DatosPersona({ fallecido }: { fallecido: boolean }) {
   return (
-    <div className="flex flex-col gap-sp-12">
+    <div className="flex flex-col items-start gap-sp-12">
       {/* "Fallecido" no tiene token propio: usa el de error (Cancelada) con su texto. */}
       {fallecido ? (
         <EstadoBadge estado="Cancelada" texto="Fallecido" />
       ) : (
         <EstadoBadge estado="Validado" />
       )}
-      <dl className="grid grid-cols-[auto_1fr] gap-x-sp-16 gap-y-sp-8">
-        <dt>Estado</dt>
-        <dd className="text-text-primary">{fallecido ? 'Fallecido' : 'Vigente'}</dd>
-        <dt>Fecha de validación</dt>
-        <dd className="text-text-primary">{TEXTOS_RENAPER.fechaSinGuardar}</dd>
+      <dl className="flex flex-col gap-sp-12">
+        <div>
+          <dt>Estado</dt>
+          <dd className="text-text-primary">{fallecido ? 'Fallecido' : 'Vigente'}</dd>
+        </div>
+        <div>
+          <dt>Fecha de validación</dt>
+          <dd className="text-text-primary">{TEXTOS_RENAPER.fechaSinGuardar}</dd>
+        </div>
       </dl>
       {fallecido ? <p>{TEXTOS_RENAPER.fallecido}</p> : null}
     </div>
@@ -30,7 +34,7 @@ export function WidgetValidacionRenaper({ resultado }: { resultado: ResultadoRen
   return (
     <div aria-live="polite">
       <CardWidget title={TEXTOS_RENAPER.titulo} icon={<IdentificationCardIcon size={20} />}>
-        <div className="flex flex-col gap-sp-12">
+        <div className="flex flex-col items-start gap-sp-12">
           {resultado.tipo === 'inicial' ? <p>{TEXTOS_RENAPER.inicial}</p> : null}
           {resultado.tipo === 'vigente' || resultado.tipo === 'fallecido' ? (
             <DatosPersona fallecido={resultado.tipo === 'fallecido'} />

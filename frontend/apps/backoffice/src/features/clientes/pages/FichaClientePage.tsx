@@ -65,7 +65,7 @@ function FichaCargada({ cliente }: { cliente: ClienteResponse }) {
       : 'cargando';
 
   return (
-    <div className="flex flex-col gap-sp-32 xl:flex-row xl:items-start">
+    <div className="flex flex-col gap-sp-24 xl:flex-row">
       <div className="flex min-w-0 flex-1 flex-col gap-sp-24">
         <ClienteEncabezado
           cliente={cliente}
@@ -96,7 +96,10 @@ function FichaCargada({ cliente }: { cliente: ClienteResponse }) {
           datos={<DatosClienteLectura cliente={cliente} />}
         />
       </div>
-      <aside aria-label="Acciones del cliente" className="w-full xl:w-[280px] xl:shrink-0">
+      <aside
+        aria-label="Acciones del cliente"
+        className="w-full xl:w-[280px] xl:shrink-0 xl:border-l xl:border-border-hairline xl:pl-sp-24"
+      >
         <AccionesRapidas clienteId={cliente.id} />
       </aside>
     </div>

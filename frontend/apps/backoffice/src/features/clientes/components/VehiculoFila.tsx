@@ -60,13 +60,16 @@ export function VehiculoFila({ vehiculo, poliza, estadoPolizas }: VehiculoFilaPr
   const Icono = esMoto ? MotorcycleIcon : CarIcon;
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-sp-16 rounded-card border border-border-hairline bg-surface-panel p-sp-16">
+    <li className="flex flex-wrap items-center justify-between gap-sp-16 border-b border-border-hairline py-sp-16">
       <div className="flex min-w-0 items-center gap-sp-12">
-        <span aria-hidden="true" className="inline-flex text-text-primary">
-          <Icono size={24} />
+        <span
+          aria-hidden="true"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-input bg-surface-subtle text-text-primary"
+        >
+          <Icono size={20} />
         </span>
         <div className="flex min-w-0 flex-col gap-sp-4">
-          <p className="break-words text-body text-text-primary">
+          <p className="break-words text-h3 text-text-primary">
             {vehiculo.marca} {vehiculo.modelo} {vehiculo.anio}
           </p>
           <div className="flex flex-wrap items-center gap-x-sp-12 text-body-sm text-text-secondary">
