@@ -63,17 +63,25 @@ contratoEndpoint({
   ],
 });
 // El harness exige CONTRACT_ALLOW_WRITES=true; nunca se da de baja un vehículo para repetir el alta.
-const alta = () => ({ clienteId: cliente, patente: esMock ? 'AE789FG' : patenteReal(), uso: 0 });
+const alta = () => ({
+  clienteId: cliente,
+  patente: esMock ? 'AE789FG' : patenteReal(),
+  uso: 0,
+  marca: 'Toyota',
+  modelo: 'Hilux SRX',
+  anio: 2023,
+  tipo: 2,
+  numeroMotor: 'MOT123456',
+  numeroChasis: 'CHA123456',
+});
 function patenteReal(): string {
   const valor = process.env.CONTRACT_PATENTE_ALTA;
   if (!valor)
-    throw new Error(
-      'Falta CONTRACT_PATENTE_ALTA: seleccionar una patente DNRPA no registrada del cliente de prueba.',
-    );
+    throw new Error('Falta CONTRACT_PATENTE_ALTA: seleccionar una patente no registrada.');
   return valor;
 }
 contratoEndpoint({
-  nombre: 'Alta validada en DNRPA',
+  nombre: 'Alta de vehículo',
   metodo: 'POST',
   ruta: '/api/vehiculos',
   requiereSesion: true,

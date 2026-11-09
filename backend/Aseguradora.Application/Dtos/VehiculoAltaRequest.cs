@@ -5,7 +5,7 @@ using Aseguradora.Domain.Enums;
 namespace Aseguradora.Application.Dtos;
 
 /// <summary>
-/// Request payload to register a vehicle for a client with DNRPA validation (CU06, RN03).
+/// Request payload to register a vehicle for a client (CU06). There is no DNRPA lookup: the vehicle data is typed in.
 /// </summary>
 public sealed partial record VehiculoAltaRequest
 {
@@ -25,6 +25,30 @@ public sealed partial record VehiculoAltaRequest
     /// <summary>Declared use of the vehicle (<see cref="UsoVehiculo.Particular"/> or <see cref="UsoVehiculo.Comercial"/>).</summary>
     [Required]
     public UsoVehiculo? Uso { get; init; }
+
+    /// <summary>Vehicle brand, as typed by the employee.</summary>
+    [Required]
+    public string Marca { get; init; } = string.Empty;
+
+    /// <summary>Vehicle model, as typed by the employee.</summary>
+    [Required]
+    public string Modelo { get; init; } = string.Empty;
+
+    /// <summary>Manufacturing year.</summary>
+    [Required]
+    public int? Anio { get; init; }
+
+    /// <summary>Engine number, as printed on the vehicle title.</summary>
+    [Required]
+    public string NumeroMotor { get; init; } = string.Empty;
+
+    /// <summary>Chassis number, as printed on the vehicle title.</summary>
+    [Required]
+    public string NumeroChasis { get; init; } = string.Empty;
+
+    /// <summary>Vehicle category (<see cref="TipoVehiculo"/>).</summary>
+    [Required]
+    public TipoVehiculo? Tipo { get; init; }
 
     /// <summary>
     /// Normalizes a license plate to trimmed uppercase and checks whether it matches <see cref="PatronPatente"/>.

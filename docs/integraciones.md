@@ -7,7 +7,7 @@ Estado de los servicios de otros grupos y cómo pasar de mock a real (US-T-04). 
 | Servicio | Interfaz | Clave de configuración | Mock | Real | Responsable | Estado |
 |----------|----------|------------------------|------|------|-------------|--------|
 | Renaper | `IRenaperService` | `Integraciones:Renaper` | `RenaperMockService` | `RenaperHttpService` | Grupo OpenRENAPER | Real implementado contra OpenRENAPER (sin clave); activar con `UsarMock=false`. Ver "Particularidades" |
-| DNRPA | `IDnrpaService` | `Integraciones:Dnrpa` | `DnrpaMockService` | `DnrpaHttpService` | Sin grupo | Mock definitivo (no hay servicio real accesible) |
+| DNRPA | `IDnrpaService` | `Integraciones:Dnrpa` | `DnrpaMockService` | `DnrpaHttpService` | Sin grupo | Mock definitivo (no hay servicio real accesible). **El alta de vehículo ya no lo consulta**: marca, modelo, año, tipo, motor y chasis se cargan a mano y el vehículo queda con `ValidadoDnrpa = false`. |
 | ARCA | `IArcaService` | `Integraciones:Arca` | `ArcaMockService` | `ArcaHttpService` | Grupo FacturAR | Real implementado contra FacturAR; falta su API key para activarlo. Ver "Particularidades" |
 | Pasarela 1 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela1` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 1 | Mock; real pendiente |
 | Pasarela 2 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela2` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 2 | Mock; real pendiente |
