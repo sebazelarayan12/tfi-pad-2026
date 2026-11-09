@@ -40,3 +40,14 @@ export const TEXTO_COPIAR_CODIGO = 'Copiar código';
 export const TEXTO_CODIGO_COPIADO = 'Código copiado.';
 export const TEXTO_ERROR_COPIAR = 'No se pudo copiar. Seleccionalo y copialo a mano.';
 export const TEXTO_CARGANDO_CUPON = 'Generando el cupón…';
+
+/** Rail de B-18 (ficha US-FE-B-18 §8). */
+export const TITULO_DEUDA_VENCIDA = 'Deuda vencida';
+export const TITULO_PAGOS = 'Pagos';
+export const TEXTO_SIN_VENCIDAS = 'Sin cuotas vencidas.';
+export const TEXTO_CUOTAS_A_COBRAR = 'Cuotas a cobrar';
+export const TEXTO_TOTAL_A_COBRAR = 'Total a cobrar';
+export const TEXTO_SIN_PAGOS = 'Sin pagos registrados.';
+export const TEXTO_ERROR_PAGOS = 'No se pudieron cargar los pagos.';
+export const detalleVencidas = (numeros: string, cantidad: number) =>
+  `${cantidad === 1 ? 'Cuota' : 'Cuotas'} ${numeros}, con recargo del 5%`;

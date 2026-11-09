@@ -6,3 +6,5 @@ export { useCobrarCuotas, useFactura, usePago } from './api/usePagos';
 export { cobroCajaSchema } from './schemas/cobroCaja';
 export { pagosRoutes } from './routes';
 export type { CuotaCobrable } from './types/cobro';
+export { EstadoFacturaBadge } from './components/EstadoFacturaBadge';
+export { textoCuotas } from './components/textoCuotas';

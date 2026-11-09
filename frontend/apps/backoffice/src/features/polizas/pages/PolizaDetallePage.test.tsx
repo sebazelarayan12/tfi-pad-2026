@@ -206,7 +206,7 @@ describe('PolizaDetallePage', () => {
     expect(lista.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('acciones: la barra tiene los tres botones y la columna derecha sigue vacía (B-18)', async () => {
+  it('acciones: la barra tiene los tres botones y la columna derecha trae el rail (B-18)', async () => {
     servir();
     renderizar();
     await screen.findByRole('heading', { level: 1, name: 'POL-0000057' });
@@ -216,9 +216,9 @@ describe('PolizaDetallePage', () => {
         .getAllByRole('button')
         .map((boton) => boton.textContent),
     ).toEqual(['Registrar pago en caja', 'Cupón Pago Fácil', 'Cancelar póliza']);
-    expect(
-      screen.getByRole('complementary', { name: 'Resumen de la póliza' }),
-    ).toBeEmptyDOMElement();
+    const rail = screen.getByRole('complementary', { name: 'Resumen de la póliza' });
+    expect(within(rail).getByRole('heading', { name: 'Deuda vencida' })).toBeInTheDocument();
+    expect(within(rail).getByRole('heading', { name: 'Pagos' })).toBeInTheDocument();
   });
 
   it('cancelar: al confirmar recarga el detalle y queda Cancelada con las cuotas Anuladas', async () => {
@@ -253,7 +253,6 @@ describe('PolizaDetallePage', () => {
       'true',
     );
   });
-
   it('404: muestra el detail del back y un enlace a Pólizas', async () => {
     servir(problema(404, { status: 404, detail: `La póliza ${ID} no existe.` }));
     renderizar();
