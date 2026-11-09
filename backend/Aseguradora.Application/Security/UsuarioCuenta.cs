@@ -10,4 +10,5 @@ public sealed record UsuarioCuenta(
     string Email,
     bool DebeCambiarPassword = false,
     string Nombre = "",
-    string Apellido = "");
+    string Apellido = "",
+    bool Activo = true);

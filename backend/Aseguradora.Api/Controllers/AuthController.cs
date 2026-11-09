@@ -74,6 +74,37 @@ public sealed class AuthController(AutenticacionService autenticacion) : Control
         [FromQuery] UsuarioFiltro filtro, CancellationToken ct) =>
         Ok(await _autenticacion.ListarUsuariosAsync(filtro, ct));
 
+    /// <summary>Changes name, surname and role of an account. Only an administrator can call it (PB-04).</summary>
+    [HttpPut("/api/usuarios/{id}")]
+    [Authorize(Policy = Politicas.Admin)]
+    [ProducesResponseType(typeof(UsuarioListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UsuarioListItemResponse>> Actualizar(
+        string id, ActualizarUsuarioRequest solicitud, CancellationToken ct) =>
+        Ok(await _autenticacion.ActualizarUsuarioAsync(id, solicitud, ct));
+
+    /// <summary>Enables or disables an account. Only an administrator can call it (PB-04).</summary>
+    [HttpPatch("/api/usuarios/{id}/activo")]
+    [Authorize(Policy = Politicas.Admin)]
+    [ProducesResponseType(typeof(UsuarioListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UsuarioListItemResponse>> CambiarActivo(
+        string id, CambiarActivoRequest solicitud, CancellationToken ct)
+    {
+        var actorId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(actorId))
+            return Unauthorized();
+
+        return Ok(await _autenticacion.CambiarActivoAsync(id, actorId, solicitud, ct));
+    }
+
     /// <summary>Creates an employee or administrator. Only an administrator can call it.</summary>
     [HttpPost("usuarios")]
     [Authorize(Policy = Politicas.Admin)]
