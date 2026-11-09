@@ -137,17 +137,75 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
             .Take(tamano)
             .ToList();
 
-        var ahora = DateTimeOffset.UtcNow;
         var items = new List<UsuarioListado>(filas.Count);
         foreach (var usuario in filas)
-        {
-            var roles = await usuarios.GetRolesAsync(usuario);
-            var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? string.Empty;
-            var activo = usuario.LockoutEnd is null || usuario.LockoutEnd <= ahora;
-            items.Add(new UsuarioListado(ADatos(usuario), rol, activo));
-        }
+            items.Add(await ADatosListadoAsync(usuario));
 
         return new PaginaResponse<UsuarioListado>(items, pagina, tamano, total);
+    }
+
+    public async Task<UsuarioListado?> BuscarListadoAsync(string id, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var usuario = await usuarios.FindByIdAsync(id);
+        return usuario is null ? null : await ADatosListadoAsync(usuario);
+    }
+
+    public async Task ActualizarAsync(
+        string id, string nombre, string apellido, string rol, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var usuario = await usuarios.FindByIdAsync(id)
+            ?? throw new BusinessRuleException("No se encontró la cuenta.");
+
+        var rolesActuales = await usuarios.GetRolesAsync(usuario);
+        if (!rolesActuales.Contains(rol))
+        {
+            var aQuitar = rolesActuales.Where(r => Roles.Asignables.Contains(r)).ToList();
+            if (aQuitar.Count > 0)
+                Verificar(await usuarios.RemoveFromRolesAsync(usuario, aQuitar));
+            Verificar(await usuarios.AddToRoleAsync(usuario, rol));
+        }
+
+        usuario.Nombre = nombre;
+        usuario.Apellido = apellido;
+        Verificar(await usuarios.UpdateAsync(usuario));
+    }
+
+    public async Task EstablecerActivoAsync(string id, bool activo, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var usuario = await usuarios.FindByIdAsync(id)
+            ?? throw new BusinessRuleException("No se encontró la cuenta.");
+
+        // A disabled account is locked out until the end of time; enabling it clears the lock.
+        Verificar(await usuarios.SetLockoutEnabledAsync(usuario, true));
+        Verificar(await usuarios.SetLockoutEndDateAsync(usuario, activo ? null : DateTimeOffset.MaxValue));
+    }
+
+    public async Task<int> ContarAdministradoresActivosAsync(CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        var administradores = await usuarios.GetUsersInRoleAsync(Roles.Administrador);
+        return administradores.Count(EstaActivo);
+    }
+
+    private async Task<UsuarioListado> ADatosListadoAsync(Usuario usuario)
+    {
+        var roles = await usuarios.GetRolesAsync(usuario);
+        var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? string.Empty;
+        return new UsuarioListado(ADatos(usuario), rol, EstaActivo(usuario));
+    }
+
+    private static bool EstaActivo(Usuario usuario) =>
+        usuario.LockoutEnd is null || usuario.LockoutEnd <= DateTimeOffset.UtcNow;
+
+    private static void Verificar(IdentityResult resultado)
+    {
+        if (!resultado.Succeeded)
+            throw new BusinessRuleException(Describir(resultado));
     }
 
     private static UsuarioCuenta ADatos(Usuario usuario) =>
@@ -156,7 +214,8 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
             usuario.Email ?? usuario.UserName ?? string.Empty,
             usuario.DebeCambiarPassword,
             usuario.Nombre,
-            usuario.Apellido);
+            usuario.Apellido,
+            EstaActivo(usuario));
 
     private static string Describir(IdentityResult resultado) =>
         string.Join(" ", resultado.Errors.Select(error => error.Description));
