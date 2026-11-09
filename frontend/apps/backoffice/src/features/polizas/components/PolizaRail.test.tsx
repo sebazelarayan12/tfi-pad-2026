@@ -99,16 +99,20 @@ describe('DeudaVencidaWidget', () => {
     expect(screen.getByRole('button', { name: 'Registrar pago en caja' })).toBeDisabled();
   });
 
-  it('ignora pendientes, pagadas y anuladas', () => {
+  it('la deuda suma solo las vencidas; las pendientes se ofrecen aparte para adelantar', () => {
     renderizar(
       <DeudaVencidaWidget
         polizaId={ID}
         cuotas={[cuota(1, 0, 525), cuota(2, 2), cuota(3, 3), cuota(4, 1, 525)]}
       />,
     );
-    // El total de la deuda y el importe de la fila de la cuota 4.
-    expect(screen.getAllByText(/11\.025,00/)).toHaveLength(2);
     expect(screen.getByText('Cuota 4, con recargo del 5%')).toBeInTheDocument();
+    expect(screen.getByText('Adelantar cuotas')).toBeInTheDocument();
+    // Solo la vencida (4) y la pendiente (1) tienen casilla; pagadas y anuladas no.
+    expect(screen.getAllByRole('checkbox').map((c) => c.closest('label')?.textContent)).toEqual([
+      expect.stringContaining('Cuota 4'),
+      expect.stringContaining('Cuota 1'),
+    ]);
   });
 });
 
@@ -116,16 +120,17 @@ describe('DeudaVencidaWidget: cuotas a cobrar (D-B18-01 opción B)', () => {
   const vencidas = [cuota(6, 1, 525), cuota(7, 1, 525)];
   const totalACobrar = () => screen.getByText('Total a cobrar').parentElement;
 
-  it('lista una casilla por cuota vencida, ninguna marcada, y el cobro queda deshabilitado', () => {
+  it('lista una casilla por cuota vencida o pendiente, ninguna marcada, y el cobro queda deshabilitado', () => {
     renderizar(
       <DeudaVencidaWidget polizaId={ID} cuotas={[...vencidas, cuota(8, 0), cuota(9, 2)]} />,
     );
 
     const casillas = screen.getAllByRole('checkbox');
-    expect(casillas).toHaveLength(2);
+    expect(casillas).toHaveLength(3);
     for (const casilla of casillas) expect(casilla).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: /Cuota 6/ })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /Cuota 7/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Cuota 8/ })).toBeInTheDocument();
     expect(totalACobrar()).toHaveTextContent('0,00');
     expect(screen.getByRole('button', { name: 'Registrar pago en caja' })).toBeDisabled();
   });
