@@ -237,6 +237,11 @@ Diferencias desktop ↔ mobile:
 10. **Datos del titular en W3.** W3 muestra "Titular: Tomás Iturralde" y "DNI 30.123.456". `ConsultaPublicaResponse` NO trae nombre del titular ni DNI (RN20: no devuelve ids de cliente; sólo datos del producto, vehículo y cuotas). Este dato no tiene fuente en el back. Ver W3, sección 13.
 11. **Mayúsculas de la póliza.** El back exige `POL-` en mayúsculas. ¿El front convierte el texto a mayúsculas al escribir? NO DEFINIDO.
 12. **Validación de `Input` en el Figma.** El texto "Sin puntos ni espacios." es ayuda, no error. ¿Se muestra siempre o sólo cuando hay error? NO DEFINIDO.
+13. **Nav y pie mobile distintos entre W2m y W3m** (detectado en US-FE-V-06). Los dos frames mobile dibujan el marco de otra forma y la app no puede seguir a los dos:
+    - W2m (`18:150`): Shell a 16 px del borde, nav de 72 px con padding horizontal 20 px, pie (`18:191`) sin fondo, con label `Nexa/Label` en `--nexa-text-primary` y valor `Nexa/Body-sm` en `--nexa-text-secondary`, gap 8 px.
+    - W3m (`18:1772`): Shell a 12 px del borde, barra de 60 px con padding 16 px, pie (`18:2164`) con fondo `--nexa-surface-subtle`, label `Nexa/Label` en `--nexa-text-secondary` y valor `Nexa/Body` en `--nexa-text-primary`, gap 12 px.
+    Mientras diseño no unifique un solo marco mobile, la app mantiene el de `US-FE-T-18` (Shell a 16 px, nav de 72 px y el `PublicFooter` apilado con fondo). Pregunta a diseño: ¿cuál de los dos es el correcto? NO DEFINIDO.
+14. **Padding superior del Shell en W2 desktop** (detectado en US-FE-V-06). En W2 (`18:90`) la nav arranca pegada al borde superior del Shell; en W1 (`18:201`) y W3 (`18:47`) tiene 24 px arriba. La app usa el mismo padding de 24 px en todas las pantallas. Confirmar con diseño.
 
 ## 14. Referencia Figma
 
