@@ -211,6 +211,7 @@ No hay frame mobile para W6. **Propuesta** a validar con diseño:
 - **D10. Cuotas en plural.** "Pagaste las cuotas 8 y 9" para una cuota no está definido (ver punto 5).
 - **D11. Pie de página.** Mismos placeholders "A confirmar" que W4 (ver W4 D9).
 - **D12. "Volver a mi póliza".** Destino y datos necesarios (`dni`, `numeroPoliza`) no definidos (ver D3).
+- **D13. Nav pegada al borde superior** (detectado en US-FE-V-07). Como en W3 y W4, la nav arranca sin padding arriba; en W1 y W5 tiene 24 px. La app usa 24 px en todas las pantallas (ver W3 §13.18).
 
 ## 14. Referencia Figma
 
