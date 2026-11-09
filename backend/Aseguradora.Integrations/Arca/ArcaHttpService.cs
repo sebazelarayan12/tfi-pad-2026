@@ -146,9 +146,12 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
     private async Task<ExternalServiceException> TraducirErrorAsync(HttpResponseMessage respuesta, CancellationToken ct)
     {
         string? codigo = null;
+        string? mensaje = null;
         try
         {
-            codigo = (await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct))?.Codigo;
+            var error = await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct);
+            codigo = error?.Codigo;
+            mensaje = error?.Mensaje;
         }
         catch (JsonException)
         {
@@ -158,7 +161,7 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
         var estado = (int)respuesta.StatusCode;
         return respuesta.StatusCode == HttpStatusCode.Unauthorized
             ? new ExternalServiceException($"{Servicio}: el servicio externo rechazó la API key (401 {codigo}).")
-            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}).");
+            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}){(string.IsNullOrWhiteSpace(mensaje) ? "" : $": {mensaje}")}.");
     }
 
     private sealed record PedidoComprobante(
@@ -180,5 +183,5 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
         DateTime? CaeVencimiento,
         string? Estado);
 
-    private sealed record RespuestaError(string? Codigo);
+    private sealed record RespuestaError(string? Codigo, string? Mensaje);
 }

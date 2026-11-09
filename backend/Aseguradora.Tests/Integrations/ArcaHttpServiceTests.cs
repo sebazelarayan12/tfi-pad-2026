@@ -233,7 +233,7 @@ public class ArcaHttpServiceTests
     public async Task EmitirFactura_con_error_de_negocio_lanza_ExternalServiceException_con_el_codigo(HttpStatusCode estado, string codigo)
     {
         var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(Json(estado, $$"""{ "codigo": "{{codigo}}", "mensaje": "x" }""")));
+            Task.FromResult(Json(estado, $$"""{ "codigo": "{{codigo}}", "mensaje": "El documentoTipo no es válido." }""")));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
 
@@ -241,6 +241,7 @@ public class ArcaHttpServiceTests
             () => Arca(scope.ServiceProvider).EmitirFacturaAsync(SolicitudFactura(), CancellationToken.None));
 
         Assert.Contains(codigo, ex.Message);
+        Assert.Contains("El documentoTipo no es válido.", ex.Message);
     }
 
     [Fact]
