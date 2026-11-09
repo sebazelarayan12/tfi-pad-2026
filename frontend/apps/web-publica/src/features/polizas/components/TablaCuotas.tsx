@@ -1,33 +1,15 @@
-import {
-  formatearFechaCalendario,
-  formatearImporte,
-  type CuotaPublica,
-  type EstadoCuotaPublica,
-} from '@nexa/api';
-import { EstadoBadge, type BadgeEstado } from '@nexa/ui';
+import { formatearImporte, type CuotaPublica } from '@nexa/api';
+import { EstadoBadge } from '@nexa/ui';
 
 import { esCuotaElegible, type SeleccionCuotas } from '../hooks/useSeleccionCuotas';
+import { BADGE_POR_ESTADO, textoVencimiento } from './cuotaVista';
 
-const BADGE_POR_ESTADO: Record<EstadoCuotaPublica, BadgeEstado> = {
-  PAGADA: 'Pagada',
-  PENDIENTE: 'Pendiente',
-  VENCIDA: 'Vencida',
-  ANULADA: 'Anulada',
-};
-
-/** Texto fijo del recargo por vencimiento (RN08). */
-const TEXTO_RECARGO = ', recargo 5%';
-
-const CELDA = 'border-b border-border-hairline px-sp-16 align-middle text-body-sm text-text-primary';
+const CELDA =
+  'border-b border-border-hairline px-sp-16 align-middle text-body-sm text-text-primary';
 
 interface TablaCuotasProps {
   cuotas: ReadonlyArray<CuotaPublica>;
   seleccion: SeleccionCuotas;
-}
-
-function textoVencimiento(cuota: CuotaPublica): string {
-  const fecha = formatearFechaCalendario(cuota.vencimiento);
-  return cuota.recargo > 0 ? `${fecha}${TEXTO_RECARGO}` : fecha;
 }
 
 /** Tabla de cuotas de escritorio. Solo las impagas tienen casilla (W3 §6). */
