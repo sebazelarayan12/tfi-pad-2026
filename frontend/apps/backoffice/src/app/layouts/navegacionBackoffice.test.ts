@@ -31,8 +31,11 @@ describe('gruposParaRol', () => {
     expect(etiquetas(NAV_ADMIN)).toEqual(['Planes', 'Usuarios']);
   });
 
-  it('Vehículos y Cotizaciones no tienen destino todavía', () => {
+  it('Vehículos no tiene destino todavía y Cotizaciones lleva a su listado', () => {
     const sinHref = NAV_PRINCIPAL.items.filter((item) => item.href === undefined);
-    expect(sinHref.map((item) => item.label)).toEqual(['Vehículos', 'Cotizaciones']);
+    expect(sinHref.map((item) => item.label)).toEqual(['Vehículos']);
+    expect(NAV_PRINCIPAL.items.find((item) => item.label === 'Cotizaciones')?.href).toBe(
+      '/cotizaciones',
+    );
   });
 });
