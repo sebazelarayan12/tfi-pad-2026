@@ -40,13 +40,14 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
             ["MONOTRIBUTO"] = 6
         };
 
-    // AFIP document type codes, the ones FacturAR shows in its manual ("99", "CUIT").
+    // FacturAR names the document type in text ("CUIT") besides the "99" of a final consumer, and rejects the
+    // AFIP numeric codes ("96" for a DNI answered 400 CUIT_INVALIDO), so the type is sent by name.
     private static readonly IReadOnlyDictionary<string, string> TiposDocumento =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["DNI"] = "96",
-            ["CUIT"] = "80",
-            ["CUIL"] = "86"
+            ["DNI"] = "DNI",
+            ["CUIT"] = "CUIT",
+            ["CUIL"] = "CUIL"
         };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -207,9 +208,12 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
     private async Task<ExternalServiceException> TraducirErrorAsync(HttpResponseMessage respuesta, CancellationToken ct)
     {
         string? codigo = null;
+        string? mensaje = null;
         try
         {
-            codigo = (await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct))?.Codigo;
+            var error = await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct);
+            codigo = error?.Codigo;
+            mensaje = error?.Mensaje;
         }
         catch (JsonException)
         {
@@ -219,7 +223,7 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
         var estado = (int)respuesta.StatusCode;
         return respuesta.StatusCode == HttpStatusCode.Unauthorized
             ? new ExternalServiceException($"{Servicio}: el servicio externo rechazó la API key (401 {codigo}).")
-            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}).");
+            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}){(string.IsNullOrWhiteSpace(mensaje) ? "" : $": {mensaje}")}.");
     }
 
     private sealed record PedidoComprobante(
@@ -245,5 +249,5 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
 
     private sealed record ItemComprobante(Guid Id, long Numero);
 
-    private sealed record RespuestaError(string? Codigo);
+    private sealed record RespuestaError(string? Codigo, string? Mensaje);
 }

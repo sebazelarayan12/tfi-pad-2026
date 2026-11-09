@@ -29,7 +29,7 @@ public class ArcaHttpServiceTests
           "fechaEmision": "2026-11-08T15:30:00Z",
           "cae": "74123456789012",
           "caeVencimiento": "2026-11-18T00:00:00Z",
-          "receptor": { "documentoTipo": "96", "documentoNumero": "30123456", "razonSocial": "Juan Carlos Pérez", "condicionIva": 5 },
+          "receptor": { "documentoTipo": "DNI", "documentoNumero": "30123456", "razonSocial": "Juan Carlos Pérez", "condicionIva": 5 },
           "importeNeto": 51250,
           "importeIva": 0,
           "importeTotal": 51250,
@@ -122,7 +122,7 @@ public class ArcaHttpServiceTests
         Assert.Equal("Pago PAG-6f1c2a", raiz.GetProperty("observaciones").GetString());
 
         var receptor = raiz.GetProperty("receptor");
-        Assert.Equal("96", receptor.GetProperty("documentoTipo").GetString());
+        Assert.Equal("DNI", receptor.GetProperty("documentoTipo").GetString());
         Assert.Equal("30123456", receptor.GetProperty("documentoNumero").GetString());
         Assert.Equal("Juan Carlos Pérez", receptor.GetProperty("razonSocial").GetString());
         Assert.Equal(5, receptor.GetProperty("condicionIva").GetInt32());
@@ -233,7 +233,7 @@ public class ArcaHttpServiceTests
     public async Task EmitirFactura_con_error_de_negocio_lanza_ExternalServiceException_con_el_codigo(HttpStatusCode estado, string codigo)
     {
         var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(Json(estado, $$"""{ "codigo": "{{codigo}}", "mensaje": "x" }""")));
+            Task.FromResult(Json(estado, $$"""{ "codigo": "{{codigo}}", "mensaje": "El documentoTipo no es válido." }""")));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
 
@@ -241,6 +241,7 @@ public class ArcaHttpServiceTests
             () => Arca(scope.ServiceProvider).EmitirFacturaAsync(SolicitudFactura(), CancellationToken.None));
 
         Assert.Contains(codigo, ex.Message);
+        Assert.Contains("El documentoTipo no es válido.", ex.Message);
     }
 
     [Fact]
