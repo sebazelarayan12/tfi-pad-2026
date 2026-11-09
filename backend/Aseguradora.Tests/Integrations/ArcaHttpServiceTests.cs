@@ -17,7 +17,7 @@ namespace Aseguradora.Tests.Integrations;
 public class ArcaHttpServiceTests
 {
     private const string BaseUrl = "https://facturar.example";
-    private const string ApiKey = "fak_0123456789ab_clave-de-prueba";
+    private const string ApiKey = "clave-de-prueba-facturar";
 
     private const string RespuestaComprobante = """
         {
