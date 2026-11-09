@@ -1,12 +1,9 @@
 import { formatearImporte } from '@nexa/api';
 import { Button, CardWidget, Dato } from '@nexa/ui';
-import { useNavigate } from 'react-router-dom';
 
-import type { EstadoMiPoliza, EstadoPagoPublico } from '../types/navegacion';
 import type { SeleccionCuotas } from '../hooks/useSeleccionCuotas';
-
-const RUTA_MEDIO_DE_PAGO = '/poliza/pagar/medio-de-pago';
-const RUTA_PAGO_FACIL = '/poliza/pagar/pago-facil';
+import { RUTA_MEDIO_DE_PAGO, RUTA_PAGO_FACIL, useNavegarAPago } from '../hooks/useNavegarAPago';
+import type { EstadoMiPoliza } from '../types/navegacion';
 
 interface ResumenPagoProps {
   estado: EstadoMiPoliza;
@@ -15,13 +12,8 @@ interface ResumenPagoProps {
 
 /** Resumen y acciones de pago. Navega con `state`, nunca con datos en la URL (FC12). */
 export function ResumenPago({ estado, seleccion }: ResumenPagoProps) {
-  const navigate = useNavigate();
+  const irA = useNavegarAPago(estado, seleccion);
   const sinSeleccion = seleccion.cantidadSeleccionadas === 0;
-
-  function irA(ruta: string) {
-    const siguiente: EstadoPagoPublico = { ...estado, cuotaIds: seleccion.cuotaIds };
-    void navigate(ruta, { state: siguiente });
-  }
 
   return (
     <CardWidget title="Resumen de pago">
