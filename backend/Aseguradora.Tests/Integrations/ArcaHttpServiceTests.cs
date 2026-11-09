@@ -29,7 +29,7 @@ public class ArcaHttpServiceTests
           "fechaEmision": "2026-11-08T15:30:00Z",
           "cae": "74123456789012",
           "caeVencimiento": "2026-11-18T00:00:00Z",
-          "receptor": { "documentoTipo": "96", "documentoNumero": "30123456", "razonSocial": "Juan Carlos Pérez", "condicionIva": 5 },
+          "receptor": { "documentoTipo": "DNI", "documentoNumero": "30123456", "razonSocial": "Juan Carlos Pérez", "condicionIva": 5 },
           "importeNeto": 51250,
           "importeIva": 0,
           "importeTotal": 51250,
@@ -122,7 +122,7 @@ public class ArcaHttpServiceTests
         Assert.Equal("Pago PAG-6f1c2a", raiz.GetProperty("observaciones").GetString());
 
         var receptor = raiz.GetProperty("receptor");
-        Assert.Equal("96", receptor.GetProperty("documentoTipo").GetString());
+        Assert.Equal("DNI", receptor.GetProperty("documentoTipo").GetString());
         Assert.Equal("30123456", receptor.GetProperty("documentoNumero").GetString());
         Assert.Equal("Juan Carlos Pérez", receptor.GetProperty("razonSocial").GetString());
         Assert.Equal(5, receptor.GetProperty("condicionIva").GetInt32());

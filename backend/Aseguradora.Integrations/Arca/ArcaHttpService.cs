@@ -40,13 +40,14 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
             ["MONOTRIBUTO"] = 6
         };
 
-    // AFIP document type codes, the ones FacturAR shows in its manual ("99", "CUIT").
+    // FacturAR names the document type in text ("CUIT") besides the "99" of a final consumer, and rejects the
+    // AFIP numeric codes ("96" for a DNI answered 400 CUIT_INVALIDO), so the type is sent by name.
     private static readonly IReadOnlyDictionary<string, string> TiposDocumento =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["DNI"] = "96",
-            ["CUIT"] = "80",
-            ["CUIL"] = "86"
+            ["DNI"] = "DNI",
+            ["CUIT"] = "CUIT",
+            ["CUIL"] = "CUIL"
         };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
