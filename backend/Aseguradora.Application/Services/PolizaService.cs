@@ -202,9 +202,6 @@ public sealed class PolizaService(
         if (vehiculo is null || !vehiculo.Activo)
             throw new BusinessRuleException("El vehículo de la cotización no existe o no está activo.");
 
-        if (!vehiculo.ValidadoDnrpa)
-            throw new BusinessRuleException("El vehículo no está validado en DNRPA (RN03).");
-
         if (vehiculo.ClienteId != cliente.Id)
             throw new BusinessRuleException("El vehículo no pertenece al cliente de la cotización (RN03).");
 
