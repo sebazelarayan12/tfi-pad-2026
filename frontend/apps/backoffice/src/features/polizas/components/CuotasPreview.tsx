@@ -34,10 +34,10 @@ export function CuotasPreview({
   }));
 
   return (
-    <section className="flex flex-col gap-sp-12 rounded-card border border-border-hairline bg-surface-panel p-sp-20">
+    <section className="flex flex-col gap-sp-12">
       <h2 className="text-h3 text-text-primary">Cuotas que se generan</h2>
       <p className="text-body-sm text-text-secondary">Fechas a confirmar: se muestran al emitir.</p>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-input border border-border-hairline bg-surface-panel">
         <div className="min-w-[440px]">
           <Table
             caption="Cuotas que se generan"
@@ -45,19 +45,22 @@ export function CuotasPreview({
             rows={cuotas}
             getRowKey={({ numero }) => String(numero)}
           />
+          {vigencia === null ? null : (
+            <p className="grid grid-cols-4 items-baseline px-sp-16 py-sp-12 text-body-sm text-text-primary">
+              <strong>Total</strong>
+              <span>
+                {vigencia} {vigencia === 1 ? 'cuota' : 'cuotas'}
+              </span>
+              <strong className="col-span-2 font-mono text-mono-lg font-medium">
+                {formatearImporte(vigencia * prima)}
+              </strong>
+            </p>
+          )}
         </div>
       </div>
       {vigencia === null ? (
         <p className="text-body-sm text-text-secondary">Elegí una vigencia para ver las cuotas.</p>
-      ) : (
-        <p className="flex flex-wrap items-baseline justify-between gap-sp-8 text-body-sm text-text-primary">
-          <strong>Total</strong>
-          <span>
-            {vigencia} {vigencia === 1 ? 'cuota' : 'cuotas'}
-          </span>
-          <strong className="font-mono">{formatearImporte(vigencia * prima)}</strong>
-        </p>
-      )}
+      ) : null}
     </section>
   );
 }

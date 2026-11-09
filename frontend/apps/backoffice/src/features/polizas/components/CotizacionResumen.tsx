@@ -26,7 +26,7 @@ export function CotizacionResumen({
   const cobertura = plan.data;
   const [validez] = formatearFechaHora(datos.fechaVencimiento).split(' ');
   return (
-    <section className="flex flex-col gap-sp-16 rounded-card border border-border-hairline bg-surface-panel p-sp-20">
+    <section className="flex flex-col gap-sp-16 rounded-card border border-border-hairline bg-surface-panel p-sp-24">
       <h2 className="text-h3 text-text-primary">Cotización</h2>
       <dl className="grid grid-cols-2 gap-sp-16 lg:grid-cols-4">
         <DatoResumen etiqueta="Cliente">
@@ -46,10 +46,14 @@ export function CotizacionResumen({
           {cobertura ? datos.codigoPlan + ' ' + cobertura.nombre : 'No disponible'}
         </DatoResumen>
         <DatoResumen etiqueta="Prima mensual">
-          <strong className="font-mono text-h3">{formatearImporte(datos.primaMensual)}</strong>
+          <strong className="block font-mono text-mono-lg font-medium">
+            {formatearImporte(datos.primaMensual)}
+          </strong>
+          <span className="mt-sp-4 block text-label text-text-secondary">
+            Válida hasta {validez}
+          </span>
         </DatoResumen>
       </dl>
-      <p className="text-body-sm text-text-secondary">Válida hasta {validez}</p>
       {vehiculo.isError ? (
         <AlertaError>
           {detalleEmision(vehiculo.error, 'No se pudo cargar el vehículo.')}
