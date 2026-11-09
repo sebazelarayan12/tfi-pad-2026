@@ -84,6 +84,64 @@ public sealed class IdentityUsuarioStoreTests : IDisposable
         Assert.False(await store.VerificarPasswordAsync(creado, "Otra_Password1!"));
     }
 
+    [Fact]
+    public async Task ActualizarAsync_CambiaNombreYReemplazaElRolSinDejarElAnterior()
+    {
+        await using var scope = _services.CreateAsyncScope();
+        var store = CrearStore(scope.ServiceProvider);
+        var creado = await store.CrearAsync("e@example.com", PasswordValida, Roles.Empleado, "E", "P");
+
+        await store.ActualizarAsync(creado.Id, "Ana", "Gómez", Roles.Administrador);
+
+        var listado = await store.BuscarListadoAsync(creado.Id);
+        Assert.Equal("Ana", listado?.Cuenta.Nombre);
+        Assert.Equal("Gómez", listado?.Cuenta.Apellido);
+        Assert.Equal(Roles.Administrador, listado?.Rol);
+        var roles = await store.ObtenerRolesAsync(creado);
+        Assert.Equal([Roles.Administrador], roles);
+    }
+
+    [Fact]
+    public async Task EstablecerActivoAsync_DesactivaYReactivaLaCuenta()
+    {
+        await using var scope = _services.CreateAsyncScope();
+        var store = CrearStore(scope.ServiceProvider);
+        var creado = await store.CrearAsync("e@example.com", PasswordValida, Roles.Empleado, "E", "P");
+        Assert.True((await store.BuscarListadoAsync(creado.Id))?.Activo);
+
+        await store.EstablecerActivoAsync(creado.Id, false);
+        Assert.False((await store.BuscarListadoAsync(creado.Id))?.Activo);
+        Assert.False((await store.BuscarPorEmailAsync("e@example.com"))?.Activo);
+        Assert.False((await store.ListarAsync(1, 10)).Items.Single().Activo);
+
+        await store.EstablecerActivoAsync(creado.Id, true);
+        Assert.True((await store.BuscarListadoAsync(creado.Id))?.Activo);
+    }
+
+    [Fact]
+    public async Task ContarAdministradoresActivosAsync_IgnoraEmpleadosYCuentasDesactivadas()
+    {
+        await using var scope = _services.CreateAsyncScope();
+        var store = CrearStore(scope.ServiceProvider);
+        var admin1 = await store.CrearAsync("a1@example.com", PasswordValida, Roles.Administrador, "A", "Uno");
+        var admin2 = await store.CrearAsync("a2@example.com", PasswordValida, Roles.Administrador, "A", "Dos");
+        await store.CrearAsync("e@example.com", PasswordValida, Roles.Empleado, "E", "P");
+        Assert.Equal(2, await store.ContarAdministradoresActivosAsync());
+
+        await store.EstablecerActivoAsync(admin2.Id, false);
+
+        Assert.Equal(1, await store.ContarAdministradoresActivosAsync());
+        Assert.NotNull(admin1);
+    }
+
+    [Fact]
+    public async Task BuscarListadoAsync_ConIdInexistente_DevuelveNull()
+    {
+        await using var scope = _services.CreateAsyncScope();
+
+        Assert.Null(await CrearStore(scope.ServiceProvider).BuscarListadoAsync("no-existe"));
+    }
+
     private static IdentityUsuarioStore CrearStore(IServiceProvider services) =>
         new(services.GetRequiredService<UserManager<Usuario>>());
 

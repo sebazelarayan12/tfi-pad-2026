@@ -165,6 +165,181 @@ public class AuthControllerTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    private static async Task<HttpClient> IniciarSesionAsync(AseguradoraWebFactory factory, string email, string password)
+    {
+        var client = factory.CreateClient();
+        var login = await client.PostAsJsonAsync(Login, new { email, password });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        using var body = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", body.RootElement.GetProperty("token").GetString());
+        return client;
+    }
+
+    [Fact]
+    public async Task Yo_ConToken_DevuelveLaCuentaDelUsuario()
+    {
+        var store = new UsuarioStoreFalso();
+        await store.CrearAsync("ana@example.com", "Ana_Prueba123!", Roles.Empleado, "Ana", "Gómez");
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var client = await IniciarSesionAsync(factory, "ana@example.com", "Ana_Prueba123!");
+
+        var response = await client.GetAsync("/api/auth/yo");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("ana@example.com", body.RootElement.GetProperty("email").GetString());
+        Assert.Equal("Ana", body.RootElement.GetProperty("nombre").GetString());
+        Assert.Equal("Gómez", body.RootElement.GetProperty("apellido").GetString());
+        Assert.Equal(Roles.Empleado, body.RootElement.GetProperty("rol").GetString());
+    }
+
+    [Fact]
+    public async Task Yo_SinToken_Responde401()
+    {
+        await using var factory = CrearFactory(new UsuarioStoreFalso(), usarAutenticacionReal: true);
+
+        var response = await factory.CreateClient().GetAsync("/api/auth/yo");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListarUsuarios_ComoAdministrador_DevuelveLaPaginaOrdenadaPorEmail()
+    {
+        await using var factory = CrearFactory(new UsuarioStoreFalso(), usarAutenticacionReal: true);
+        var client = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+
+        var response = await client.GetAsync("/api/usuarios?pagina=1&tamano=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(2, body.RootElement.GetProperty("total").GetInt32());
+        var items = body.RootElement.GetProperty("items");
+        Assert.Equal(UsuarioStoreFalso.EmailAdministrador, items[0].GetProperty("email").GetString());
+        Assert.Equal(Roles.Administrador, items[0].GetProperty("rol").GetString());
+        Assert.True(items[0].GetProperty("activo").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, items[0].GetProperty("ultimoIngreso").ValueKind);
+    }
+
+    [Fact]
+    public async Task ListarUsuarios_ComoEmpleado_Responde403YSinTokenResponde401()
+    {
+        await using var factory = CrearFactory(new UsuarioStoreFalso(), usarAutenticacionReal: true);
+        var empleado = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailEmpleado, UsuarioStoreFalso.PasswordEmpleado);
+
+        var comoEmpleado = await empleado.GetAsync("/api/usuarios");
+        var anonimo = await factory.CreateClient().GetAsync("/api/usuarios");
+
+        Assert.Equal(HttpStatusCode.Forbidden, comoEmpleado.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonimo.StatusCode);
+    }
+
+    [Fact]
+    public async Task ActualizarUsuario_ComoAdministrador_Responde200ConLaCuentaActualizada()
+    {
+        var store = new UsuarioStoreFalso();
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var client = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/usuarios/{store.IdDe(UsuarioStoreFalso.EmailEmpleado)}",
+            new { nombre = "Ana", apellido = "Gómez", rol = Roles.Empleado });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("Ana", body.RootElement.GetProperty("nombre").GetString());
+        Assert.Equal("Gómez", body.RootElement.GetProperty("apellido").GetString());
+    }
+
+    [Fact]
+    public async Task ActualizarUsuario_ConDatosInvalidosOInexistente_Responde400Y404()
+    {
+        var store = new UsuarioStoreFalso();
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var client = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+        var id = store.IdDe(UsuarioStoreFalso.EmailEmpleado);
+
+        var rolInvalido = await client.PutAsJsonAsync($"/api/usuarios/{id}", new { nombre = "Ana", apellido = "G", rol = "Cliente" });
+        var sinNombre = await client.PutAsJsonAsync($"/api/usuarios/{id}", new { nombre = "", apellido = "G", rol = Roles.Empleado });
+        var inexistente = await client.PutAsJsonAsync("/api/usuarios/no-existe", new { nombre = "Ana", apellido = "G", rol = Roles.Empleado });
+
+        Assert.Equal(HttpStatusCode.BadRequest, rolInvalido.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, sinNombre.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, inexistente.StatusCode);
+    }
+
+    [Fact]
+    public async Task CambiarActivo_DesactivaLaCuentaYElEmpleadoYaNoPuedeIniciarSesion()
+    {
+        var store = new UsuarioStoreFalso();
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var admin = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+
+        var response = await admin.PatchAsJsonAsync(
+            $"/api/usuarios/{store.IdDe(UsuarioStoreFalso.EmailEmpleado)}/activo", new { activo = false });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.False(body.RootElement.GetProperty("activo").GetBoolean());
+
+        var login = await factory.CreateClient().PostAsJsonAsync(Login, new
+        {
+            email = UsuarioStoreFalso.EmailEmpleado,
+            password = UsuarioStoreFalso.PasswordEmpleado
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task CambiarActivo_DeLaPropiaCuenta_Responde400()
+    {
+        var store = new UsuarioStoreFalso();
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var admin = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+
+        var response = await admin.PatchAsJsonAsync(
+            $"/api/usuarios/{store.IdDe(UsuarioStoreFalso.EmailAdministrador)}/activo", new { activo = false });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditarYActivar_ComoEmpleado_Responde403()
+    {
+        var store = new UsuarioStoreFalso();
+        await using var factory = CrearFactory(store, usarAutenticacionReal: true);
+        var empleado = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailEmpleado, UsuarioStoreFalso.PasswordEmpleado);
+        var id = store.IdDe(UsuarioStoreFalso.EmailEmpleado);
+
+        var put = await empleado.PutAsJsonAsync($"/api/usuarios/{id}", new { nombre = "A", apellido = "B", rol = Roles.Administrador });
+        var patch = await empleado.PatchAsJsonAsync($"/api/usuarios/{id}/activo", new { activo = false });
+
+        Assert.Equal(HttpStatusCode.Forbidden, put.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, patch.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("tamano=101")]
+    [InlineData("pagina=0")]
+    public async Task ListarUsuarios_ConPaginacionInvalida_Responde400(string consulta)
+    {
+        await using var factory = CrearFactory(new UsuarioStoreFalso(), usarAutenticacionReal: true);
+        var client = await IniciarSesionAsync(
+            factory, UsuarioStoreFalso.EmailAdministrador, UsuarioStoreFalso.PasswordAdministrador);
+
+        var response = await client.GetAsync($"/api/usuarios?{consulta}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private static AseguradoraWebFactory CrearFactory(
         UsuarioStoreFalso store,
         bool usarAutenticacionReal = false) =>

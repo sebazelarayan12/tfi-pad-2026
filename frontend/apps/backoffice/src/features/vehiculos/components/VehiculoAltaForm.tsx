@@ -15,6 +15,12 @@ const opcionesUso = [
   { value: '1', label: etiquetaEnum('UsoVehiculo', 1) },
 ] as const;
 
+const opcionesTipo = [
+  { value: '0', label: etiquetaEnum('TipoVehiculo', 0) },
+  { value: '1', label: etiquetaEnum('TipoVehiculo', 1) },
+  { value: '2', label: etiquetaEnum('TipoVehiculo', 2) },
+] as const;
+
 interface Props {
   habilitado: boolean;
   guardando: boolean;
@@ -89,6 +95,69 @@ export function VehiculoAltaForm({ habilitado, guardando, onGuardar, onCancelar 
             className="font-mono"
           />
         </div>
+        <Input
+          {...register('marca')}
+          label="Marca"
+          helper={errors.marca?.message}
+          error={Boolean(errors.marca)}
+          disabled={deshabilitado}
+          required
+          autoComplete="off"
+        />
+        <Input
+          {...register('modelo')}
+          label="Modelo"
+          helper={errors.modelo?.message}
+          error={Boolean(errors.modelo)}
+          disabled={deshabilitado}
+          required
+          autoComplete="off"
+        />
+        <Input
+          {...register('anio')}
+          label="Año"
+          helper={errors.anio?.message}
+          error={Boolean(errors.anio)}
+          disabled={deshabilitado}
+          required
+          inputMode="numeric"
+          autoComplete="off"
+        />
+        <Input
+          {...register('numeroMotor')}
+          label="Número de motor"
+          helper={errors.numeroMotor?.message}
+          error={Boolean(errors.numeroMotor)}
+          disabled={deshabilitado}
+          required
+          autoComplete="off"
+          spellCheck={false}
+          className="font-mono"
+        />
+        <Input
+          {...register('numeroChasis')}
+          label="Número de chasis"
+          helper={errors.numeroChasis?.message}
+          error={Boolean(errors.numeroChasis)}
+          disabled={deshabilitado}
+          required
+          autoComplete="off"
+          spellCheck={false}
+          className="font-mono"
+        />
+        <Controller
+          control={control}
+          name="tipo"
+          render={({ field }) => (
+            <Select
+              {...field}
+              label="Tipo"
+              options={opcionesTipo}
+              required
+              disabled={deshabilitado}
+            />
+          )}
+        />
         <Controller
           control={control}
           name="uso"

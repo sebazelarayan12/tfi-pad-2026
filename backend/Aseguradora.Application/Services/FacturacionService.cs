@@ -118,9 +118,10 @@ public sealed class FacturacionService(
             }
             else _logger.LogWarning("ARCA_ESTADO_NO_APROBADO PagoId={PagoId} Estado={Estado}", pago.Id, response.Estado);
         }
-        catch (ExternalServiceException)
+        catch (ExternalServiceException ex)
         {
             // El pago ya fue confirmado y la factura queda disponible para US-F4-09.
+            _logger.LogWarning("ARCA_EMISION_FALLIDA PagoId={PagoId} Motivo={Motivo}", pago.Id, ex.Message);
         }
     }
 }

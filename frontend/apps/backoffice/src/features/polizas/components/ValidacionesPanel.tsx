@@ -2,7 +2,6 @@ import { CardWidget } from '@nexa/ui';
 
 const validaciones = [
   'Cliente validado en Renaper',
-  'Vehículo validado en DNRPA',
   'Sin otra póliza activa para el vehículo',
   'Plan compatible con el vehículo',
 ];

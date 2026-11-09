@@ -29,6 +29,21 @@ public sealed class ArcaMockService : IArcaService
             return Task.FromResult(factura);
         }
     }
+    /// <summary>PDF mínimo con el número de la factura, para poder probar el flujo sin el servicio real.</summary>
+    public Task<byte[]> ObtenerPdfAsync(string numeroComprobante, char tipo, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var texto = $"Factura {tipo} {numeroComprobante} (simulada)";
+        var contenido = $"BT /F1 18 Tf 72 720 Td ({texto}) Tj ET";
+        var pdf = "%PDF-1.4\n"
+            + "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+            + "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+            + "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
+            + $"4 0 obj<</Length {contenido.Length}>>stream\n{contenido}\nendstream endobj\n"
+            + "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
+            + "trailer<</Root 1 0 R/Size 6>>\n%%EOF";
+        return Task.FromResult(Encoding.ASCII.GetBytes(pdf));
+    }
     /// <summary>Consulta una factura autorizada por su número de comprobante.</summary>
     public Task<ArcaFacturaResponse> ConsultarFacturaAsync(string numeroComprobante, CancellationToken ct)
     {
