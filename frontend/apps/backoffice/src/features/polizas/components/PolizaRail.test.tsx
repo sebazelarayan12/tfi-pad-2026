@@ -164,6 +164,7 @@ describe('DeudaVencidaWidget: cuotas a cobrar (D-B18-01 opción B)', () => {
 
     await userEvent.click(screen.getByRole('checkbox', { name: /Cuota 7/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Registrar pago en caja' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar pago' }));
 
     await waitFor(() => expect(body).toBeDefined());
     expect(body?.cuotaIds).toEqual(['q7']);

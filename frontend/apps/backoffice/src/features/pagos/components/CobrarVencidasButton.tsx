@@ -1,11 +1,14 @@
 import { ESTADO_CUOTA_NUMERO } from '@nexa/api';
-import { AlertaError, Button } from '@nexa/ui';
+import { AlertaError, Button, Dialogo, toast } from '@nexa/ui';
 import { WalletIcon } from '@phosphor-icons/react/dist/csr/Wallet';
 import { useMemo, useRef, useState } from 'react';
 
 import { useCobrarCuotas } from '../api/usePagos';
 import type { CuotaCobrable } from '../types/cobro';
 import { mensajeDeError } from './mensajesError';
+import { textoCuotas } from './textoCuotas';
+
+const TEXTO_PAGO_REGISTRADO = 'Pago registrado.';
 
 export interface CobrarVencidasButtonProps {
   polizaId: string;
@@ -16,6 +19,7 @@ export interface CobrarVencidasButtonProps {
 
 /**
  * Cobra con un clic todas las cuotas Vencida de una póliza (RV-D10), o solo las de `cuotaIds`.
+ * Pide confirmación antes de cobrar y avisa el éxito con un toast.
  * No dispara ninguna request al montar ni permite un segundo POST en vuelo.
  */
 export function CobrarVencidasButton({
@@ -23,7 +27,7 @@ export function CobrarVencidasButton({
   cuotas,
   cuotaIds: elegidas,
 }: CobrarVencidasButtonProps) {
-  const [exito, setExito] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const enviandoRef = useRef(false);
   const mutacion = useCobrarCuotas(polizaId);
 
@@ -39,15 +43,23 @@ export function CobrarVencidasButton({
   );
   const deshabilitado = cuotaIds.length === 0 || mutacion.isPending;
 
+  const numeros = useMemo(() => {
+    const idsACobrar = new Set(cuotaIds);
+    return cuotas
+      .filter((cuota) => idsACobrar.has(cuota.id))
+      .sort((a, b) => a.numero - b.numero)
+      .map((cuota) => cuota.numero);
+  }, [cuotas, cuotaIds]);
+
   function cobrar() {
+    setConfirmando(false);
     if (deshabilitado || enviandoRef.current) return;
 
     enviandoRef.current = true;
-    setExito(false);
     mutacion.mutate(
       { cuotaIds },
       {
-        onSuccess: () => setExito(true),
+        onSuccess: () => toast.success(TEXTO_PAGO_REGISTRADO),
         onSettled: () => {
           enviandoRef.current = false;
         },
@@ -62,11 +74,25 @@ export function CobrarVencidasButton({
         variant="primary"
         size="m"
         icon={<WalletIcon size={16} weight="regular" />}
-        onClick={cobrar}
+        onClick={() => setConfirmando(true)}
         disabled={deshabilitado}
         aria-disabled={deshabilitado}
       />
-      {exito ? <p role="status">Pago registrado.</p> : null}
+      {confirmando ? (
+        <Dialogo
+          titulo="Confirmar pago en caja"
+          descripcion={`Se va a registrar el pago de ${numeros.length === 1 ? 'la cuota' : 'las cuotas'} ${textoCuotas(numeros)}. Esta acción no se puede deshacer.`}
+          onCancelar={() => setConfirmando(false)}
+        >
+          <Button
+            label="Cancelar"
+            variant="secondary"
+            onClick={() => setConfirmando(false)}
+            data-foco-inicial
+          />
+          <Button label="Confirmar pago" onClick={cobrar} />
+        </Dialogo>
+      ) : null}
       {mutacion.isError ? <AlertaError>{mensajeDeError(mutacion.error)}</AlertaError> : null}
     </div>
   );
