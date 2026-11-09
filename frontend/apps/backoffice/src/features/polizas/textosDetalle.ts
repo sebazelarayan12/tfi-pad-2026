@@ -21,6 +21,8 @@ export const mensajeNoExiste = (id: string) => `La póliza ${id} no existe.`;
 export const TITULO_DEUDA_VENCIDA = 'Deuda vencida';
 export const TITULO_PAGOS = 'Pagos';
 export const TEXTO_SIN_VENCIDAS = 'Sin cuotas vencidas.';
+export const TEXTO_CUOTAS_A_COBRAR = 'Cuotas a cobrar';
+export const TEXTO_TOTAL_A_COBRAR = 'Total a cobrar';
 export const TEXTO_SIN_PAGOS = 'Sin pagos registrados.';
 export const TEXTO_ERROR_PAGOS = 'No se pudieron cargar los pagos.';
 export const detalleVencidas = (numeros: string, cantidad: number) =>

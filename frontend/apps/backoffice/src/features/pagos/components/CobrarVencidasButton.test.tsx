@@ -34,6 +34,26 @@ describe('CobrarVencidasButton', () => {
     expect(body?.cuotaIds).toEqual(['cuota-6', 'cuota-8']);
   });
 
+  it('con cuotaIds cobra solo esas cuotas y sin ids queda deshabilitado', async () => {
+    let body: PagoCajaRequest | undefined;
+    servidorMock.use(
+      http.post('*/api/pagos/caja', async ({ request }) => {
+        body = (await request.json()) as PagoCajaRequest;
+        return HttpResponse.json(PAGO_APROBADO, { status: 201 });
+      }),
+    );
+    const { rerender } = renderConProveedores(
+      <CobrarVencidasButton polizaId="poliza-1" cuotas={CUOTAS} cuotaIds={[]} />,
+    );
+    expect(screen.getByRole('button', { name: 'Registrar pago en caja' })).toBeDisabled();
+
+    rerender(<CobrarVencidasButton polizaId="poliza-1" cuotas={CUOTAS} cuotaIds={['cuota-8']} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Registrar pago en caja' }));
+
+    await waitFor(() => expect(body).toBeDefined());
+    expect(body?.cuotaIds).toEqual(['cuota-8']);
+  });
+
   it('no dispara ninguna request al montar y se deshabilita sin vencidas', async () => {
     const post = vi.fn();
     servidorMock.use(

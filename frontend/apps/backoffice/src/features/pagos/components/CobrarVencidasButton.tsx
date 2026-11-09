@@ -10,24 +10,32 @@ import { mensajeDeError } from './mensajesError';
 export interface CobrarVencidasButtonProps {
   polizaId: string;
   cuotas: ReadonlyArray<CuotaCobrable>;
+  /** Si viene, cobra solo estas cuotas (selección manual); si no, todas las Vencida. */
+  cuotaIds?: ReadonlyArray<string>;
 }
 
 /**
- * Cobra con un clic todas las cuotas Vencida de una póliza (RV-D10).
+ * Cobra con un clic todas las cuotas Vencida de una póliza (RV-D10), o solo las de `cuotaIds`.
  * No dispara ninguna request al montar ni permite un segundo POST en vuelo.
  */
-export function CobrarVencidasButton({ polizaId, cuotas }: CobrarVencidasButtonProps) {
+export function CobrarVencidasButton({
+  polizaId,
+  cuotas,
+  cuotaIds: elegidas,
+}: CobrarVencidasButtonProps) {
   const [exito, setExito] = useState(false);
   const enviandoRef = useRef(false);
   const mutacion = useCobrarCuotas(polizaId);
 
   const cuotaIds = useMemo(
     () =>
-      cuotas
-        .filter((cuota) => cuota.estado === ESTADO_CUOTA_NUMERO.Vencida)
-        .sort((a, b) => a.numero - b.numero)
-        .map((cuota) => cuota.id),
-    [cuotas],
+      elegidas
+        ? [...elegidas]
+        : cuotas
+            .filter((cuota) => cuota.estado === ESTADO_CUOTA_NUMERO.Vencida)
+            .sort((a, b) => a.numero - b.numero)
+            .map((cuota) => cuota.id),
+    [cuotas, elegidas],
   );
   const deshabilitado = cuotaIds.length === 0 || mutacion.isPending;
 

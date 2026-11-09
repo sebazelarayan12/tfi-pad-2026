@@ -202,7 +202,7 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 ## 13. Decisiones pendientes con default
 
-- [CONFIRMAR] **D-B18-01 (D1 de B10; RV-D11): cobro desde el widget.** Default: cobra todas las cuotas vencidas con un clic (`CobrarVencidasButton`), sin checkboxes. La selección manual queda en B-19. No cerrar sin confirmación del equipo: producto, antes de esta tarea.
+- **D-B18-01 (D1 de B10; RV-D11): cobro desde el widget. DECIDIDA el 2026-11-09 por el usuario (dueño de producto en la sesión): opción B.** El empleado elige qué cuotas vencidas cobrar con checkboxes en el widget, ninguna marcada de entrada; el botón se habilita con al menos una marcada y envía solo esas `cuotaIds`. La selección manual se implementó en esta tarea (no en B-19). El botón del encabezado de B-16 sigue cobrando todas las vencidas. Sin documento de producto extra: la decisión se registra acá y en el PR.
 - **D-B18-02: confirmación antes de cobrar.** Default: sin paso extra de confirmación; el widget muestra qué se cobra (`Cuotas 6 y 7`). Confirmar si el cobro en caja necesita diálogo.
 - **D-B18-03: habilitación del botón.** B10 §7 dice "Habilitado si hay cuotas Pendiente o Vencida". Default: habilitado solo si hay cuotas Vencida, igual que el widget. Lo aplica `CobrarVencidasButton` (B-17), que también usa B-16.
 - **D-B18-04 (RV-D13): forma de `GET /api/polizas/{id}/pagos`. Resuelto.** `PagoResponse[]` con `factura` para el widget. PB-05 se actualiza en el doc PR para que el back lo confirme. Si el back elige otra forma, se ajusta el mock de T-29 y `PagoResumenItem`.
@@ -230,4 +230,4 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 - Resuelto (RV-D10): el botón "Registrar pago en caja" del encabezado lo coloca B-16 con `CobrarVencidasButton` de B-17. Esta tarea no edita `PolizaAcciones.tsx`.
 - Resuelto (RV-D10 / RV-66): la dependencia de B-16 deja de ser necesaria para esta tarea; el INDEX la deja como "Puede empezar sin esperar a".
-- ABIERTO: el monto de "Deuda vencida" se suma en el front (importe + recargo). Motivo: RV-D14 cubre solo el total previo de B-17; `convenciones-transversales.md §5.4` pide no recalcular totales. Decisión pendiente del equipo.
+- RESUELTO el 2026-11-09 (decisión del usuario en la sesión): el front ayuda en el cálculo. "Deuda vencida" y "Total a cobrar" (suma de las cuotas marcadas) se suman en el front con `importe + recargo`, solo como ayuda informativa; el importe real lo confirma el back en `PagoResponse.importe`. Excepción acotada a `convenciones-transversales.md §5.4`.
