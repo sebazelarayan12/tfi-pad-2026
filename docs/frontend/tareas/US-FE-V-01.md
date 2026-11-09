@@ -119,10 +119,10 @@ La persona responsable abre la app con MSW, recorre cada pantalla del grupo con 
 - Altura de fila de la tabla (48 px contra 49 px del Figma): viene del primitivo `Table` (T-06), fuera del alcance mínimo.
 - Separación del icono de lupa (4 px contra 8 px): se reutiliza el espaciado del buscador del Sidebar para no agregar un token nuevo.
 
-**Pendientes de decisión del usuario (no se resolvieron por cuenta propia):**
-- Estructura de la columna derecha de B2: en el Figma el rail ocupa todo el alto, con un separador de 1 px, y el Topbar mide 795 px. En la app el Topbar abarca todo el ancho y el rail está dentro de la página. Corregirlo implica un slot de rail en `LayoutBackoffice` (T-16) que afecta a otras pantallas.
-- Botón "Nueva cotización" del Topbar (D-B02-4 y DP-6 de T-16).
-- P-C3 (Badge Suspendida, 4,42) y P-C4 (borde de campos, 1,48): requieren cambiar tokens y se alejarían del Figma en todas las pantallas.
+**Decisiones del usuario (2026-11-09, después de la verificación):**
+- Estructura de la columna derecha de B2 (rail a todo el alto, Topbar de 795 px): **se deja como está** y queda como excepción aceptada; si luego no gusta, se cambia en una tarea de T-16.
+- Botón "Nueva cotización" del Topbar: **se agrega deshabilitado** en B2 (como en el Figma, sin acción hasta que exista el flujo de cotización).
+- P-C3 (Badge Suspendida y Pendiente CAE): **se corrige** oscureciendo `status/suspendida/text` de `#9A6400` a `#956100` (4,65:1 sobre `#FBF0D6`). P-C4 (borde de campos, 1,48): **no se cambia**, queda como excepción aceptada para acordarlo con diseño.
 
 ## 14. Riesgos y errores comunes
 
