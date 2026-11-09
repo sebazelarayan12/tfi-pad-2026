@@ -54,7 +54,7 @@ function DetalleCuota({
   const conRecargo = cuota.recargo > 0;
 
   return (
-    <div className="flex flex-col gap-sp-12">
+    <div className="flex flex-col gap-sp-16">
       <div className={FILA}>
         <div className="flex flex-col gap-sp-4">
           <p className="text-h3 text-text-primary">{`Cuota ${cuota.numero} de ${totalCuotasPoliza}`}</p>
@@ -64,7 +64,7 @@ function DetalleCuota({
         </div>
         <EstadoBadge estado={BADGE_POR_ESTADO[cuota.estado]} />
       </div>
-      <dl className="flex flex-col gap-sp-8 text-body-sm">
+      <dl className="flex flex-col gap-sp-16 text-body-sm">
         <div className={FILA}>
           <dt className="text-text-secondary">Importe de la cuota</dt>
           <dd className={VALOR}>{formatearImporte(cuota.importe)}</dd>

@@ -239,7 +239,7 @@ export function PagoAprobadoPage() {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center py-sp-24 md:py-sp-40">
+    <div className="flex flex-1 items-start justify-center py-sp-24 md:py-sp-40">
       {vista.tipo === 'no-identificado' ? <NoIdentificado /> : null}
       {vista.tipo === 'cargando' ? <EsqueletoResultado /> : null}
       {vista.tipo === 'error' ? <ErrorConsulta es429={vista.es429} {...reconsulta} /> : null}
