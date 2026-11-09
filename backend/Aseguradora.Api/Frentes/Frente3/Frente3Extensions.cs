@@ -24,6 +24,7 @@ public static class Frente3Extensions
         // CU10: policy issuing (US-F3-02).
         services.AddScoped<INumeradorPolizas, NumeradorPolizasSql>();
         services.AddScoped<IPolizaService, PolizaService>();
+        services.AddScoped<ICuotaConsultaService, CuotaConsultaService>();
         services.AddScoped<ISeeder, SeedFrente3>();
 
         // CU14: daily expiry process (US-F3-05).
