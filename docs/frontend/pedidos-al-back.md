@@ -18,7 +18,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 | PB-02 | Cupón público de Pago Fácil `POST /api/publico/cupon` | Falta endpoint | Bloquea | W3, W4, W5 | Falta endpoint |
 | PB-03 | Resumen de clientes: faltan Renaper y conteos | Inconsistencia de contrato | Degrada | B3 (B-04) | Parcialmente resuelto: GET/PUT/DELETE implementados; ampliación del resumen pendiente |
 | PB-04 | Usuarios: listado, edición, activar/desactivar, último ingreso, nombre | Falta endpoint | Bloquea | B14, B1, B2 | Falta endpoint |
-| PB-05 | Búsqueda y listados de pagos (por póliza, por cuota, por número de póliza) | Falta endpoint | Bloquea | B10, B11, B9, B8 | Falta endpoint |
+| PB-05 | Búsqueda y listados de pagos (por póliza, por cuota, por número de póliza) | Resuelto en el back: `GET /api/pagos` y `GET /api/polizas/{id}/pagos` | Bloquea | B10, B11, B9, B8 | Resuelto |
 | PB-06 | Filtros de `GET /api/polizas`: plan, número de póliza, DNI | Falta endpoint | Bloquea | B9 | Falta endpoint |
 | PB-07 | Titular y DNI en la consulta pública | Falta endpoint | Degrada | W3, W5 | Falta endpoint |
 | PB-08 | Resumen de inicio (conteos, cuotas vencidas, tareas, fecha de corte) | Falta endpoint | Bloquea | B2 | Falta endpoint |
@@ -118,6 +118,8 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 - **Workaround front.** B2 muestra el email del claim `email` y omite el nombre. B14 se reduce a alta (ver PB-04 Dudas del propio B14, punto 1).
 
 ### PB-05. Pagos: listado por póliza, por cuota y búsqueda por número
+
+> **Resuelto.** El back publica `GET /api/pagos?estado=&medio=&numeroPoliza=&pagina=&tamano=` (`PaginaResponse<PagoListadoResponse>`, del más nuevo al más viejo, sin filtro por fechas) y `GET /api/polizas/{id}/pagos` (`PagoResponse[]` con factura; 404 si la póliza no existe). Estado y medio van en mayúsculas (`PENDIENTE`, `APROBADO`, `RECHAZADO`; `CAJA`, `PASARELA`, `PAGO_FACIL`) y un valor desconocido da 400. El front los consume sin mock; MSW solo los responde con `VITE_USE_MOCKS=true`. Lo que sigue describe el pedido original.
 
 - **Qué pasa hoy.** `Controllers/PagosController.cs` define `POST /api/pagos/caja` (línea 28), `GET /api/pagos/{id}` (38), `GET /api/pagos/{id}/factura` (44) y `POST /api/pagos/{id}/conciliar` (19). No hay `GET /api/pagos` (listado) ni `GET /api/polizas/{id}/pagos`. `CuotaResponse` (`Dtos/Polizas/CuotaResponse.cs:15-22`) no trae `pagoId`. `PolizaDetalleResponse` no trae pagos. Por eso un pago de caja que se perdió (corte de red tras el 201) no se puede recuperar buscando por cuota o póliza (`contratos-api/pagos-facturas.md` §9.3).
 - **Qué necesita el front.** B10 (widget de pagos), B11 (tabla de pagos y facturas), B9 (acciones por fila), y la recuperación de caja tras corte de red.

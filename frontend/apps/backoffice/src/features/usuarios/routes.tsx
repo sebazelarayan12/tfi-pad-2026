@@ -6,7 +6,7 @@ export const usuariosRoutes: RouteObject[] = [
   {
     path: '/usuarios',
     element: <UsuariosPage />,
-    handle: { titulo: 'Usuarios' },
+    handle: { titulo: 'Usuarios', ocultarBuscador: true },
   },
 ];
 

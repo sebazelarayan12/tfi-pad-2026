@@ -6,9 +6,9 @@ Estado de los servicios de otros grupos y cómo pasar de mock a real (US-T-04). 
 
 | Servicio | Interfaz | Clave de configuración | Mock | Real | Responsable | Estado |
 |----------|----------|------------------------|------|------|-------------|--------|
-| Renaper | `IRenaperService` | `Integraciones:Renaper` | `RenaperMockService` | `RenaperHttpService` | Un grupo confirmado | Mock; real pendiente de que publiquen su API |
+| Renaper | `IRenaperService` | `Integraciones:Renaper` | `RenaperMockService` | `RenaperHttpService` | Grupo OpenRENAPER | Real implementado contra OpenRENAPER (sin clave); activar con `UsarMock=false`. Ver "Particularidades" |
 | DNRPA | `IDnrpaService` | `Integraciones:Dnrpa` | `DnrpaMockService` | `DnrpaHttpService` | Sin grupo | Mock definitivo (no hay servicio real accesible) |
-| ARCA | `IArcaService` | `Integraciones:Arca` | `ArcaMockService` | `ArcaHttpService` | Un grupo confirmado | Mock; real pendiente. Plan B: AFIP en homologación |
+| ARCA | `IArcaService` | `Integraciones:Arca` | `ArcaMockService` | `ArcaHttpService` | Grupo FacturAR | Real implementado contra FacturAR; falta su API key para activarlo. Ver "Particularidades" |
 | Pasarela 1 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela1` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 1 | Mock; real pendiente |
 | Pasarela 2 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela2` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 2 | Mock; real pendiente |
 
@@ -25,6 +25,18 @@ Cada clave tiene tres ajustes. Con `UsarMock=true` (valor por defecto) no hace f
 | `ApiKey` | Clave que enviamos al otro grupo | `INTEGRACIONES_<SERVICIO>_APIKEY` en `.env` (ver `.env.example`) |
 
 Para las pasarelas, `<Servicio>` es `Pasarelas__pasarela1` o `Pasarelas__pasarela2`. Además, `Integraciones:Pasarelas:<proveedor>:ConfirmarWebhook` (por defecto `true`) hace que el webhook se confirme contra la pasarela; el mock deja el pago en `PENDIENTE`, así que con mocks hay que ponerlo en `false` (ver `docs/webhook-pasarela.md`).
+
+## Particularidades de OpenRENAPER y FacturAR
+
+**OpenRENAPER** (`POST /api/v1/consultas`, sin autenticación; por eso `Integraciones__Renaper__RequiereApiKey=false`). Devuelve solo `nombre`, `dni`, `cuit`, `edad`, `sexo` y `provincia_ubicacion`, todos opcionales. Consecuencias en el alta de cliente:
+
+- RN01 (mayor de 18) se verifica con la `edad` de Renaper. Si no la publica, el cliente se registra con `ValidadoRenaper=false`.
+- RN02 (fallecido) no se puede verificar: la fuente no informa estado.
+- No hay domicilio ni fecha de nacimiento: se conserva lo que cargó el empleado. El nombre llega en un solo texto; si viene como `Nombre APELLIDO` (apellido en mayúsculas) se separa y se precargan nombre y apellido, si no (todo en mayúsculas, empresa) no se adivina y solo se pisan CUIL y sexo.
+- Un DNI compartido por varias personas responde 409; se reintenta por el CUIL cargado.
+- Límite de 15 consultas por minuto por IP y disponibilidad bajo demanda (no 24/7): una caída no bloquea el alta (queda sin validar).
+
+**FacturAR** (`POST /v1/comprobantes`, header `X-Api-Key` con una clave `fak_...` y `Idempotency-Key` = número de pago). La empresa emisora sale de la clave, así que `Facturacion:Cuit` no se envía; `Facturacion:PuntoVenta` debe existir y estar activo en su portal. Se emite Factura B (tipo 6) con IVA incluido. No hay consulta por número de comprobante (`ConsultarFacturaAsync` falla), y el PDF no se guarda.
 
 ## Pasar un servicio de mock a real
 

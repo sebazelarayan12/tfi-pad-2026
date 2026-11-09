@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Aseguradora.Api.Frentes.Frente1;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.External;
@@ -11,10 +12,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Aseguradora.Tests.Integrations;
 
+/// <summary>The real client talks to OpenRENAPER (<c>POST /api/v1/consultas</c>, no authentication).</summary>
 public class RenaperHttpServiceTests
 {
-    private const string BaseUrl = "https://renaper.example";
-    private const string ApiKey = "clave-renaper-prueba";
+    private const string BaseUrl = "https://openrenaper.example";
+
+    private const string RespuestaCompleta = """
+        {
+          "nombre": "PEREZ JUAN CARLOS",
+          "dni": "30123456",
+          "cuit": "20301234565",
+          "edad": 41,
+          "sexo": "Masculino",
+          "provincia_ubicacion": "TUCUMAN"
+        }
+        """;
 
     private static ServiceProvider CrearProveedor(
         ContadorHandler handler,
@@ -24,8 +36,8 @@ public class RenaperHttpServiceTests
         var ajustes = new Dictionary<string, string?>
         {
             ["Integraciones:Renaper:UsarMock"] = "false",
+            ["Integraciones:Renaper:RequiereApiKey"] = "false",
             ["Integraciones:Renaper:BaseUrl"] = BaseUrl,
-            ["Integraciones:Renaper:ApiKey"] = ApiKey,
             ["Integraciones:Renaper:TimeoutSegundos"] = timeoutSegundos.ToString(),
             ["Integraciones:Renaper:ReintentosMaximos"] = reintentosMaximos.ToString()
         };
@@ -46,150 +58,221 @@ public class RenaperHttpServiceTests
         Content = new StringContent(json, Encoding.UTF8, "application/json")
     };
 
-    [Fact]
-    public async Task Mapea_200_completo_incluidos_piso_y_depto_nulos()
-    {
-        const string json = """
-            {
-              "dni": "30123456",
-              "cuil": "20301234565",
-              "nombre": "Juan Carlos",
-              "apellido": "Pérez",
-              "fechaNacimiento": "1985-03-21",
-              "sexo": "M",
-              "domicilio": {
-                "calle": "San Martín",
-                "numero": "1234",
-                "piso": null,
-                "depto": null,
-                "localidad": "San Miguel de Tucumán",
-                "provincia": "Tucumán",
-                "codigoPostal": "4000"
-              },
-              "estado": "VIGENTE",
-              "fechaFallecimiento": null
-            }
-            """;
+    private static IRenaperService Renaper(IServiceProvider provider) => provider.GetRequiredService<IRenaperService>();
 
-        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
+    [Fact]
+    public async Task Consulta_por_dni_con_POST_y_mapea_solo_lo_que_publica_la_fuente()
+    {
+        string? cuerpo = null;
+        var handler = new ContadorHandler(async (pedido, token) =>
+        {
+            cuerpo = await pedido.Content!.ReadAsStringAsync(token);
+            return JsonRespuesta(HttpStatusCode.OK, RespuestaCompleta);
+        });
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
-        var persona = await service.ObtenerPorDniAsync("30123456", CancellationToken.None);
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None);
+
+        Assert.Equal(HttpMethod.Post, handler.UltimoPedido?.Method);
+        Assert.Equal("/api/v1/consultas", handler.UltimoPedido?.RequestUri?.AbsolutePath);
+        using (var documento = JsonDocument.Parse(cuerpo!))
+        {
+            Assert.Equal("dni", documento.RootElement.GetProperty("tipo").GetString());
+            Assert.Equal("30123456", documento.RootElement.GetProperty("numero").GetString());
+        }
 
         Assert.NotNull(persona);
         Assert.Equal("30123456", persona.Dni);
         Assert.Equal("20301234565", persona.Cuil);
-        Assert.Equal("Juan Carlos", persona.Nombre);
-        Assert.Equal("Pérez", persona.Apellido);
-        Assert.Equal(new DateOnly(1985, 3, 21), persona.FechaNacimiento);
+        Assert.Equal("PEREZ JUAN CARLOS", persona.Nombre);
         Assert.Equal('M', persona.Sexo);
-        Assert.Equal("San Martín", persona.Domicilio.Calle);
-        Assert.Equal("1234", persona.Domicilio.Numero);
-        Assert.Null(persona.Domicilio.Piso);
-        Assert.Null(persona.Domicilio.Depto);
-        Assert.Equal("San Miguel de Tucumán", persona.Domicilio.Localidad);
-        Assert.Equal("Tucumán", persona.Domicilio.Provincia);
-        Assert.Equal("4000", persona.Domicilio.CodigoPostal);
+        Assert.Equal(41, persona.Edad);
         Assert.Equal(EstadoRenaper.Vigente, persona.Estado);
+        // The source does not publish these and nothing is invented.
+        Assert.Null(persona.Apellido);
+        Assert.Null(persona.FechaNacimiento);
+        Assert.Null(persona.Domicilio);
         Assert.Null(persona.FechaFallecimiento);
-        Assert.Equal("/api/personas/30123456", handler.UltimoPedido?.RequestUri?.AbsolutePath);
+    }
+
+    [Theory]
+    [InlineData("Sebastian ZELARAYAN", "Sebastian", "ZELARAYAN")]
+    [InlineData("Juan Carlos DE LA CRUZ", "Juan Carlos", "DE LA CRUZ")]
+    [InlineData("PEREZ JUAN CARLOS", "PEREZ JUAN CARLOS", null)]
+    [InlineData("Sebastian", "Sebastian", null)]
+    [InlineData("ZELARAYAN Sebastian", "ZELARAYAN Sebastian", null)]
+    public void Separa_el_nombre_solo_cuando_el_formato_es_inequivoco(string completo, string nombre, string? apellido)
+    {
+        Assert.Equal((nombre, apellido), RenaperHttpService.SepararNombre(completo));
     }
 
     [Fact]
-    public async Task Envia_el_header_X_Api_Key_configurado()
+    public async Task Consulta_por_cuil_usa_tipo_cuit()
+    {
+        string? cuerpo = null;
+        var handler = new ContadorHandler(async (pedido, token) =>
+        {
+            cuerpo = await pedido.Content!.ReadAsStringAsync(token);
+            return JsonRespuesta(HttpStatusCode.OK, RespuestaCompleta);
+        });
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorCuilAsync("20301234565", CancellationToken.None);
+
+        using var documento = JsonDocument.Parse(cuerpo!);
+        Assert.Equal("cuit", documento.RootElement.GetProperty("tipo").GetString());
+        Assert.Equal("20301234565", documento.RootElement.GetProperty("numero").GetString());
+        Assert.Equal("20301234565", persona?.Cuil);
+    }
+
+    [Fact]
+    public async Task Todos_los_campos_opcionales_en_null_se_conservan_como_null()
     {
         const string json = """
-            {
-              "dni": "30123456",
-              "cuil": "20301234565",
-              "nombre": "Juan Carlos",
-              "apellido": "Pérez",
-              "fechaNacimiento": "1985-03-21",
-              "sexo": "M",
-              "domicilio": {
-                "calle": "San Martín",
-                "numero": "1234",
-                "piso": null,
-                "depto": null,
-                "localidad": "San Miguel de Tucumán",
-                "provincia": "Tucumán",
-                "codigoPostal": "4000"
-              },
-              "estado": "VIGENTE",
-              "fechaFallecimiento": null
-            }
+            { "nombre": "PEREZ JUAN CARLOS", "dni": null, "cuit": null, "edad": null, "sexo": null, "provincia_ubicacion": null }
             """;
-
         var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
-        await service.ObtenerPorDniAsync("30123456", CancellationToken.None);
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None);
 
-        Assert.NotNull(handler.UltimoPedido);
-        Assert.True(handler.UltimoPedido.Headers.TryGetValues(ResilienciaExtensions.ApiKeyHeader, out var valores));
-        Assert.Equal(ApiKey, Assert.Single(valores));
+        Assert.NotNull(persona);
+        Assert.Equal("30123456", persona.Dni);
+        Assert.Null(persona.Cuil);
+        Assert.Null(persona.Edad);
+        Assert.Null(persona.Sexo);
     }
 
     [Fact]
-    public async Task Devuelve_null_con_404_y_codigo_persona_no_encontrada()
+    public async Task Consulta_por_cuil_sin_dni_en_la_respuesta_toma_el_dni_del_medio_del_cuil()
     {
-        const string json = """{ "codigo": "PERSONA_NO_ENCONTRADA", "mensaje": "La persona no existe." }""";
-
-        var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(JsonRespuesta(HttpStatusCode.NotFound, json)));
+        const string json = """
+            { "nombre": "PEREZ JUAN CARLOS", "dni": null, "cuit": "20301234565", "edad": 41, "sexo": "Masculino", "provincia_ubicacion": null }
+            """;
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
-        var persona = await service.ObtenerPorDniAsync("99999999", CancellationToken.None);
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorCuilAsync("20301234565", CancellationToken.None);
+
+        Assert.Equal("30123456", persona?.Dni);
+    }
+
+    [Fact]
+    public async Task Consulta_por_cuit_de_empresa_sin_dni_no_inventa_un_dni()
+    {
+        const string json = """
+            { "nombre": "TRANSPORTE DELLEPIANE SOCIEDAD ANONIMA", "dni": null, "cuit": "30712345671", "edad": null, "sexo": null, "provincia_ubicacion": null }
+            """;
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorCuilAsync("30712345671", CancellationToken.None);
+
+        Assert.Equal("30712345671", persona?.Dni);
+        Assert.Equal("30712345671", persona?.Cuil);
+    }
+
+    [Theory]
+    [InlineData("Femenino", 'F')]
+    [InlineData("Masculino", 'M')]
+    [InlineData("Otro", null)]
+    public async Task Mapea_el_sexo_publicado(string sexo, char? esperado)
+    {
+        var json = RespuestaCompleta.Replace("\"Masculino\"", $"\"{sexo}\"");
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None);
+
+        Assert.Equal(esperado, persona?.Sexo);
+    }
+
+    [Fact]
+    public async Task No_envia_X_Api_Key_porque_OpenRENAPER_no_la_usa()
+    {
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, RespuestaCompleta)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        await Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None);
+
+        Assert.False(handler.UltimoPedido!.Headers.Contains(ResilienciaExtensions.ApiKeyHeader));
+    }
+
+    [Fact]
+    public async Task Devuelve_null_con_404_sin_resultados()
+    {
+        const string json = """{ "codigo": "sin_resultados", "mensaje": "Sin coincidencias.", "fuente": null, "detalles": [] }""";
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.NotFound, json)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorDniAsync("99999999", CancellationToken.None);
 
         Assert.Null(persona);
         Assert.Equal(1, handler.Llamadas);
     }
 
     [Fact]
-    public async Task Lanza_ExternalServiceException_con_404_y_otro_codigo()
+    public async Task Un_dni_ambiguo_lanza_PersonaAmbiguaException()
     {
-        const string json = """{ "codigo": "ERROR_INTERNO" }""";
-
-        var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(JsonRespuesta(HttpStatusCode.NotFound, json)));
+        const string json = """{ "codigo": "consulta_ambigua", "mensaje": "consultar por CUIT.", "fuente": null, "detalles": [] }""";
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.Conflict, json)));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
-        await Assert.ThrowsAsync<ExternalServiceException>(
-            () => service.ObtenerPorDniAsync("30123456", CancellationToken.None));
+        await Assert.ThrowsAsync<PersonaAmbiguaException>(
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
     }
 
     [Fact]
-    public async Task Lanza_ExternalServiceException_con_500()
+    public async Task Un_conflicto_por_datos_contradictorios_lanza_ExternalServiceException_sin_ser_ambigua()
     {
-        var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+        const string json = """{ "codigo": "datos_contradictorios", "mensaje": "x", "fuente": null, "detalles": [] }""";
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.Conflict, json)));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
+
+        var ex = await Assert.ThrowsAsync<ExternalServiceException>(
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
+
+        Assert.IsNotType<PersonaAmbiguaException>(ex);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.UnprocessableEntity)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    public async Task Los_otros_errores_del_servicio_lanzan_ExternalServiceException(HttpStatusCode estado)
+    {
+        var handler = new ContadorHandler((_, _) => Task.FromResult(new HttpResponseMessage(estado)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
 
         await Assert.ThrowsAsync<ExternalServiceException>(
-            () => service.ObtenerPorDniAsync("30123456", CancellationToken.None));
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
     }
 
     [Fact]
-    public async Task Lanza_ExternalServiceException_con_401_por_clave_invalida()
+    public async Task Una_respuesta_sin_nombre_lanza_ExternalServiceException()
     {
-        var handler = new ContadorHandler((_, _) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+        const string json = """{ "nombre": null, "dni": "30123456", "cuit": null, "edad": null, "sexo": null, "provincia_ubicacion": null }""";
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
         await Assert.ThrowsAsync<ExternalServiceException>(
-            () => service.ObtenerPorDniAsync("30123456", CancellationToken.None));
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
     }
 
     [Fact]
@@ -202,10 +285,9 @@ public class RenaperHttpServiceTests
         });
         await using var provider = CrearProveedor(handler, timeoutSegundos: 1, reintentosMaximos: 0);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
         await Assert.ThrowsAsync<ExternalServiceException>(
-            () => service.ObtenerPorDniAsync("30123456", CancellationToken.None));
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
     }
 
     [Fact]
@@ -215,9 +297,8 @@ public class RenaperHttpServiceTests
             Task.FromResult(JsonRespuesta(HttpStatusCode.OK, "{ esto no es json")));
         await using var provider = CrearProveedor(handler);
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRenaperService>();
 
         await Assert.ThrowsAsync<ExternalServiceException>(
-            () => service.ObtenerPorDniAsync("30123456", CancellationToken.None));
+            () => Renaper(scope.ServiceProvider).ObtenerPorDniAsync("30123456", CancellationToken.None));
     }
 }

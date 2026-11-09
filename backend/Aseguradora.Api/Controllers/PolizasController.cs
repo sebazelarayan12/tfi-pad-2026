@@ -1,5 +1,6 @@
 using Aseguradora.Api.Security;
 using Aseguradora.Application.Comun;
+using Aseguradora.Application.Dtos;
 using Aseguradora.Application.Dtos.Polizas;
 using Aseguradora.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace Aseguradora.Api.Controllers;
 [ApiController]
 [Route("api/polizas")]
 [Authorize(Policy = Politicas.Empleado)]
-public sealed class PolizasController(IPolizaService polizas) : ControllerBase
+public sealed class PolizasController(IPolizaService polizas, IPagoConsultaService pagos) : ControllerBase
 {
     private readonly IPolizaService _polizas = polizas ?? throw new ArgumentNullException(nameof(polizas));
 
@@ -69,4 +70,13 @@ public sealed class PolizasController(IPolizaService polizas) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<CuotaResponse>>> ObtenerCuotas(Guid id, CancellationToken ct) =>
         Ok(await _polizas.ObtenerCuotasAsync(id, ct));
+
+    /// <summary>Gets the payments of a policy with their invoice, newest first (CU18).</summary>
+    [HttpGet("{id:guid}/pagos")]
+    [ProducesResponseType(typeof(IReadOnlyList<PagoResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<PagoResponse>>> ObtenerPagos(Guid id, CancellationToken ct) =>
+        Ok(await pagos.ListarPorPolizaAsync(id, ct));
 }

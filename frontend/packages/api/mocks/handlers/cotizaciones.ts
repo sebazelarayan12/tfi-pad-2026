@@ -1,5 +1,9 @@
 import { http, HttpResponse } from 'msw';
-import type { CotizacionDto, OpcionCotizacionMock } from '../../src/dto/cotizaciones';
+import type {
+  CotizacionDto,
+  CotizacionListItemResponse,
+  OpcionCotizacionMock,
+} from '../../src/dto/cotizaciones';
 import type { VehiculoResponse } from '../../src/dto/vehiculos';
 import { CLIENTE_JUAN_ID, clientesFixture } from '../fixtures/clientes';
 import {
@@ -20,6 +24,55 @@ import { autorizar, leerCuerpo, responderProblema, variante } from './soporte-ve
 import { estadoVehiculos } from './vehiculos';
 
 const ruta = '*/api/cotizaciones';
+
+/** Filas fijas del listado; el handler solo las filtra y pagina. */
+const listadoCotizaciones: CotizacionListItemResponse[] = [
+  {
+    id: 'd3000000-0000-0000-0000-000000000003',
+    planId: 'a1000000-0000-0000-0000-000000000002',
+    codigoPlan: 'TC',
+    nombrePlan: 'Terceros Completo',
+    clienteId: CLIENTE_JUAN_ID,
+    clienteNombre: 'Juan Carlos Pérez',
+    vehiculoId: VEHICULO_ID,
+    patente: 'AB123CD',
+    primaMensual: 18000,
+    fechaCotizacion: '2026-11-08T15:00:00Z',
+    fechaVencimiento: '2026-11-23T15:00:00Z',
+    vigente: true,
+    origen: 1,
+  },
+  {
+    id: 'd3000000-0000-0000-0000-000000000002',
+    planId: 'a1000000-0000-0000-0000-000000000001',
+    codigoPlan: 'RC',
+    nombrePlan: 'Responsabilidad Civil',
+    clienteId: null,
+    clienteNombre: null,
+    vehiculoId: null,
+    patente: null,
+    primaMensual: 12000,
+    fechaCotizacion: '2026-11-02T11:42:14Z',
+    fechaVencimiento: '2026-11-17T11:42:14Z',
+    vigente: true,
+    origen: 2,
+  },
+  {
+    id: 'd3000000-0000-0000-0000-000000000001',
+    planId: 'a1000000-0000-0000-0000-000000000001',
+    codigoPlan: 'RC',
+    nombrePlan: 'Responsabilidad Civil',
+    clienteId: CLIENTE_JUAN_ID,
+    clienteNombre: 'Juan Carlos Pérez',
+    vehiculoId: VEHICULO_ID,
+    patente: 'AB123CD',
+    primaMensual: 12000,
+    fechaCotizacion: '2026-10-01T10:00:00Z',
+    fechaVencimiento: '2026-10-16T10:00:00Z',
+    vigente: false,
+    origen: 1,
+  },
+];
 const planes = [
   {
     id: 'a1000000-0000-0000-0000-000000000001',
@@ -151,6 +204,24 @@ export function crearHandlersCotizaciones(
           };
         });
       return HttpResponse.json({ fechaVencimiento, opciones }, { status: 201 });
+    }),
+    http.get(ruta, ({ request }) => {
+      const error = autorizar(request);
+      if (error) return error;
+      const url = new URL(request.url);
+      const vigente = url.searchParams.get('vigente');
+      const pagina = Math.max(Number(url.searchParams.get('pagina')) || 1, 1);
+      const tamano = Math.min(Math.max(Number(url.searchParams.get('tamano')) || 20, 1), 100);
+      const filtradas = listadoCotizaciones.filter(
+        (cotizacion) => vigente === null || String(cotizacion.vigente) === vigente,
+      );
+      const inicio = (pagina - 1) * tamano;
+      return HttpResponse.json({
+        items: filtradas.slice(inicio, inicio + tamano),
+        pagina,
+        tamanoPagina: tamano,
+        total: filtradas.length,
+      });
     }),
     http.get(`${ruta}/:id`, ({ request, params }) => {
       const error = autorizar(request);

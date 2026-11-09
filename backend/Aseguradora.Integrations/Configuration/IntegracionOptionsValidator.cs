@@ -31,7 +31,7 @@ public sealed class IntegracionOptionsValidator<TOpciones> : IValidateOptions<TO
             else if (!Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out _))
                 errores.Add($"{seccion}:BaseUrl debe ser una URL absoluta.");
 
-            if (string.IsNullOrWhiteSpace(options.ApiKey))
+            if (options.RequiereApiKey && string.IsNullOrWhiteSpace(options.ApiKey))
                 errores.Add($"{seccion}:ApiKey es obligatoria cuando UsarMock es false.");
         }
 

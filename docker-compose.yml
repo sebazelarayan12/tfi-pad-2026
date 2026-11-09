@@ -26,8 +26,13 @@ services:
       # One key per external group, named after the provider it authenticates.
       ApiKeys__pasarela1: ${APIKEY_PASARELA1}
       ApiKeys__pasarela2: ${APIKEY_PASARELA2}
-      Integraciones__Renaper__ApiKey: ${INTEGRACIONES_RENAPER_APIKEY}
+      # Mock or real per service. OpenRENAPER needs no key; FacturAR issues one per company.
+      Integraciones__Renaper__UsarMock: ${INTEGRACIONES_RENAPER_USAR_MOCK:-true}
+      Integraciones__Renaper__BaseUrl: ${INTEGRACIONES_RENAPER_BASEURL:-https://api-openrenaper.matiasagustinibanez.com}
+      Integraciones__Renaper__RequiereApiKey: "false"
       Integraciones__Dnrpa__ApiKey: ${INTEGRACIONES_DNRPA_APIKEY}
+      Integraciones__Arca__UsarMock: ${INTEGRACIONES_ARCA_USAR_MOCK:-true}
+      Integraciones__Arca__BaseUrl: ${INTEGRACIONES_ARCA_BASEURL:-https://facturar-api-utn-frt-gncabkgzghh2gbf2.brazilsouth-01.azurewebsites.net}
       Integraciones__Arca__ApiKey: ${INTEGRACIONES_ARCA_APIKEY}
       Integraciones__Pasarelas__pasarela1__ApiKey: ${INTEGRACIONES_PASARELA1_APIKEY}
       Integraciones__Pasarelas__pasarela2__ApiKey: ${INTEGRACIONES_PASARELA2_APIKEY}

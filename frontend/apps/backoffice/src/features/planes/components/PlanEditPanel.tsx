@@ -30,11 +30,13 @@ function FormularioPlan({
   guardarPlan,
   onCreado,
   onCancelar,
+  estado,
 }: {
   plan?: PlanResponse;
   guardarPlan: (body: PlanRequest) => Promise<PlanResponse>;
   onCreado?: (plan: PlanResponse) => void;
   onCancelar?: () => void;
+  estado?: React.ReactNode;
 }) {
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
@@ -133,6 +135,12 @@ function FormularioPlan({
           campo={register('antiguedadMaxima')}
           error={errors.antiguedadMaxima?.message}
         />
+        {estado ? (
+          <div className="flex items-center justify-between">
+            <span>Activo</span>
+            {estado}
+          </div>
+        ) : null}
       </fieldset>
       {mensaje ? <AlertaError>{mensaje}</AlertaError> : null}
       <div role="status">{guardado ? 'Cambios guardados.' : null}</div>
@@ -178,13 +186,12 @@ export function PlanEditPanel({
   const error = isApiError(consulta.error) ? consulta.error.detail : null;
   return (
     <CardWidget title={`Editar plan ${codigo}`}>
-      {estado}
       {consulta.isPending ? (
         <p role="status">Cargando plan…</p>
       ) : consulta.isError ? (
         <AlertaError>{error ?? 'No se pudo cargar el plan.'}</AlertaError>
       ) : (
-        <FormularioPlan key={id} plan={consulta.data} guardarPlan={mutateAsync} />
+        <FormularioPlan key={id} plan={consulta.data} guardarPlan={mutateAsync} estado={estado} />
       )}
     </CardWidget>
   );

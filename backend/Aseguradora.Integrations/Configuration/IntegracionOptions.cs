@@ -18,8 +18,14 @@ public class IntegracionOptions
     /// <summary>Base address of the other group. Required when <see cref="UsarMock"/> is <c>false</c>.</summary>
     public string? BaseUrl { get; set; }
 
-    /// <summary>Key sent in the <c>X-Api-Key</c> header. Required when <see cref="UsarMock"/> is <c>false</c>.</summary>
+    /// <summary>Key sent in the <c>X-Api-Key</c> header. Required when <see cref="UsarMock"/> is <c>false</c> unless <see cref="RequiereApiKey"/> is <c>false</c>.</summary>
     public string? ApiKey { get; set; }
+
+    /// <summary>
+    /// Whether the other group needs a key. Set it to <c>false</c> for an open service (OpenRENAPER
+    /// takes no authentication) so the operator is not forced to invent one.
+    /// </summary>
+    public bool RequiereApiKey { get; set; } = true;
 
     /// <summary>Timeout of one attempt, in seconds.</summary>
     [Range(1, 300)]

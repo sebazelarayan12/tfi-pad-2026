@@ -10,6 +10,7 @@ const columnas = [
   ['Activo', 60],
   ['Acción', 32],
 ] as const;
+const anchoTotal = columnas.reduce((total, [, ancho]) => total + ancho, 0);
 
 export function PlanesTable({
   planes,
@@ -24,12 +25,17 @@ export function PlanesTable({
 }) {
   return (
     <div className="overflow-x-auto rounded-input border border-border-hairline">
-      <table className="w-full min-w-[789px] table-fixed border-separate border-spacing-0 text-left text-body-sm text-text-primary">
+      <table className="w-full table-fixed border-separate border-spacing-0 text-left text-body-sm text-text-primary">
         <caption className="sr-only">Planes activos</caption>
         <thead className="bg-surface-subtle text-label text-text-secondary">
           <tr>
             {columnas.map(([nombre, ancho]) => (
-              <th key={nombre} scope="col" style={{ width: ancho }} className="h-[52px] px-sp-8">
+              <th
+                key={nombre}
+                scope="col"
+                style={{ width: `${(ancho / anchoTotal) * 100}%` }}
+                className="h-[52px] px-sp-8"
+              >
                 {nombre === 'Acción' ? <span className="sr-only">{nombre}</span> : nombre}
               </th>
             ))}

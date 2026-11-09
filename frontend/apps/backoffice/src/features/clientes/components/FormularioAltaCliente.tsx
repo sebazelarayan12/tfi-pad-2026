@@ -95,9 +95,10 @@ export function FormularioAltaCliente() {
       return;
     }
     const datos = datosRenaperAFormulario(data);
-    CAMPOS_RENAPER.forEach((campo) =>
-      setValue(campo, datos[campo], { shouldDirty: true, shouldValidate: true }),
-    );
+    CAMPOS_RENAPER.forEach((campo) => {
+      const valor = datos[campo];
+      if (valor !== undefined) setValue(campo, valor, { shouldDirty: true, shouldValidate: true });
+    });
     setPrecarga({ dni, datos });
     volverFocoAlBoton.current = true;
   };
@@ -105,6 +106,7 @@ export function FormularioAltaCliente() {
   // Un campo conserva la marca mientras su valor sea el de Renaper para el DNI consultado.
   const esDatoRenaper = (campo: CampoRenaper) =>
     precarga?.dni === dni &&
+    precarga.datos[campo] !== undefined &&
     precarga.datos[campo] !== '' &&
     valores[campo] === precarga.datos[campo];
 

@@ -101,7 +101,18 @@ La persona responsable abre la app con MSW, recorre cada pantalla del grupo con 
 - **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
 - **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+Fernando Chumba confirmó DP-1, DP-2 y DP-3 para esta revisión.
+
+| Pantalla | Diferencia | Resolución |
+|---|---|---|
+| B12, B13 y B14 | El encabezado mostraba el buscador global, ausente en los tres frames. | Se oculta en estas rutas. Se conserva el buscador de la navegación lateral. |
+| B13 | Tipos permitidos en texto plano, códigos sin etiqueta y tabla con desplazamiento horizontal a 1440 px. | Chips neutros, códigos con fondo y columnas proporcionales. |
+| B13 | El control Activo aparecía antes de los campos del editor. | Se muestra después de Antigüedad máxima. |
+| B12 | Figma muestra un historial de bases positivas. | Se omite según D-12 de B-21. La API no ofrece ese historial. |
+| B13 | Los importes y la descripción de los planes pueden diferir del ejemplo. | Se muestran los valores de la API (DP-1). |
+| B14 | Figma muestra Último ingreso y más usuarios que el mock. | Se omite la columna según B-25 y PB-04. Se muestran los usuarios de MSW (DP-1). |
+| B13 y B14 | Las acciones de alta aparecen sobre la tabla en la app, debajo del encabezado compartido. | Se conserva su ubicación en el contenido de cada feature. |
+| Todas | Contrastes registrados en el sistema de diseño. | Se conservan según DP-2 y FB7. |
 
 ## 14. Riesgos y errores comunes
 

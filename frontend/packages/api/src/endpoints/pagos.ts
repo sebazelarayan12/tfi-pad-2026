@@ -3,7 +3,7 @@ import type { PaginaResponse } from '../dto/comunes';
 import type {
   FacturaResponse,
   PagoCajaRequest,
-  PagoListadoFiltroMock,
+  PagoListadoFiltro,
   PagoListadoResponse,
   PagoResponse,
 } from '../dto/pagos';
@@ -16,9 +16,7 @@ export const pagosKeys = {
   all: ['pagos'] as const,
   detalle: (id: string) => [...pagosKeys.all, 'detalle', id] as const,
   factura: (id: string) => [...pagosKeys.all, 'factura', id] as const,
-  /** MOCK (PB-05): `GET /api/pagos` no existe en el back. */
-  lista: (filtro: PagoListadoFiltroMock = {}) => [...pagosKeys.all, 'lista', filtro] as const,
-  /** MOCK (PB-05): `GET /api/polizas/{id}/pagos` no existe en el back. */
+  lista: (filtro: PagoListadoFiltro = {}) => [...pagosKeys.all, 'lista', filtro] as const,
   porPoliza: (polizaId: string) => [...pagosKeys.all, 'porPoliza', polizaId] as const,
 };
 
@@ -43,14 +41,10 @@ export function obtenerFacturaDePago(api: ApiClient, id: string): Promise<Factur
   return api.get<FacturaResponse>(`/api/pagos/${id}/factura`);
 }
 
-/**
- * MOCK (PB-05): listado paginado de pagos para la tabla de B-19.
- * `GET /api/pagos` no existe en el back; solo lo implementa el handler MSW.
- * No se conecta a la UI hasta que PB-05 se publique (RV-D29).
- */
-export function listarPagosMock(
+/** `GET /api/pagos`: listado paginado de pagos, del más nuevo al más viejo, para la tabla de B-19. */
+export function listarPagos(
   api: ApiClient,
-  filtro: PagoListadoFiltroMock = {},
+  filtro: PagoListadoFiltro = {},
 ): Promise<PaginaResponse<PagoListadoResponse>> {
   return api.get<PaginaResponse<PagoListadoResponse>>('/api/pagos', {
     query: { ...filtro },
@@ -58,10 +52,9 @@ export function listarPagosMock(
 }
 
 /**
- * MOCK (PB-05): pagos de una póliza para el widget de B-18.
- * `GET /api/polizas/{id}/pagos` no existe en el back; solo lo implementa el handler MSW.
- * Devuelve `PagoResponse[]` con `factura` (RV-D13).
+ * `GET /api/polizas/{id}/pagos`: pagos de una póliza para el widget de B-18.
+ * Devuelve `PagoResponse[]` con `factura`, del más nuevo al más viejo (RV-D13).
  */
-export function listarPagosDePolizaMock(api: ApiClient, polizaId: string): Promise<PagoResponse[]> {
+export function listarPagosDePoliza(api: ApiClient, polizaId: string): Promise<PagoResponse[]> {
   return api.get<PagoResponse[]>(`/api/polizas/${polizaId}/pagos`);
 }

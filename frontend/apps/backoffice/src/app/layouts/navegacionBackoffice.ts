@@ -10,7 +10,7 @@ export interface HandleRuta {
   tituloPrincipal?: boolean;
 }
 
-// Vehículos y Cotizaciones no tienen pantalla todavía (DP-1): sin `href` quedan no interactivos.
+// Vehículos no tiene pantalla todavía (DP-1): sin `href` queda no interactivo.
 export const NAV_PRINCIPAL: GrupoNav = {
   id: 'principal',
   titulo: 'Principal',
@@ -18,7 +18,7 @@ export const NAV_PRINCIPAL: GrupoNav = {
     { label: 'Inicio', icon: 'house', href: '/inicio' },
     { label: 'Clientes', icon: 'users', href: '/clientes' },
     { label: 'Vehículos', icon: 'car' },
-    { label: 'Cotizaciones', icon: 'calculator' },
+    { label: 'Cotizaciones', icon: 'calculator', href: '/cotizaciones' },
     { label: 'Pólizas', icon: 'file-text', href: '/polizas' },
     { label: 'Pagos y facturas', icon: 'receipt', href: '/pagos' },
     { label: 'Pago Fácil', icon: 'barcode', href: '/pago-facil' },

@@ -1,4 +1,5 @@
 using Aseguradora.Api.Security;
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Dtos;
 using Aseguradora.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +13,8 @@ namespace Aseguradora.Api.Controllers;
 [ApiController]
 [Route("api/cotizaciones")]
 [Authorize(Policy = Politicas.Empleado)]
-public sealed class CotizacionesController(ICotizacionService cotizaciones) : ControllerBase
+public sealed class CotizacionesController(ICotizacionService cotizaciones, ICotizacionConsultaService consulta)
+    : ControllerBase
 {
     private readonly ICotizacionService _cotizaciones = cotizaciones ?? throw new ArgumentNullException(nameof(cotizaciones));
 
@@ -30,6 +32,16 @@ public sealed class CotizacionesController(ICotizacionService cotizaciones) : Co
         var resultado = await _cotizaciones.CotizarVehiculoAsync(request.VehiculoId!.Value, ct);
         return StatusCode(StatusCodes.Status201Created, resultado);
     }
+
+    /// <summary>Lists quotes, newest first, filtered by validity, client, vehicle and plate.</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(PaginaResponse<CotizacionListItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PaginaResponse<CotizacionListItemResponse>>> Listar(
+        [FromQuery] CotizacionFiltro filtro, CancellationToken ct) =>
+        Ok(await consulta.ListarAsync(filtro, ct));
 
     /// <summary>Gets a stored quote by id.</summary>
     [HttpGet("{id:guid}")]

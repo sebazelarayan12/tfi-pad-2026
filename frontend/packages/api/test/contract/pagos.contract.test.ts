@@ -4,8 +4,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   cobrarEnCaja,
   createApiClient,
-  listarPagosDePolizaMock,
-  listarPagosMock,
+  listarPagosDePoliza,
+  listarPagos,
   obtenerFacturaDePago,
   obtenerPago,
   pagosKeys,
@@ -208,7 +208,7 @@ describe('Mocks de PB-05 y PB-11', () => {
   });
 
   it('el mock de listado (PB-05) se marca MOCK y devuelve PaginaResponse', async () => {
-    const pagina = await listarPagosMock(api(), {});
+    const pagina = await listarPagos(api(), {});
     const pagos: PagoListadoResponse[] = pagina.items;
 
     expect(pagos).toHaveLength(2);
@@ -218,13 +218,13 @@ describe('Mocks de PB-05 y PB-11', () => {
     expect(pagina.total).toBe(2);
 
     servidorMock.use(pagosVacios);
-    const vacia = await listarPagosMock(api(), {});
+    const vacia = await listarPagos(api(), {});
     expect(vacia.items).toEqual([]);
     expect(vacia.total).toBe(0);
   });
 
   it('el mock por póliza (PB-05) devuelve PagoResponse[] con factura', async () => {
-    const pagos = await listarPagosDePolizaMock(api(), POLIZA_UNO_ID);
+    const pagos = await listarPagosDePoliza(api(), POLIZA_UNO_ID);
 
     expect(pagos).toHaveLength(2);
     expect(pagos[0]?.factura?.estado).toBe('AUTORIZADA');
@@ -243,8 +243,8 @@ describe('Autenticación', () => {
     ['cobrarEnCaja', (cliente) => cobrarEnCaja(cliente, SOLICITUD)],
     ['obtenerPago', (cliente) => obtenerPago(cliente, PAGO_UNO_ID)],
     ['obtenerFacturaDePago', (cliente) => obtenerFacturaDePago(cliente, PAGO_UNO_ID)],
-    ['listarPagosMock', (cliente) => listarPagosMock(cliente, {})],
-    ['listarPagosDePolizaMock', (cliente) => listarPagosDePolizaMock(cliente, POLIZA_UNO_ID)],
+    ['listarPagos', (cliente) => listarPagos(cliente, {})],
+    ['listarPagosDePoliza', (cliente) => listarPagosDePoliza(cliente, POLIZA_UNO_ID)],
   ];
 
   it.each(llamadas)('%s devuelve 401 sin token', async (_nombre, llamada) => {

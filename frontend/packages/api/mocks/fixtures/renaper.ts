@@ -1,4 +1,21 @@
-import type { ClienteAltaRequest, PersonaRenaperResponse } from '../../src/dto/clientes';
+import type {
+  ClienteAltaRequest,
+  DomicilioRenaperResponse,
+  PersonaRenaperResponse,
+  SexoCliente,
+} from '../../src/dto/clientes';
+
+/** Persona del mock: tiene todos los datos (el Renaper del back, el mock, los publica completos). */
+export type PersonaRenaperCompleta = Omit<
+  PersonaRenaperResponse,
+  'cuil' | 'apellido' | 'fechaNacimiento' | 'sexo' | 'domicilio'
+> & {
+  cuil: string;
+  apellido: string;
+  fechaNacimiento: string;
+  sexo: SexoCliente;
+  domicilio: DomicilioRenaperResponse;
+};
 import { clientesFixture } from './clientes';
 
 /** Personas del contrato §3.3 y del RenaperMockService; Lucía es menor en el registro oficial. */
@@ -12,7 +29,7 @@ const domicilio = {
   provincia: juan.provincia,
   codigoPostal: juan.codigoPostal,
 };
-export const personasRenaperFixture: readonly PersonaRenaperResponse[] = [
+export const personasRenaperFixture: readonly PersonaRenaperCompleta[] = [
   {
     dni: juan.dni,
     cuil: juan.cuil,
