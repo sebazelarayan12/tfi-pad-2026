@@ -4,3 +4,6 @@ afc71eb5c8ca4b07c68ad802d96f4444f0306004:docs/frontend/tareas/US-FE-T-13.md:gene
 # Falso positivo: JWT de ejemplo en una prueba de US-FE-B-26 (ya reemplazado por un valor simple).
 12a50db30d4442382e2a7b236f0ea036a9094dfa:frontend/apps/backoffice/src/features/auth/pages/CambiarPasswordPage.test.tsx:generic-api-key:29
 12a50db30d4442382e2a7b236f0ea036a9094dfa:frontend/apps/backoffice/src/features/auth/pages/CambiarPasswordPage.test.tsx:generic-api-key:84
+
+# Falso positivo: clave ficticia de una prueba de ArcaHttpService (ya reemplazada por un valor sin forma de clave).
+b2cd99e4cf0e9f647c814ff2562b35764596b4ce:backend/Aseguradora.Tests/Integrations/ArcaHttpServiceTests.cs:generic-api-key:20

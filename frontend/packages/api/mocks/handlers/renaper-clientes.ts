@@ -1,8 +1,5 @@
-import type {
-  ClienteAltaRequest,
-  ClienteResponse,
-  PersonaRenaperResponse,
-} from '../../src/dto/clientes';
+import type { ClienteAltaRequest, ClienteResponse } from '../../src/dto/clientes';
+import type { PersonaRenaperCompleta } from '../fixtures/renaper';
 
 export const mensajeFallecido = 'RN02: La persona figura como fallecida en Renaper.';
 export const mensajeMenor = 'RN01: El cliente debe tener 18 años o más.';
@@ -82,7 +79,7 @@ export function esMenor(fechaNacimiento: string, ahora: Date) {
 
 export function aplicarRenaper(
   cliente: ClienteResponse,
-  persona: PersonaRenaperResponse,
+  persona: PersonaRenaperCompleta,
   ahora: Date,
 ) {
   const { calle, numero, localidad, provincia, codigoPostal } = persona.domicilio;

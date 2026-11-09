@@ -66,6 +66,17 @@ public class RegistroIntegracionesTests
     }
 
     [Fact]
+    public void Options_RequiereApiKeyFalso_NoExigeApiKeyConUsarMockFalso()
+    {
+        var handler = new ContadorHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        var ajustes = IntegracionesTestHost.Ajustes(usarMock: false, apiKey: "");
+        ajustes[$"Integraciones:{IntegracionesTestHost.Servicio}:RequiereApiKey"] = "false";
+        using var provider = IntegracionesTestHost.Proveedor(handler, ajustes);
+
+        provider.GetRequiredService<IStartupValidator>().Validate();
+    }
+
+    [Fact]
     public void Options_UsarMockTrue_NoExigeBaseUrlNiApiKey()
     {
         var configuration = new ConfigurationBuilder()

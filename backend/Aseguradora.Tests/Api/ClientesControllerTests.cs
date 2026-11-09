@@ -49,6 +49,9 @@ public sealed class ClientesControllerTests : IDisposable
     {
         public Task<PersonaRenaper?> ObtenerPorDniAsync(string dni, CancellationToken ct = default) =>
             throw new ExternalServiceException("El servicio Renaper no está disponible.");
+
+        public Task<PersonaRenaper?> ObtenerPorCuilAsync(string cuil, CancellationToken ct = default) =>
+            throw new ExternalServiceException("El servicio Renaper no está disponible.");
     }
 
     private static ClienteAltaRequest Request(

@@ -83,14 +83,18 @@ export interface DomicilioRenaperResponse {
   codigoPostal: string;
 }
 
+/**
+ * Lo que Renaper publica de la persona. OpenRENAPER no informa apellido (viene junto con el nombre),
+ * fecha de nacimiento ni domicilio, y cualquier dato puede faltar: `null` es "no publicado", nunca un valor inventado.
+ */
 export interface PersonaRenaperResponse {
   dni: string;
-  cuil: string;
+  cuil: string | null;
   nombre: string;
-  apellido: string;
-  fechaNacimiento: string;
-  sexo: SexoCliente;
-  domicilio: DomicilioRenaperResponse;
+  apellido: string | null;
+  fechaNacimiento: string | null;
+  sexo: SexoCliente | null;
+  domicilio: DomicilioRenaperResponse | null;
   estado: 'VIGENTE' | 'FALLECIDO';
   fechaFallecimiento: string | null;
 }

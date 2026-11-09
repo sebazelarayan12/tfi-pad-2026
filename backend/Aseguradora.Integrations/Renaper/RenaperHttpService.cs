@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.External;
 using Aseguradora.Integrations.Http;
@@ -9,16 +10,21 @@ using Microsoft.Extensions.Logging;
 namespace Aseguradora.Integrations.Renaper;
 
 /// <summary>
-/// HTTP client implementation of <see cref="IRenaperService"/> against contract 9.1
-/// (<c>GET /api/personas/{dni}</c>). Inherits resilience, timeout, the <c>X-Api-Key</c> header
-/// and 5xx/network translation from <see cref="ClienteHttpBase"/> (US-T-02, C4).
+/// HTTP client implementation of <see cref="IRenaperService"/> against the OpenRENAPER group
+/// (<c>POST /api/v1/consultas</c>, no authentication). Inherits resilience, timeout and 5xx/network
+/// translation from <see cref="ClienteHttpBase"/> (US-T-02, C4).
 /// </summary>
+/// <remarks>
+/// OpenRENAPER answers with six optional fields only (name, DNI, CUIT, age, sex, province). Nothing is
+/// inferred from what it omits: the missing data stays <see langword="null"/> in <see cref="PersonaRenaper"/>.
+/// It has no vital status, so every person it returns is <see cref="EstadoRenaper.Vigente"/>.
+/// </remarks>
 public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHttpService> logger)
     : ClienteHttpBase(httpClient, logger), IRenaperService
 {
-    private const string PersonaNoEncontrada = "PERSONA_NO_ENCONTRADA";
-    private const string EstadoVigente = "VIGENTE";
-    private const string EstadoFallecido = "FALLECIDO";
+    private const string TipoDni = "dni";
+    private const string TipoCuit = "cuit";
+    private const string ConsultaAmbigua = "consulta_ambigua";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -26,29 +32,48 @@ public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHtt
     protected override string Servicio => "Renaper";
 
     /// <inheritdoc />
-    public async Task<PersonaRenaper?> ObtenerPorDniAsync(string dni, CancellationToken ct = default)
+    public Task<PersonaRenaper?> ObtenerPorDniAsync(string dni, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dni);
+        return ConsultarAsync(TipoDni, dni.Trim(), ct);
+    }
 
-        var normalizado = Uri.EscapeDataString(dni.Trim());
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/personas/{normalizado}");
+    /// <inheritdoc />
+    public Task<PersonaRenaper?> ObtenerPorCuilAsync(string cuil, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cuil);
+        // OpenRENAPER looks up a CUIL with tipo "cuit" ("cuil" is not accepted).
+        return ConsultarAsync(TipoCuit, cuil.Trim(), ct);
+    }
+
+    private async Task<PersonaRenaper?> ConsultarAsync(string tipo, string numero, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/consultas")
+        {
+            Content = JsonContent.Create(new SolicitudConsulta(tipo, numero), options: JsonOptions)
+        };
         using var response = await EnviarAsync(request, ct, esIdempotente: true);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            return await EsPersonaNoEncontradaAsync(response, ct)
-                ? null
-                : throw new ExternalServiceException($"{Servicio}: el servicio externo respondió 404 sin el código {PersonaNoEncontrada}.");
+        switch (response.StatusCode)
+        {
+            case HttpStatusCode.NotFound:
+                return null;
+            case HttpStatusCode.Conflict:
+                throw await TraducirConflictoAsync(response, ct);
+            case HttpStatusCode.TooManyRequests:
+                throw new ExternalServiceException($"{Servicio}: se superó el límite de consultas del servicio externo (429).");
+        }
 
         if (!response.IsSuccessStatusCode)
             throw new ExternalServiceException($"{Servicio}: respuesta inesperada {(int)response.StatusCode} del servicio externo.");
 
         try
         {
-            var respuesta = await response.Content.ReadFromJsonAsync<RespuestaRenaper>(JsonOptions, ct);
+            var respuesta = await response.Content.ReadFromJsonAsync<RespuestaConsulta>(JsonOptions, ct);
             if (respuesta is null)
                 throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió una respuesta vacía.");
 
-            return Mapear(respuesta);
+            return Mapear(respuesta, tipo, numero);
         }
         catch (JsonException ex)
         {
@@ -56,89 +81,90 @@ public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHtt
         }
     }
 
-    private async Task<bool> EsPersonaNoEncontradaAsync(HttpResponseMessage response, CancellationToken ct)
+    private async Task<ExternalServiceException> TraducirConflictoAsync(HttpResponseMessage response, CancellationToken ct)
     {
+        string? codigo = null;
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct);
-            return string.Equals(error?.Codigo, PersonaNoEncontrada, StringComparison.Ordinal);
+            codigo = (await response.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct))?.Codigo;
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió un JSON inválido en la respuesta 404.", ex);
+            // An unreadable 409 is reported below as an unexpected answer.
         }
+
+        return string.Equals(codigo, ConsultaAmbigua, StringComparison.Ordinal)
+            ? new PersonaAmbiguaException($"{Servicio}: el DNI corresponde a varias personas; hay que consultar por CUIL.")
+            : new ExternalServiceException($"{Servicio}: el servicio externo respondió 409 ({codigo ?? "sin código"}).");
     }
 
-    private PersonaRenaper Mapear(RespuestaRenaper respuesta)
+    private PersonaRenaper Mapear(RespuestaConsulta respuesta, string tipo, string numero)
     {
-        var sexo = respuesta.Sexo?.Trim();
-        if (string.IsNullOrWhiteSpace(respuesta.Dni)
-            || string.IsNullOrWhiteSpace(respuesta.Cuil)
-            || string.IsNullOrWhiteSpace(respuesta.Nombre)
-            || string.IsNullOrWhiteSpace(respuesta.Apellido)
-            || respuesta.FechaNacimiento is null
-            || sexo is not { Length: 1 }
-            || respuesta.Domicilio is null
-            || string.IsNullOrWhiteSpace(respuesta.Estado))
-        {
-            throw new ExternalServiceException($"{Servicio}: la respuesta del servicio externo no incluye todos los campos obligatorios.");
-        }
+        if (string.IsNullOrWhiteSpace(respuesta.Nombre))
+            throw new ExternalServiceException($"{Servicio}: la respuesta del servicio externo no incluye el nombre.");
 
-        var domicilio = respuesta.Domicilio;
-        if (string.IsNullOrWhiteSpace(domicilio.Calle)
-            || string.IsNullOrWhiteSpace(domicilio.Numero)
-            || string.IsNullOrWhiteSpace(domicilio.Localidad)
-            || string.IsNullOrWhiteSpace(domicilio.Provincia)
-            || string.IsNullOrWhiteSpace(domicilio.CodigoPostal))
-        {
-            throw new ExternalServiceException($"{Servicio}: la respuesta del servicio externo no incluye el domicilio completo.");
-        }
+        var cuil = string.IsNullOrWhiteSpace(respuesta.Cuit) ? null : respuesta.Cuit.Trim();
+        var dni = !string.IsNullOrWhiteSpace(respuesta.Dni)
+            ? respuesta.Dni.Trim()
+            : tipo == TipoDni ? numero : DniDelCuil(cuil ?? numero);
 
-        var estado = respuesta.Estado.Trim().ToUpperInvariant() switch
-        {
-            EstadoVigente => EstadoRenaper.Vigente,
-            EstadoFallecido => EstadoRenaper.Fallecido,
-            _ => throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió un estado desconocido.")
-        };
+        var (nombre, apellido) = SepararNombre(respuesta.Nombre.Trim());
 
         return new PersonaRenaper(
-            Dni: respuesta.Dni.Trim(),
-            Cuil: respuesta.Cuil.Trim(),
-            Nombre: respuesta.Nombre.Trim(),
-            Apellido: respuesta.Apellido.Trim(),
-            FechaNacimiento: respuesta.FechaNacimiento.Value,
-            Sexo: char.ToUpperInvariant(sexo[0]),
-            Domicilio: new DomicilioRenaper(
-                Calle: domicilio.Calle.Trim(),
-                Numero: domicilio.Numero.Trim(),
-                Piso: string.IsNullOrWhiteSpace(domicilio.Piso) ? null : domicilio.Piso.Trim(),
-                Depto: string.IsNullOrWhiteSpace(domicilio.Depto) ? null : domicilio.Depto.Trim(),
-                Localidad: domicilio.Localidad.Trim(),
-                Provincia: domicilio.Provincia.Trim(),
-                CodigoPostal: domicilio.CodigoPostal.Trim()),
-            Estado: estado,
-            FechaFallecimiento: respuesta.FechaFallecimiento);
+            Dni: dni,
+            Cuil: cuil ?? (tipo == TipoCuit ? numero : null),
+            Nombre: nombre,
+            Apellido: apellido,
+            FechaNacimiento: null,
+            Sexo: MapearSexo(respuesta.Sexo),
+            Domicilio: null,
+            Estado: EstadoRenaper.Vigente,
+            FechaFallecimiento: null,
+            Edad: respuesta.Edad is >= 0 ? respuesta.Edad : null);
     }
 
-    private sealed record RespuestaRenaper(
-        string? Dni,
-        string? Cuil,
-        string? Nombre,
-        string? Apellido,
-        DateOnly? FechaNacimiento,
-        string? Sexo,
-        DomicilioRespuesta? Domicilio,
-        string? Estado,
-        DateOnly? FechaFallecimiento);
+    /// <summary>
+    /// The eight middle digits of an individual's CUIL/CUIT (prefix 20, 23, 24 or 27) are the DNI. A company
+    /// (prefix 30, 33, 34) has no DNI, so its CUIT is returned unchanged instead of inventing one.
+    /// </summary>
+    private static string DniDelCuil(string cuil) =>
+        cuil.Length == 11 && cuil[..2] is "20" or "23" or "24" or "27" ? cuil.Substring(2, 8).TrimStart('0') : cuil;
 
-    private sealed record DomicilioRespuesta(
-        string? Calle,
-        string? Numero,
-        string? Piso,
-        string? Depto,
-        string? Localidad,
-        string? Provincia,
-        string? CodigoPostal);
+    /// <summary>
+    /// The source publishes one text. When it is written as "Nombre APELLIDO" (given names in mixed case,
+    /// surnames in capitals) the two parts are split; any other shape (all capitals, no capitals, a company)
+    /// is ambiguous, so the whole text stays as the name and no surname is guessed.
+    /// </summary>
+    public static (string Nombre, string? Apellido) SepararNombre(string completo)
+    {
+        var palabras = completo.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var primeraMayuscula = Array.FindIndex(palabras, EsMayuscula);
+        var hayMinusculas = palabras.Any(p => !EsMayuscula(p));
+        if (!hayMinusculas || primeraMayuscula <= 0 || palabras[primeraMayuscula..].Any(p => !EsMayuscula(p)))
+            return (completo, null);
+
+        return (string.Join(' ', palabras[..primeraMayuscula]), string.Join(' ', palabras[primeraMayuscula..]));
+    }
+
+    private static bool EsMayuscula(string palabra) =>
+        palabra.Any(char.IsLetter) && palabra.ToUpperInvariant() == palabra;
+
+    private static char? MapearSexo(string? sexo) => sexo?.Trim().ToUpperInvariant() switch
+    {
+        "MASCULINO" or "M" => 'M',
+        "FEMENINO" or "F" => 'F',
+        _ => null
+    };
+
+    private sealed record SolicitudConsulta(string Tipo, string Numero);
+
+    private sealed record RespuestaConsulta(
+        string? Nombre,
+        string? Dni,
+        string? Cuit,
+        int? Edad,
+        string? Sexo,
+        [property: JsonPropertyName("provincia_ubicacion")] string? ProvinciaUbicacion);
 
     private sealed record RespuestaError(string? Codigo);
 }
