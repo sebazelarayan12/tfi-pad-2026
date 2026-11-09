@@ -60,7 +60,7 @@ function DetalleCargado({ poliza }: { poliza: PolizaDetalleResponse }) {
   const vehiculo = useVehiculoAnio(poliza.vehiculoId);
   const ciclo = cicloDeVida(poliza);
   return (
-    <div className="flex flex-col gap-sp-32 xl:flex-row xl:items-start">
+    <div className="flex flex-col gap-sp-32 lg:flex-row lg:items-start">
       <div className="flex min-w-0 flex-1 flex-col gap-sp-24">
         <PolizaEncabezado numero={poliza.numero} estado={poliza.estado} />
         <PolizaAcciones />
@@ -70,7 +70,7 @@ function DetalleCargado({ poliza }: { poliza: PolizaDetalleResponse }) {
         <CuotasTabla cuotas={poliza.cuotas} vigenciaMeses={poliza.vigenciaMeses} />
       </div>
       {/* Columna derecha (B-18): deuda vencida y pagos. */}
-      <aside aria-label={ETIQUETA_COLUMNA_DERECHA} className="w-full xl:w-[300px] xl:shrink-0">
+      <aside aria-label={ETIQUETA_COLUMNA_DERECHA} className="w-full lg:w-[300px] lg:shrink-0">
         <PolizaRail polizaId={poliza.id} cuotas={poliza.cuotas} />
       </aside>
     </div>
