@@ -5,10 +5,12 @@ export function PlanRow({
   plan,
   seleccionado,
   onSeleccionar,
+  estado,
 }: {
   plan: PlanResponse;
   seleccionado: boolean;
   onSeleccionar: (id: string) => void;
+  estado: React.ReactNode;
 }) {
   const celda = 'border-b border-border-hairline px-sp-8 py-sp-8';
   return (
@@ -25,6 +27,7 @@ export function PlanRow({
       <td className={celda}>
         {plan.antiguedadMaxima === null ? 'Sin límite' : `${plan.antiguedadMaxima} años`}
       </td>
+      <td className={celda}>{estado}</td>
       <td className={celda}>
         <button
           type="button"
