@@ -209,6 +209,8 @@ export const handlers = [
     }
     return HttpResponse.json(pagoCreado, { status: 201 });
   }),
+  // DB-W8-1 opción A (RV-D17): W-08 manda solo `numeroPago` a estas dos rutas (sin DNI).
+  // Desviación del contrato vigente de factura y del propuesto en PB-01: el mock no valida el DNI.
   http.post(estadoPago, () => HttpResponse.json(estadoAprobado)),
   http.post(factura, () => HttpResponse.json(facturaAutorizada)),
   http.post(cupon, () => HttpResponse.json(cuponMock)),

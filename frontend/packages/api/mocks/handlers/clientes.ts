@@ -1,17 +1,33 @@
 import { http, HttpResponse } from 'msw';
-import type { ClienteModificacionRequest, ClienteResumenResponse } from '../../src/dto/clientes';
+import type {
+  ClienteModificacionRequest,
+  ClienteResumenResponse,
+  ClienteAltaRequest,
+} from '../../src/dto/clientes';
 import type { ProblemDetails } from '../../src/dto/comunes';
 import { clientesFixture, tokensMockClientes, type ClienteFixture } from '../fixtures/clientes';
+import { personasRenaperFixture } from '../fixtures/renaper';
+import {
+  validarAlta,
+  esMenor,
+  aplicarRenaper,
+  clienteIngresado,
+  mensajeFallecido,
+  mensajeMenor,
+  mensajeNoFigura,
+} from './renaper-clientes';
 import {
   problemaNegocio,
   problemaNoEncontrado,
   problemaSinPermiso,
   problemaSinSesion,
   problemaValidacion,
+  problemaErrorInesperado,
 } from '../fixtures/comunes';
 
 const ruta = '*/api/clientes';
 const rutaDetalle = `${ruta}/:id`;
+const altasSinRenaper = new WeakSet<Request>();
 const camposContacto = [
   ['email', 'Email', 150],
   ['calle', 'Calle', 150],
@@ -71,8 +87,21 @@ function leerEntero(valor: string | null, defecto: number, maximo: number): numb
 }
 
 /** Cada fábrica aísla el estado para que las bajas y ediciones no se filtren entre pruebas. */
-export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clientesFixture) {
-  const registros = structuredClone(semillas);
+/** Minúsculas y sin tildes: el listado real debe encontrar "Perez" al buscar "pe" (PB-32). */
+function sinAcentos(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('es-AR');
+}
+
+export function crearHandlersClientes(
+  semillas: readonly ClienteFixture[] = clientesFixture,
+  opciones: { renaperDisponible?: boolean; ahora?: () => Date } = {},
+) {
+  const registros = structuredClone([...semillas]);
+  const ahora = opciones.ahora ?? (() => new Date());
   const buscar = (id: string) => registros.find(({ cliente }) => cliente.id === id.toLowerCase());
   const noEncontrado = (request: Request, id: string) =>
     responderProblema(
@@ -81,6 +110,95 @@ export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clie
     );
 
   return [
+    http.get(`${ruta}/renaper/:dni`, ({ request, params }) => {
+      const error = autorizar(request);
+      if (error) return error;
+      const dni = String(params.dni).trim();
+      if (!/^[0-9]{8}$/.test(dni))
+        return responderProblema(request, problemaNegocio('El DNI debe tener 8 dígitos.'));
+      if (opciones.renaperDisponible === false)
+        return responderProblema(request, problemaRenaperCaido);
+      const persona = personasRenaperFixture.find((p) => p.dni === dni);
+      return persona
+        ? HttpResponse.json(persona)
+        : responderProblema(
+            request,
+            problemaNoEncontrado(mensajeNoFigura(dni), 'PERSONA_NO_ENCONTRADA'),
+          );
+    }),
+    http.post(ruta, async ({ request }) => {
+      const error = autorizar(request);
+      if (error) return error;
+      let cuerpo: unknown;
+      try {
+        cuerpo = await request.json();
+      } catch {
+        return responderProblema(request, problemaValidacion({ $: ['Invalid JSON.'] }));
+      }
+      const erroresAlta = validarAlta(cuerpo);
+      const errors = erroresAlta.request
+        ? erroresAlta
+        : { ...validarContacto(cuerpo), ...erroresAlta };
+      if (Object.keys(errors).length) return responderProblema(request, problemaValidacion(errors));
+      const datos = cuerpo as ClienteAltaRequest;
+      if (!['M', 'F', 'X'].includes(datos.sexo.toUpperCase()))
+        return responderProblema(request, problemaNegocio('El sexo debe ser M, F o X.'));
+      const dni = datos.dni.trim();
+      const email = datos.email.trim();
+      if (registros.some((r) => r.cliente.dni === dni))
+        return responderProblema(
+          request,
+          problemaNegocio(`RN01: Ya existe un cliente con el DNI '${dni}'.`),
+        );
+      if (registros.some((r) => r.cliente.email.toLowerCase() === email.toLowerCase()))
+        return responderProblema(
+          request,
+          problemaNegocio(`RN01: Ya existe un cliente con el email '${email}'.`),
+        );
+      const renaperDisponible =
+        opciones.renaperDisponible !== false && !altasSinRenaper.has(request);
+      const persona = renaperDisponible
+        ? personasRenaperFixture.find((p) => p.dni === dni)
+        : undefined;
+      if (persona?.estado === 'FALLECIDO')
+        return responderProblema(request, problemaNegocio(mensajeFallecido));
+      if (!persona && renaperDisponible)
+        return responderProblema(request, problemaNegocio(mensajeNoFigura(dni)));
+      if (esMenor(persona?.fechaNacimiento ?? datos.fechaNacimiento, ahora()))
+        return responderProblema(request, problemaNegocio(mensajeMenor));
+      const cliente = clienteIngresado(datos);
+      if (persona) aplicarRenaper(cliente, persona, ahora());
+      registros.push({
+        cliente,
+        tienePolizaActiva: false,
+        cuenta: { deudaVencida: 0, cuotaVencidaConRecargo: null, proximaCuota: null },
+      });
+      return HttpResponse.json(cliente, {
+        status: 201,
+        headers: { Location: `/api/clientes/${cliente.id}` },
+      });
+    }),
+    http.post(`${rutaDetalle}/validar-renaper`, ({ request, params }) => {
+      const error = autorizar(request);
+      if (error) return error;
+      const id = String(params.id);
+      if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(id))
+        return new HttpResponse(null, { status: 404 });
+      const registro = buscar(id);
+      // CU04 consulta por id incluso un cliente inactivo; CU05 conserva sus propias reglas.
+      if (!registro) return noEncontrado(request, id);
+      if (opciones.renaperDisponible === false)
+        return responderProblema(request, problemaRenaperCaido);
+      const persona = personasRenaperFixture.find((p) => p.dni === registro.cliente.dni);
+      if (!persona)
+        return responderProblema(request, problemaNegocio(mensajeNoFigura(registro.cliente.dni)));
+      if (persona.estado === 'FALLECIDO')
+        return responderProblema(request, problemaNegocio(mensajeFallecido));
+      if (esMenor(persona.fechaNacimiento, ahora()))
+        return responderProblema(request, problemaNegocio(mensajeMenor));
+      aplicarRenaper(registro.cliente, persona, ahora());
+      return HttpResponse.json(registro.cliente);
+    }),
     http.get(ruta, ({ request }) => {
       const error = autorizar(request);
       if (error) return error;
@@ -95,14 +213,14 @@ export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clie
         return responderProblema(request, problemaValidacion(errors));
       }
       const dni = params.get('dni')?.trim();
-      const apellido = params.get('apellido')?.trim().toLocaleLowerCase('es-AR');
+      const apellido = sinAcentos(params.get('apellido') ?? '');
       const coincidencias = registros
         .map(({ cliente }) => cliente)
         .filter(
           (cliente) =>
             cliente.activo &&
             (!dni || cliente.dni === dni) &&
-            (!apellido || cliente.apellido.toLocaleLowerCase('es-AR').includes(apellido)),
+            (!apellido || sinAcentos(cliente.apellido).includes(apellido)),
         )
         .sort(
           (a, b) =>
@@ -202,3 +320,84 @@ export function crearHandlersClientes(semillas: readonly ClienteFixture[] = clie
 }
 
 export const handlers = crearHandlersClientes();
+
+const problemaRenaperCaido: ProblemDetails = {
+  status: 502,
+  title: 'Bad Gateway',
+  detail: 'Renaper no respondió a la consulta.',
+};
+const variante = (metodo: 'get' | 'post', path: string, problema: ProblemDetails) =>
+  http[metodo](path, ({ request }) => autorizar(request) ?? responderProblema(request, problema));
+
+/** Errores activables por nombre; no se interpretan mensajes en los requests. */
+export const variantesClientesAltaRenaper = {
+  altaDniDuplicado: variante(
+    'post',
+    ruta,
+    problemaNegocio("RN01: Ya existe un cliente con el DNI '30123456'."),
+  ),
+  altaEmailDuplicado: variante(
+    'post',
+    ruta,
+    problemaNegocio("RN01: Ya existe un cliente con el email 'juan.perez@ejemplo.com'."),
+  ),
+  altaRenaperFallecido: variante('post', ruta, problemaNegocio(mensajeFallecido)),
+  altaRenaperNoFigura: variante('post', ruta, problemaNegocio(mensajeNoFigura('99999999'))),
+  altaMenorDeEdad: variante('post', ruta, problemaNegocio(mensajeMenor)),
+  altaSexoInvalido: variante('post', ruta, problemaNegocio('El sexo debe ser M, F o X.')),
+  altaValidacionModelo: variante(
+    'post',
+    ruta,
+    problemaValidacion({
+      Dni: ['El DNI debe tener 8 dígitos.'],
+      Cuil: ['El CUIL debe tener 11 dígitos.'],
+    }),
+  ),
+  altaError500: variante('post', ruta, problemaErrorInesperado()),
+  altaRenaperCaido: http.post(ruta, ({ request }) => {
+    // Sin respuesta, MSW continúa con el alta activa y conserva su estado y sus validaciones.
+    altasSinRenaper.add(request);
+  }),
+  renaperFallecido: http.get(
+    `${ruta}/renaper/:dni`,
+    ({ request }) => autorizar(request) ?? HttpResponse.json(personasRenaperFixture[2]!),
+  ),
+  renaperNoFigura: variante(
+    'get',
+    `${ruta}/renaper/:dni`,
+    problemaNoEncontrado(mensajeNoFigura('99999999'), 'PERSONA_NO_ENCONTRADA'),
+  ),
+  renaperDniInvalido: variante(
+    'get',
+    `${ruta}/renaper/:dni`,
+    problemaNegocio('El DNI debe tener 8 dígitos.'),
+  ),
+  renaperCaido: variante('get', `${ruta}/renaper/:dni`, problemaRenaperCaido),
+  validarRenaperNoFigura: variante(
+    'post',
+    `${rutaDetalle}/validar-renaper`,
+    problemaNegocio(mensajeNoFigura('99999999')),
+  ),
+  validarRenaperFallecido: variante(
+    'post',
+    `${rutaDetalle}/validar-renaper`,
+    problemaNegocio(mensajeFallecido),
+  ),
+  validarRenaperMenor: variante(
+    'post',
+    `${rutaDetalle}/validar-renaper`,
+    problemaNegocio(mensajeMenor),
+  ),
+  clienteNoExiste: variante(
+    'post',
+    `${rutaDetalle}/validar-renaper`,
+    problemaNoEncontrado(
+      'El cliente 00000000-0000-0000-0000-000000000000 no existe.',
+      'CLIENTE_NO_ENCONTRADO',
+    ),
+  ),
+  validarRenaperCaido: variante('post', `${rutaDetalle}/validar-renaper`, problemaRenaperCaido),
+  sinToken: http.all(/\/api\/clientes(?:\/|$)/, ({ request }) =>
+    responderProblema(request, problemaSinSesion()),
+  ),
+};

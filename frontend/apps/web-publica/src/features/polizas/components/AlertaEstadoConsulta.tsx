@@ -29,7 +29,7 @@ export function AlertaEstadoConsulta({ tono, children }: AlertaEstadoConsultaPro
   return (
     <div
       role="alert"
-      className={`flex items-start gap-sp-12 rounded-card p-sp-16 text-body-sm ${ESTILOS[tono]}`}
+      className={`flex items-start gap-sp-12 rounded-input p-sp-16 text-body ${ESTILOS[tono]}`}
     >
       <span aria-hidden="true" className="shrink-0">
         <Icono size={20} weight="regular" />

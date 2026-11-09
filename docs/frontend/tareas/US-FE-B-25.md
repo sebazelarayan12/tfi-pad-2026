@@ -25,7 +25,6 @@ Al terminar, la pantalla `/usuarios` (B14) muestra a la izquierda la tabla de us
 - Búsqueda oculta por DNI o apellido: no se renderiza (B14 §5).
 - Editar el email: el `PUT` no lo acepta (`{ nombre, apellido, rol }`).
 - Cambiar la contraseña de un usuario existente: no hay endpoint.
-- Regla de "no desactivarse a uno mismo" o "no dejar sin administrador" (NO DEFINIDA, ver D-B25-02).
 
 ## 3. Dependencias
 
@@ -217,8 +216,8 @@ Valores de muestra del Figma (no son texto fijo): `Hernán Sosa`, `hernan.sosa@n
 | Desactivar: diálogo | `Cancelar` y `Escape` no envían. Confirmar envía un solo PATCH `{ activo: false }`. |
 | Activar | Un solo PATCH `{ activo: true }`. |
 | PATCH 404 | Alerta `detail` y refresco de la lista. |
-| Desactivarse a uno mismo | Sin regla en la UI (D-B25-02). Si el back lo rechaza, se muestra el `detail`. |
-| Desactivar al último administrador | Sin regla en la UI (D-B25-02). |
+| Desactivarse a uno mismo | `Desactivar` deshabilitado con el motivo `No podés desactivar tu propia cuenta.` (D-B25-02). |
+| Desactivar al último administrador activo | `Desactivar` deshabilitado con `Debe quedar al menos un administrador activo.`; en la edición, `Empleado` no se guarda (D-B25-02). |
 | Viewport < 1280 px | Tabla con scroll horizontal dentro de su contenedor. |
 
 ## 10. Tests requeridos
@@ -285,10 +284,12 @@ Herramientas: Vitest, Testing Library, MSW (handlers de T-32 con `server.use`), 
 6. Elegir `Activar` en ese mismo usuario y verificar `Activo`.
 Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
-## 13. Decisiones pendientes con default
+## 13. Decisiones tomadas
+
+Decididas por Sebastián el 2026-11-07 (regla 12): aceptó los defaults de D-B25-01 y D-B25-03 a D-B25-07 y cambió D-B25-02 a bloquear en la UI.
 
 - **D-B25-01: paginación.** El Figma no muestra paginación; B14 propone `pagina` y `tamano` (sin límite de página en la UI). Default: `tamano=100` y sin controles de paginación. Si hay más de 100 usuarios, confirmar la paginación con diseño.
-- **D-B25-02: reglas de desactivación (B14 §13.2, NO DEFINIDA).** Default: sin regla en la UI. El back decide; si rechaza, se muestra su `detail`. Confirmar: desactivarse a uno mismo y dejar al sistema sin administrador activo.
+- **D-B25-02: reglas de desactivación (B14 §13.2, NO DEFINIDA). Decidido: bloquear en la UI.** No se puede desactivar la propia cuenta (se compara el email de la fila con el de la sesión, sin distinguir mayúsculas) ni al único administrador activo, ni pasarlo a `Empleado` desde la edición. `Desactivar` queda deshabilitado en el menú (`aria-disabled`) con el motivo leído por `aria-describedby`: `No podés desactivar tu propia cuenta.` / `Debe quedar al menos un administrador activo.`. Al editar al último administrador, `Empleado` no se puede guardar: error de campo con el segundo texto. El back sigue siendo la autoridad; si rechaza, se muestra su `detail`.
 - **D-B25-03 (RV-D30): forma del contrato. Resuelto.** B14 §9 propone `POST .../desactivar` y `POST .../activar` (204) y `GET /api/usuarios?pagina=1&tamano=20`. PB-04 propone `PATCH /api/usuarios/{id}/activo` y `?pagina=&tamanoPagina=`. El INDEX de B-25 usa `PATCH`. Default: `PATCH` y `tamano` (RV-D30); B14 §9 y PB-04 se ajustan en el doc PR.
 - **D-B25-04: panel de edición.** B14 §3 muestra solo el panel de alta. Default: el panel de edición reemplaza al de alta mientras se edita, y `Cancelar` vuelve al alta vacía. Confirmar con diseño.
 - **D-B25-05: color de `Administrador` en la tabla (B14 §13.9).** Default: destacado (lime), como el Figma. Confirmar que no es un error de uso del componente.
@@ -316,3 +317,13 @@ Confirmar los resultados antes de abrir el PR (regla 7 de `docs/workflow.md`).
 
 - Resuelto (RV-61): T-07 (`AlertaError`, `Backdrop`) agregado a "Depende de".
 - Resuelto (triage final, default de la ficha): el INDEX no lista T-04 (`Input`), que la tarea usa para Nombre, Apellido y Email. Motivo: la observación no aparece en REVISION.md ni en FB8.
+
+## 16. Observaciones al implementar
+
+- Nombres reales de T-32: los tipos y funciones llevan el sufijo `Mock` (`UsuarioListItemMock`, `ActualizarUsuarioMock`, `listarUsuariosMock`, `actualizarUsuarioMock`, `cambiarActivoUsuarioMock`); esta tarea los usa tal cual y no los renombra.
+- `UsuariosTable` reutiliza `Table` de `@nexa/ui` con una columna `Acciones` cuyo contenido es `MenuUsuario` (el `onRowMenu` del componente no admite nombre accesible por fila ni menú).
+- La edición reemplaza al panel de alta; `Nuevo empleado` cierra la edición. Tras guardar con éxito el panel vuelve al alta.
+- El error de un `PATCH` se muestra como alerta sobre la tabla y la lista se vuelve a pedir siempre (`onSettled`).
+- Los avisos de éxito (`Cambios guardados.`, `Usuario actualizado.`) son toast (FC19).
+- La cuenta propia se detecta por email: el contrato mock no tiene un `GET /api/auth/yo` real (PB-04), y el JWT trae el email.
+- ABIERTO: con el back real, el mismo bloqueo debería aplicarse en el servidor (desactivarse a uno mismo, quedarse sin administrador). Hasta PB-04 es solo UI.

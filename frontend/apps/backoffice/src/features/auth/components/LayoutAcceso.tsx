@@ -14,7 +14,7 @@ export function LayoutAcceso({ children }: LayoutAccesoProps) {
     <Backdrop>
       <div className="p-sp-24">
         <Shell>
-          <div className="grid min-h-[calc(100dvh-96px)] gap-sp-16 p-sp-16 lg:grid-cols-2">
+          <div className="grid min-h-[calc(100dvh-48px)] p-sp-16 lg:grid-cols-2">
             <main className="flex items-center justify-center p-sp-24 lg:p-sp-48">
               <div className="w-full max-w-[360px]">{children}</div>
             </main>

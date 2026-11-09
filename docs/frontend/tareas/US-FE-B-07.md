@@ -247,16 +247,18 @@ Se puede usar el backend para el detalle del cliente; con `VITE_USE_MOCKS=true`,
 5. Abrir un id inexistente y ver "Cliente no encontrado.".
 6. Confirmar con la persona responsable los pasos 2 y 4 antes del PR (workflow regla 7).
 
-## 13. Decisiones pendientes (con default)
+## 13. Decisiones tomadas
+
+Decididas por Sebastián el 2026-11-07 (regla 12): aceptó todas las opciones por defecto, una a una, tras verlas en una tabla con sus alternativas.
 
 - **D-B07-1. Pestañas (B5 D-B5-03, D-17 del INDEX y B-07 en INDEX).** Default: `Datos` y `Vehículos`; Pólizas es sección apilada debajo de Vehículos (D-17, aplicado literal); `Pagos` no se muestra porque no hay diseño. Las pestañas de B5 §2 (`pagos`, `polizas`) quedan fuera.
-- **D-B07-2. "Próx. vencimiento" (B5 D-B5-04).** Default: fecha de la primera cuota con estado `Pendiente` (valor 0), por número. Con los datos del Figma da `10/11/2026` para la póliza con cuota 8 vencida y `-` para la póliza vencida. Confirmar la regla.
+- **D-B07-2. "Próx. vencimiento" (B5 D-B5-04).** Default: fecha de la primera cuota con estado `Pendiente` (valor 0), por número. Con los datos del Figma da `10/11/2026` para la póliza con cuota 8 vencida y `-` para la póliza vencida. Regla confirmada.
 - **D-B07-3. Acciones del rail (B5 D-B5-09 y D-B5-13).** Default: solo "Agregar vehículo". "Nueva cotización" y "Registrar pago en caja" esperan decisión.
 - **D-B07-4. Bloque Cuenta (B5 D-B5-05, D-33, PB-28).** Oculto hasta que el back publique la deuda.
 - **D-B07-5. Contenido de la pestaña Datos (B5 §7 y D-B5-02).** Default: lectura de contacto y domicilio. Editar lo implementa B-08.
 - **D-B07-6. Estado de póliza y RN04 (B5 D-B5-06).** Default: Pendiente, Vigente y Suspendida cuentan como activas; Vencida y Cancelada no.
 - **D-B07-7. Texto de cliente no validado (B5 §7).** Default: badge `Pendiente` con la etiqueta `Renaper`.
-- **D-B07-8. Pólizas de más de 100.** Default: se piden 100; si `total` es mayor, se muestra aviso `Mostrando las primeras 100 pólizas.` (propuesta). Confirmar con el back si hace falta paginar.
+- **D-B07-8. Pólizas de más de 100.** Default: se piden 100; si `total` es mayor, se muestra aviso `Mostrando las primeras 100 pólizas.` (propuesta). Queda abierto confirmar con el back si hace falta paginar.
 - **D-B07-9. Encabezado "Vehículos" en la pestaña.** Default: se agrega (no está en el diseño).
 
 ## 14. Riesgos y errores comunes
@@ -286,3 +288,9 @@ Se puede usar el backend para el detalle del cliente; con `VITE_USE_MOCKS=true`,
 - ABIERTO: costo de la próxima cuota (una query por póliza activa, N+1). Motivo: no figura en REVISION.md ni en FB8; el campo `proximoVencimiento` no está pedido en PB.
 - Resuelto (RV-35): la pestaña es Vehículos y Pólizas es sección apilada (D-17); el INDEX ya lo refleja en la fila de B-07.
 - Resuelto (triage final, default de la ficha): contrato del puente con B-08 (`onEditar` y `onDarDeBaja`). Motivo: no figura en REVISION.md ni en FB8.
+- Implementación: `iniciales` y `leerPestana` son funciones internas de `ClienteEncabezado` y `ClienteTabs` (React Doctor no admite exports que no sean componentes en esos archivos); se prueban a través de la página.
+- Implementación: la página se parte en `FichaClientePage` (carga y estados del cliente) y `FichaCargada` (vehículos, pólizas y rail), para que los hooks de vehículos y pólizas solo corran con el cliente ya cargado y activo.
+- Implementación: el `handle` de la ruta es `{ titulo: 'Ficha de cliente', ocultarBuscador: true }` (sin `tituloPrincipal`): la barra superior muestra un `h2` y el `h1` de la página es el nombre del cliente.
+- Implementación: mientras las pólizas cargan o fallan, cada vehículo no afirma "Sin póliza activa" ni muestra Cotizar (`estadoPolizas`), para no inducir a cotizar un vehículo que quizá ya tiene póliza (RN04).
+- Implementación: `onEditar` y `onDarDeBaja` son props opcionales; sin ellas no se renderiza ningún botón. Los provee B-08.
+- Implementación: `DestinoClientePendiente` se eliminó; el test de integración del listado ahora verifica que el nombre abre la ficha y que el enlace "Clientes" vuelve.

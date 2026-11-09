@@ -149,7 +149,7 @@ Textos literales de B4 §5, más el copy propuesto (marcado) para lo que el dise
 | Placeholder de select | `Seleccioná una opción` (design-system §5.3) |
 | Acciones | `Cancelar` · `Guardar cliente` |
 | Error DNI (propuesta, copy del back) | `El DNI debe tener 8 dígitos.` |
-| Errores de negocio (DNI o email duplicados, menor de 18, fallecido, no figura en Renaper) | Se muestra el `detail` del back sin prefijo `RNxx:` en la alerta general; no se marca ningún campo (FC10). No hay copy propio para estos casos. |
+| Errores de negocio (DNI o email duplicados, menor de 18, fallecido, no figura en Renaper) | Toast (FC19) con el `detail` del back sin prefijo `RNxx:`; no se marca ningún campo (FC10). No hay copy propio para estos casos. |
 | Error CUIL (copy del back) | `El CUIL debe tener 11 dígitos.` |
 | Error nombre / apellido (propuesta) | `Ingresá el nombre.` · `Ingresá el apellido.` |
 | Error fecha (back) | `La fecha de nacimiento es obligatoria.` |
@@ -159,7 +159,10 @@ Textos literales de B4 §5, más el copy propuesto (marcado) para lo que el dise
 | Error sexo (propuesta) | `Elegí el sexo.` |
 | Error calle / número / localidad / código postal (propuesta) | `Ingresá la calle.` · `Ingresá el número.` · `Ingresá la localidad.` · `Ingresá el código postal.` |
 | Error provincia (propuesta) | `Elegí la provincia.` |
-| Error general de red o 5xx (propuesta) | `No pudimos guardar el cliente. Revisá los datos e intentá de nuevo.` |
+| Error general de red o 5xx (propuesta) | Toast con `No pudimos guardar el cliente. Revisá los datos e intentá de nuevo.` (FC19) |
+| Error teléfono (D-B05-9) | `Ingresá un teléfono argentino válido, con código de área.` Ayuda: `Con código de área. Opcional.` |
+| Error número y código postal (D-B05-8) | `El número solo admite dígitos.` · `El código postal solo admite dígitos.` |
+| Calendario (D-B05-7) | Botón `Elegir en el calendario` junto al campo de fecha; el calendario del navegador no deja elegir menores de 18 años. |
 | Aviso al guardar con Renaper (201, validado) | `Cliente guardado.` (propuesta de B4 §7) |
 | Aviso al guardar sin Renaper (201, `validadoRenaper=false`) | `Cliente guardado sin validar en Renaper.` (propuesta de B4 §7) |
 | Confirmación al cancelar con cambios (propuesta) | Título `¿Descartar los datos cargados?` · botones `Seguir editando` y `Descartar` |
@@ -176,20 +179,22 @@ Provincias (propuesta, B4 D-6), en este orden: Buenos Aires, Catamarca, Chaco, C
 | Campo inválido | `Input` o `Select` en estado error con `helper` del copy de §8 y `aria-invalid`. |
 | Reglas de DNI | Acepta `35.874.219` y `35874219`; después de quitar puntos y espacios, exactamente 8 dígitos. |
 | Reglas de CUIL | Máscara `XX-XXXXXXXX-X` mientras se escribe; 11 dígitos al enviar. |
-| Fecha | Formato `dd/mm/aaaa`; fecha real; mayor de 18 años con la fecha de hoy en `America/Argentina/Buenos_Aires` (regla de D-B05-4). |
+| Fecha | Se escribe `dd/mm/aaaa` (las barras se ponen solas) o se elige en el calendario (D-B05-7); fecha real; mayor de 18 años con la fecha de hoy en `America/Argentina/Buenos_Aires` (regla de D-B05-4). |
+| Número y código postal | Solo dígitos (D-B05-8). `S/N` y los códigos postales con letras no se pueden cargar. |
+| Teléfono | Vacío permitido (`null`). Si se escribe: formato argentino con código de área, 10 dígitos en total, con `0`, `+54` o `+54 9` opcionales y separadores; no admite el `15` (D-B05-9). Se envía como se escribió, sin el espacio de los bordes. |
 | Email | Trim, formato, máximo 150. |
 | Teléfono vacío | Permitido (`null`). |
 | Enviando | Todos los campos y "Guardar cliente" deshabilitados; un solo POST aunque hagan doble clic. |
 | 201 con `validadoRenaper=true` | Navega a `/clientes` con aviso de éxito. |
 | 201 con `validadoRenaper=false` | Navega a `/clientes` con aviso de advertencia. |
 | 400 con `errors` | Marca cada campo que coincide; el resto va a la alerta general. Los datos se conservan. |
-| 400 con `detail` (negocio) | Alerta general con el `detail` sin `RNxx:`. Ningún campo se marca (FC10). |
-| 5xx o sin conexión | Alerta general del copy de §8. Datos conservados. No se reintenta. |
+| 400 con `detail` (negocio) | Toast con el `detail` sin `RNxx:`. Ningún campo se marca (FC10, FC19). |
+| 5xx o sin conexión | Toast del copy de §8. Datos conservados. No se reintenta. |
 | 401 | Lo maneja T-08 (redirige a `/login`). |
 | Cancelar sin cambios | Navega a `/clientes`. |
 | Cancelar con cambios | Abre `ConfirmarDescarte`. "Descartar" navega; "Seguir editando" cierra. |
 | Foco al enviar con errores | Primer campo inválido. |
-| Foco tras error de negocio | Alerta general (`role="alert"`). |
+| Foco tras error de negocio | No se mueve el foco: el toast avisa y los datos quedan como estaban. |
 
 ## 10. Tests requeridos
 
@@ -258,18 +263,20 @@ Requiere el back con PR #50 o `VITE_USE_MOCKS=true` (T-25).
 5. Repetir con un DNI ya cargado. Ver el mensaje general sin marcar el DNI.
 6. Confirmar con la persona responsable los pasos 4 y 5 antes del PR (workflow regla 7).
 
-## 13. Decisiones pendientes (con default)
+## 13. Decisiones tomadas
 
-- **D-B05-1. Textos de validación (B4 D-7).** Default: los de §8 (propuesta). El back devuelve textos en inglés (PB-15); no se usan.
-- **D-B05-2. Opciones de sexo (B4 D-11).** Default: `Femenino`, `Masculino`, `X`. Confirmar con diseño.
-- **D-B05-3. Confirmación al cancelar (B4 D-15).** Default: `Dialogo` de `@nexa/ui` (T-07, RV-D05) con `role="alertdialog"` y foco en "Seguir editando". B-08 y B-23 lo importan de ahí (D-37 del INDEX).
-- **D-B05-4. Edad mínima en el front (B4 D-10).** Default: el front bloquea el envío a menores de 18 con la fecha cargada, porque el back usa esa misma regla cuando no hay Renaper (esta tarea no consulta Renaper). B4 D-10 propone solo avisar; FB8 (RV-D20) fija el bloqueo. Si cambia, la validación pasa a aviso y el back decide.
-- **D-B05-5. Lista de provincias (B4 D-6).** Default: las 24 jurisdicciones de §8, como texto libre guardado. Sin catálogo en el back.
-- **D-B05-6. Reintento de validación Renaper en el alta (B4 D-9 y B-08).** Default: no hay reintento en el alta. Tras guardar con `validadoRenaper=false`, el empleado reintenta desde la ficha (B-08, RV-38). B-06 no lo incluye.
-- **D-B05-7. Selector de fecha (B4 §5 y D-10).** Default: campo de texto con formato `dd/mm/aaaa` y ayuda, sin selector. Confirmar con diseño.
-- **D-B05-8. Número y código postal solo números (B4 D-12).** Default: texto libre (el back lo acepta como texto).
-- **D-B05-9. Teléfono (B4 D-13).** Default: texto libre, máximo 20, sin validación de formato.
-- **D-B05-10. Piso y departamento (B4 D-17).** Default: no se piden en el alta (el diseño no los tiene). Si Renaper devuelve piso o depto, se pierden al guardar; ver B-06.
+Decididas por Sebastián el 2026-11-07 (regla 12). D-B05-1 a D-B05-6 y D-B05-10: el default, elegido de forma explícita. D-B05-7, D-B05-8 y D-B05-9: cambiadas.
+
+- **D-B05-1. Textos de validación (B4 D-7).** Los de §8. El back devuelve textos en inglés (PB-15); no se usan.
+- **D-B05-2. Opciones de sexo (B4 D-11).** `Femenino`, `Masculino`, `X`.
+- **D-B05-3. Confirmación al cancelar (B4 D-15).** `Dialogo` de `@nexa/ui` (T-07, RV-D05) con `role="alertdialog"` y foco en "Seguir editando". B-08 y B-23 lo importan de ahí (D-37 del INDEX).
+- **D-B05-4. Edad mínima en el front (B4 D-10).** El front bloquea el envío a menores de 18 con la fecha cargada (FB8, RV-D20).
+- **D-B05-5. Lista de provincias (B4 D-6).** Las 24 jurisdicciones de §8, como texto libre guardado. Sin catálogo en el back.
+- **D-B05-6. Reintento de validación Renaper en el alta (B4 D-9 y B-08).** No hay reintento en el alta; se reintenta desde la ficha (B-08, RV-38).
+- **D-B05-7. Selector de fecha (B4 §5 y D-10).** Cambiada: campo de texto `dd/mm/aaaa` **y** calendario del navegador (botón "Elegir en el calendario"). Los dos completan el mismo campo.
+- **D-B05-8. Número y código postal (B4 D-12).** Cambiada: solo números. Consecuencia: no se puede cargar `S/N` ni un código postal con letras (CPA, por ejemplo `S2000ABC`); el back los acepta como texto, pero esta pantalla no.
+- **D-B05-9. Teléfono (B4 D-13).** Cambiada: formato argentino validado (ver §9). Se guarda tal como se escribió; el back lo trata como texto libre (máximo 20).
+- **D-B05-10. Piso y departamento (B4 D-17).** No se piden en el alta. Si Renaper devuelve piso o depto, se pierden al guardar; ver B-06.
 
 ## 14. Riesgos y errores comunes
 
@@ -299,4 +306,5 @@ Requiere el back con PR #50 o `VITE_USE_MOCKS=true` (T-25).
 - Resuelto (REVISION §4, sin acción): T-10 ya está en la fila de B-05 del INDEX.
 - Resuelto (RV-D05): el diálogo de cancelar es `Dialogo` de `@nexa/ui` (T-07), no un `DialogoModal` propio.
 - Resuelto (RV-10): `provincias.ts` es de B-05; B-08 declara B-05 en sus dependencias.
-
+- Resuelto (FC19, T-33): los errores de negocio, de red y 5xx salen en toast (no en alerta inline); los errores de campo siguen bajo el campo. El éxito no muestra toast acá: navega al listado, que muestra el aviso (B-04).
+- Resuelto: `formState.isDirty` se lee en el render (React Hook Form solo se suscribe a lo que se lee ahí); leerlo dentro del handler de Cancelar nunca abría el diálogo.

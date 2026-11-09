@@ -53,10 +53,10 @@ describe('Input', () => {
     expect(screen.getByLabelText('Email')).not.toHaveAttribute('aria-describedby');
   });
 
-  it('un helper sin error se muestra en text-tertiary y se referencia', () => {
+  it('un helper sin error se muestra en text-secondary y se referencia', () => {
     render(<Input label="Email" helper="Usamos tu email para avisarte." />);
     const helper = screen.getByText('Usamos tu email para avisarte.');
-    expect(helper).toHaveClass('text-text-tertiary');
+    expect(helper).toHaveClass('text-text-secondary');
     expect(screen.getByLabelText('Email')).toHaveAttribute('aria-describedby', helper.id);
   });
 

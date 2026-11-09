@@ -6,6 +6,7 @@ import type {
   ClienteResumenResponse,
   CuentaClienteResponse,
   CuotaResponse,
+  PersonaRenaperResponse,
 } from '../../src';
 import {
   CLIENTE_JUAN_ID,
@@ -13,6 +14,7 @@ import {
   tokensMockClientes,
 } from '../../mocks/fixtures/clientes';
 import { crearHandlersClientes } from '../../mocks/handlers/clientes';
+import { altaClienteFixture } from '../../mocks/fixtures/renaper';
 import { servidorMock } from '../../mocks/server';
 import { contratoEndpoint, type CasoError } from './harness';
 import { fetchContrato, leerConfiguracion } from './setup';
@@ -298,6 +300,200 @@ contratoEndpoint({
       estado: 404,
       esquema: 'problem',
       request: () => fetchContrato(`${rutaCliente(inexistente)}/cuenta`, { conSesion: true }),
+    },
+  ],
+});
+
+// T-25: mismos endpoints en MSW y en el backend publicado; sin ampliar el resumen de T-24.
+const esquemaDomicilioRenaper = z.strictObject({
+  calle: z.string(),
+  numero: z.string(),
+  piso: z.string().nullable(),
+  depto: z.string().nullable(),
+  localidad: z.string(),
+  provincia: z.string(),
+  codigoPostal: z.string(),
+});
+const esquemaPersonaRenaper = z.strictObject({
+  dni: z.string().regex(/^\d{8}$/),
+  cuil: z.string().regex(/^\d{11}$/),
+  nombre: z.string(),
+  apellido: z.string(),
+  fechaNacimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  sexo: z.enum(['M', 'F', 'X']),
+  domicilio: esquemaDomicilioRenaper,
+  estado: z.enum(['VIGENTE', 'FALLECIDO']),
+  fechaFallecimiento: z.string().nullable(),
+}) satisfies z.ZodType<PersonaRenaperResponse>;
+const esquemaClienteExacto = esquemaCliente.strict();
+let clienteCreadoT25: string | undefined;
+function cuerpoAltaT25() {
+  if (esMock) return altaClienteFixture;
+  if (!process.env.CONTRACT_ALTA_DNI || !process.env.CONTRACT_ALTA_EMAIL)
+    throw new Error(
+      'Faltan CONTRACT_ALTA_DNI y CONTRACT_ALTA_EMAIL: seleccionar una persona adulta de Renaper no registrada en un entorno de prueba aislado.',
+    );
+  return {
+    ...altaClienteFixture,
+    dni: process.env.CONTRACT_ALTA_DNI,
+    email: process.env.CONTRACT_ALTA_EMAIL,
+  };
+}
+const rutaAltaT25 = '/api/clientes';
+const rutaPreviewT25 = '/api/clientes/renaper/30123456';
+const rutaValidarT25 = () =>
+  `${rutaCliente(esMock ? CLIENTE_JUAN_ID : clienteCreadoT25 || process.env.CONTRACT_CLIENTE_VALIDAR_ID || idFixture('CONTRACT_CLIENTE_ID'))}/validar-renaper`;
+const enviarAltaT25 = (body: unknown) =>
+  fetchContrato(rutaAltaT25, {
+    method: 'POST',
+    headers: json,
+    body: JSON.stringify(body),
+    conSesion: true,
+  });
+contratoEndpoint({
+  nombre: 'T-25 alta con identidad oficial y contrato exacto',
+  metodo: 'POST',
+  ruta: rutaAltaT25,
+  requiereSesion: true,
+  destructivo: true,
+  exito: {
+    estado: 201,
+    esquema: esquemaClienteExacto,
+    request: async () => {
+      if (esMock) servidorMock.use(...crearHandlersClientes([]));
+      const respuesta = await enviarAltaT25(cuerpoAltaT25());
+      if (respuesta.status === 201) {
+        const cliente = esquemaClienteExacto.parse(await respuesta.clone().json());
+        clienteCreadoT25 = cliente.id;
+      }
+      return respuesta;
+    },
+  },
+  errores: [
+    ...erroresAuth(rutaAltaT25, 'POST', {}),
+    {
+      nombre: 'campos obligatorios',
+      estado: 400,
+      esquema: 'validation',
+      request: () => enviarAltaT25({}),
+    },
+    {
+      nombre: 'DNI y CUIL con separadores',
+      estado: 400,
+      esquema: 'validation',
+      request: () =>
+        enviarAltaT25({ ...altaClienteFixture, dni: '30.123.456', cuil: '20-30123456-5' }),
+    },
+    ...(
+      [
+        ['fechaNacimiento', '2026-02-30'],
+        ['sexo', 'XX'],
+      ] as const
+    ).map(([campo, valor]): CasoError => ({
+      nombre: `deserialización de ${campo}`,
+      estado: 400,
+      esquema: 'validation',
+      request: async () => {
+        const respuesta = await enviarAltaT25({ ...altaClienteFixture, [campo]: valor });
+        z.object({
+          errors: z.strictObject({
+            request: z.array(z.string()).min(1),
+            [`$.${campo}`]: z.array(z.string()).min(1),
+          }),
+        }).parse(await respuesta.clone().json());
+        return respuesta;
+      },
+    })),
+    {
+      nombre: 'persona desconocida (400, sin código)',
+      estado: 400,
+      esquema: 'problem',
+      request: () =>
+        enviarAltaT25({ ...altaClienteFixture, dni: '99999999', email: 'nofigura@ejemplo.com' }),
+    },
+    {
+      nombre: 'persona fallecida',
+      estado: 400,
+      esquema: 'problem',
+      request: () =>
+        enviarAltaT25({ ...altaClienteFixture, dni: '20111222', email: 'fallecido@ejemplo.com' }),
+    },
+    {
+      nombre: 'persona menor',
+      estado: 400,
+      esquema: 'problem',
+      request: () => {
+        if (esMock) servidorMock.use(...crearHandlersClientes([]));
+        return enviarAltaT25({
+          ...altaClienteFixture,
+          dni: '45123456',
+          email: 'menor@ejemplo.com',
+        });
+      },
+    },
+  ],
+});
+contratoEndpoint({
+  nombre: 'T-25 preview de Renaper con campos exactos',
+  metodo: 'GET',
+  ruta: '/api/clientes/renaper/{dni}',
+  requiereSesion: true,
+  destructivo: false,
+  exito: {
+    estado: 200,
+    esquema: esquemaPersonaRenaper,
+    request: () => fetchContrato(rutaPreviewT25, { conSesion: true }),
+  },
+  errores: [
+    ...erroresAuth(rutaPreviewT25),
+    {
+      nombre: 'DNI inválido',
+      estado: 400,
+      esquema: 'problem',
+      request: () => fetchContrato('/api/clientes/renaper/123', { conSesion: true }),
+    },
+    {
+      nombre: 'PERSONA_NO_ENCONTRADA',
+      estado: 404,
+      esquema: 'problem',
+      request: async () => {
+        const respuesta = await fetchContrato('/api/clientes/renaper/99999999', {
+          conSesion: true,
+        });
+        const body: unknown = await respuesta.clone().json();
+        z.object({ codigo: z.literal('PERSONA_NO_ENCONTRADA') }).parse(body);
+        return respuesta;
+      },
+    },
+  ],
+});
+contratoEndpoint({
+  nombre: 'T-25 revalidación explícita',
+  metodo: 'POST',
+  ruta: '/api/clientes/{id}/validar-renaper',
+  requiereSesion: true,
+  destructivo: true,
+  exito: {
+    estado: 200,
+    esquema: esquemaClienteExacto,
+    request: () => fetchContrato(rutaValidarT25(), { method: 'POST', conSesion: true }),
+  },
+  errores: [
+    ...erroresAuth(`/api/clientes/${inexistente}/validar-renaper`, 'POST'),
+    {
+      nombre: 'CLIENTE_NO_ENCONTRADO',
+      estado: 404,
+      esquema: 'problem',
+      request: async () => {
+        const respuesta = await fetchContrato(`/api/clientes/${inexistente}/validar-renaper`, {
+          method: 'POST',
+          conSesion: true,
+        });
+        z.object({ codigo: z.literal('CLIENTE_NO_ENCONTRADO') }).parse(
+          await respuesta.clone().json(),
+        );
+        return respuesta;
+      },
     },
   ],
 });

@@ -33,7 +33,7 @@ La vista previa de fechas de cuotas queda marcada como "a confirmar" hasta resol
 - **Oleada:** 5.
 - **Depende de:** US-FE-B-13, US-FE-T-04, US-FE-T-05, US-FE-T-06, US-FE-T-07, US-FE-T-08, US-FE-T-09, US-FE-T-10, US-FE-T-11, US-FE-T-13, US-FE-T-16, US-FE-T-19, US-FE-T-24, US-FE-T-26, US-FE-T-27, US-FE-T-28.
 - **Puede empezar sin esperar a:** US-FE-B-10, US-FE-B-11 (solo navegación: la ruta de la cotización es la de B-10).
-- **Bloqueada por pedidos al back:** PB-20 (bloquea: leyenda con fechas a confirmar).
+- **Bloqueada por pedidos al back:** PB-20 impide mostrar fechas definitivas en la vista previa. La emisión puede avanzar con la leyenda de fechas a confirmar.
 
 ## 4. Documentos a leer
 
@@ -73,7 +73,7 @@ Sin editar: `packages/api/**` (T-24, T-26, T-27, T-28) y `packages/ui/**`.
 2. **RED:** escribir los tests `schema:` y `form:` de §10.
 3. `emisionSchema`: `vigenciaMeses: z.union([z.literal(1), z.literal(6), z.literal(12)])`. Sin valor por defecto (DP-B12-02).
 4. Hook `useCotizacionEmision(cotizacionId)`: `useQuery` para la cotización (`cotizacionesKeys.detalle`). Cuando llega, dispara en paralelo las queries de vehículo (`vehiculoId`), plan (`planId`) y cliente (`clienteId`). Un fallo de cliente no bloquea la pantalla (ver §9). Todas en `features/polizas/api/`.
-5. Hook `useEmitirPoliza()`: `useMutation({ mutationFn: crearPoliza, retry: 0 })`. En `onSuccess` invalida `polizasKeys.lista` y navega a `/polizas/${id}` (B-15) con `state: { aviso }` (DP-B12-05).
+5. Hook `useEmitirPoliza()`: `useMutation({ mutationFn: emitirPoliza, retry: 0 })`. En `onSuccess` invalida `polizasKeys.lista` y navega a `/polizas/${id}` (B-15) con `state: { aviso }` (DP-B12-05).
 6. `EmitirPolizaPage`:
    - `cotizacionId` de la query string. Si no es UUID, muestra error de ruta (DP-B12-06) sin request.
    - Enlace "Cotización" a `/cotizaciones/nueva?vehiculoId=…&clienteId=…` (ruta de B-10) con los datos de la cotización cargada.
@@ -81,7 +81,7 @@ Sin editar: `packages/api/**` (T-24, T-26, T-27, T-28) y `packages/ui/**`.
    - Columna principal: `CotizacionResumen`, `VigenciaSelector`, bloque de fecha de inicio (solo lectura), `CuotasPreview`.
    - Rail (300 px): `ValidacionesPanel`, `EmisionNota`, `AccionesEmision`.
 7. `CotizacionResumen`: Cliente (`{nombre} {apellido}` o "No disponible"); Vehículo (`{marca} {modelo} {anio}` y patente en mono); Plan (`{codigo} {nombre}`); Prima mensual (T-09, `$ 19.800,00`); debajo, `Válida hasta {dd/MM/yyyy}` con `fechaVencimiento` en fecha de Argentina.
-8. `VigenciaSelector`: `role="radiogroup"` con etiqueta `Vigencia`. Tres `Chip` seleccionables (`Sin seleccionar` hasta elegir). Flechas para moverse; `aria-checked`. No hay valor inicial (DP-B12-02).
+8. `VigenciaSelector`: `role="radiogroup"` con etiqueta `Vigencia`. Tres radios nativos con aspecto de chip. Las flechas cambian la selección y cada control expone su estado al lector de pantalla. No hay valor inicial (DP-B12-02).
 9. Fecha de inicio: solo lectura, muestra la fecha de hoy en Argentina (T-09). No es editable (D3, B8 §13). Sin helper de fecha de fin (DP-B12-07).
 10. `CuotasPreview`: cantidad de filas igual a la vigencia elegida; sin vigencia elegida, la tabla muestra solo encabezados y el texto DP-B12-08. Cada fila: `Cuota`, `Vencimiento` = `A confirmar` (PB-20), `Importe` = `primaMensual` (T-09), `Estado` = `Pendiente` (Badge de T-05). Fila de total: `Total`, `{n} cuotas`, suma formateada. La leyenda DP-B12-01 va encima de la tabla.
 11. `ValidacionesPanel`: cuatro textos del Figma sin íconos de check (DP-B12-04). No simula resultados.
@@ -99,12 +99,12 @@ Sin editar: `packages/api/**` (T-24, T-26, T-27, T-28) y `packages/ui/**`.
 | `GET /api/cotizaciones/{id}` | Implementado (PR #49) | Carga de la cotización: `clienteId`, `vehiculoId`, `planId`, `codigoPlan`, `primaMensual`, `fechaVencimiento`. |
 | `GET /api/vehiculos/{id}` | Implementado | Marca, modelo, año, patente. |
 | `GET /api/planes/{id}` | Implementado | Nombre del plan. |
-| `GET /api/clientes/{id}` | Especificado (US-F1-06) | Nombre y apellido. Mock de T-24. |
+| `GET /api/clientes/{id}` | Implementado (US-F1-06) | Nombre y apellido. Mock de T-24. |
 | `POST /api/polizas` | Implementado (en `development`) | Emitir. 201 con `PolizaDetalleResponse`; `Location` no legible (PB-17). |
 
-PB-14 (degrada): los errores llegan solo con `detail`; no hay código por causa. Workaround: mostrar el texto del back. PB-27 (degrada): el detalle de la póliza no trae emisor; esta pantalla no lo necesita. PB-16 (degrada): algunos `DateTime` llegan sin `Z`; el formateador de T-09 los trata como UTC. Workaround MSW: `GET /api/clientes/{id}` (T-24, Especificado); si falla, el nombre queda como "No disponible" (B8 §7).
+PB-14 (degrada): los errores llegan solo con `detail`; no hay código por causa. Workaround: mostrar el texto del back. PB-27 (degrada): el detalle de la póliza no trae emisor; esta pantalla no lo necesita. PB-16 (degrada): algunos `DateTime` llegan sin `Z`; el formateador de T-09 los trata como UTC. Si falla `GET /api/clientes/{id}`, el nombre queda como «No disponible» (B8 §7).
 
-Nombres de funciones y keys (`obtenerCotizacion`, `obtenerVehiculo`, `obtenerPlan`, `obtenerCliente`, `crearPoliza`, `polizasKeys.*`) son sugeridos; los exportan sus dueños.
+Nombres de funciones y keys (`obtenerCotizacion`, `obtenerVehiculo`, `obtenerPlan`, `obtenerCliente`, `emitirPoliza`, `polizasKeys.*`) son sugeridos; los exportan sus dueños.
 
 Request (dueño T-28; no se redefine):
 
@@ -229,23 +229,23 @@ Textos del back que se muestran literal: los de la tabla de §7.
 1. `VITE_USE_MOCKS=true npm run dev -w apps/backoffice`, sesión de Empleado.
 2. Desde B-10 con una cotización del mock, pulsar **Continuar a emisión**. Verificar que la pantalla muestra el plan, la prima y `Válida hasta`.
 3. Sin vigencia, Emitir está deshabilitado. Elegir `6 meses`: aparecen 6 filas con "A confirmar".
-4. Emitir con el mock: se navega al detalle de la póliza (B-15) y se ve un único `POST /api/polizas` (pestaña Network).
-5. Con la cotización vencida del mock, verificar el texto `La cotización está vencida (RN06).` y el botón deshabilitado.
+4. Emitir con el mock y verificar un único `POST /api/polizas` con respuesta 201 en la pestaña Red. La URL cambia a `/polizas/{id}`. La pantalla de destino se incorpora en B-15.
+5. Con una respuesta del mock que tenga `fechaVencimiento` en el pasado, verificar el texto `La cotización está vencida (RN06).` y el botón deshabilitado.
 
 Confirmar al responsable los pasos antes de abrir el PR.
 
-## 13. Decisiones pendientes
+## 13. Decisiones confirmadas
 
-- **DP-B12-01** Leyenda sobre la tabla de cuotas: `Fechas a confirmar: se muestran al emitir.` Sin texto en el Figma (PB-20). Default: esa leyenda.
-- **DP-B12-02** Vigencia inicial. D5 de B8: el Figma preselecciona `6 meses` y no hay documento que lo defina. Default: ninguna preseleccionada, Emitir deshabilitado. Esto evita emitir por error.
-- **DP-B12-03** Formato de la cuota. D9 de B8 (`Cuota 1 de 6`) y B10 (`1 de 12`). Default: `{n} de {total}`, bajo el encabezado `Cuota` (igual que B-15).
-- **DP-B12-04** Panel de validaciones. D4 de B8: no hay endpoint previo. Default: cuatro textos sin estado ni check verde.
-- **DP-B12-05** Destino y aviso tras emitir (D6 de B8). Default: `/polizas/{id}` con `Póliza {numero} emitida.`
-- **DP-B12-06** Texto de error de ruta (B8 §2, NO DEFINIDO). Default: `No se pudo abrir la emisión. Volvé a la cotización.` con enlace "Cotización".
-- **DP-B12-07** Helper de fecha de fin (B8 §5). Default: no se muestra, porque la fecha de fin depende de la regla de cuotas (PB-20).
-- **DP-B12-08** Texto de tabla sin vigencia elegida. Default: `Elegí una vigencia para ver las cuotas.`
-- **DP-B12-09** Destino de Cancelar y del enlace "Cotización" (D7 de B8). Default: `/cotizaciones/nueva?vehiculoId=…&clienteId=…` (ruta de B-10).
-- **DP-B12-10** Anuncio de carga al emitir (B8 §12, NO DEFINIDO). Default: `Emitiendo póliza…`.
+- **DP-B12-01.** Mostrar «Fechas a confirmar: se muestran al emitir.» (PB-20).
+- **DP-B12-02.** Empezar sin vigencia seleccionada y con Emitir deshabilitado.
+- **DP-B12-03.** Mostrar `{n} de {total}` bajo la columna «Cuota».
+- **DP-B12-04.** Mostrar las cuatro validaciones como texto.
+- **DP-B12-05.** Navegar a `/polizas/{id}` con el aviso «Póliza {numero} emitida.».
+- **DP-B12-06.** Mostrar «No se pudo abrir la emisión. Volvé a la cotización.» con enlace «Cotización» cuando la ruta sea inválida.
+- **DP-B12-07.** Omitir el texto auxiliar de fecha de fin hasta resolver PB-20.
+- **DP-B12-08.** Mostrar «Elegí una vigencia para ver las cuotas.» cuando no haya selección.
+- **DP-B12-09.** Volver a la cotización con el vehículo y el cliente cuando sus identificadores estén disponibles. Sin vehículo, volver a Clientes para retomar el flujo.
+- **DP-B12-10.** Anunciar «Emitiendo póliza…» durante el envío.
 - **PB-20** (bloquea): regla de fechas de cuotas. Decisión de negocio pendiente (B8 D1, D2, PB-20). Esta tarea no la resuelve; cuando se decida, se reemplaza "A confirmar" por la fecha que devuelve el back.
 - **D-03** (índice): ruta única de Pago Fácil. No afecta esta tarea.
 
@@ -274,4 +274,3 @@ Confirmar al responsable los pasos antes de abrir el PR.
 - Resuelto (RV-65): la fila de B-12 declara T-07, T-08, T-09, T-10 y T-13 (y T-06, T-11, T-19 por RV-04).
 - Resuelto (triage final, default de la ficha): B-12 y B-15 usan el mismo formato de cuota (`{n} de {total}`); si el equipo lo cambia, cambian ambos archivos. Motivo: no figura en REVISION.md ni en FB8.
 - Resuelto (RV-D12): el botón "Emitir póliza" de B-13 lleva a `/clientes`, así que la emisión empieza desde el cliente, el vehículo y la cotización (B-10).
-

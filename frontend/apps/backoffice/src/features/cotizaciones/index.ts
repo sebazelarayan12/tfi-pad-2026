@@ -1,0 +1,1 @@
+export { rutas } from './routes';

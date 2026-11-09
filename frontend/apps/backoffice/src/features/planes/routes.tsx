@@ -1,4 +1,8 @@
 import type { RouteObject } from 'react-router-dom';
+import { PlanesPage } from './pages/PlanesPage';
 
-// Stub de US-FE-T-14: la primera tarea del feature lo completa.
-export const rutas: RouteObject[] = [];
+export const planesRoutes: RouteObject[] = [
+  { path: '/planes', element: <PlanesPage />, handle: { titulo: 'Planes' } },
+];
+
+export { planesRoutes as rutas };

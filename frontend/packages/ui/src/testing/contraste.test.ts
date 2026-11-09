@@ -54,9 +54,9 @@ const PARES = [
     par: 'status/suspendida/text sobre status/suspendida/bg',
     a: TOKEN.suspendidaText,
     b: TOKEN.suspendidaBg,
-    ratio: 4.42,
+    ratio: 4.65,
     umbral: AA_TEXTO,
-    cumple: false,
+    cumple: true,
   },
   {
     par: 'border/strong sobre surface/panel',
