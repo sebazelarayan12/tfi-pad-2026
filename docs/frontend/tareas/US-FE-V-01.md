@@ -100,7 +100,29 @@ La persona responsable abre la app con MSW, recorre cada pantalla del grupo con 
 - **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
 - **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+**Respuestas del usuario (2026-11-09, antes de empezar):**
+- DP-1: las diferencias por dato (nombres, cifras y fechas de muestra del Figma) no importan; el Figma muestra cómo se ve la página. No se corrigen.
+- DP-2: **se corrigen** los contrastes de las pantallas verificadas (cambia el default de FB7 solo para B1 y B2).
+- DP-3: default (no inventar; avisar y corregir el documento en un PR `docs/` aparte).
+
+**Corregido (medido en un viewport de 1440 × 1024 contra los nodos 18:2178 y 18:236):**
+- B1: el Shell ocupa 976 px de alto (antes 928); las columnas miden 680 px sin separación (antes 672 con gap 16); el espacio bajo cada campo es de 24 px (el correo y la contraseña quedan a 88 px, el botón a 104 px de la contraseña, como en el Figma).
+- B2: el buscador del Topbar lleva el icono de lupa y texto de 13 px; las notas de los KPI usan el estilo Caption (11 px) y las tarjetas miden 158 px de alto; la tabla de cuotas vencidas fija el ancho de sus columnas (160, 130, 200 y 100 px) para que "Cuota y vencimiento" no se parta en dos líneas.
+- Contraste (P-C1 y P-C2): texto informativo con `text/secondary` en lugar de `text/tertiary` en el helper y el placeholder de `Input` (`FieldFrame`), el rol del Sidebar y las notas de los KPI.
+
+**Excepciones aceptadas (no se corrigen en esta tarea):**
+- Datos de muestra del Figma (Mariela Quiroga, 312, 390 pólizas, "Cuota 8 de 12"): manda el back o el mock (DP-1).
+- Foto del panel de marca de B1 (marco gris 632 × 820 con "Foto: sede de atención"): el Figma no trae imagen real; sigue D-B01-3 (sin imagen ni texto de anotación).
+- Widget "Tareas del día" y la línea de cuotas del saludo con datos del Figma: ocultos por D-11 y D-B02-4.
+- Planes, Usuarios y el pie con el usuario en el Sidebar: dependen del rol (FB7.10).
+- Móvil (390 px): el Figma de B1 y B2 no lo define.
+- Altura de fila de la tabla (48 px contra 49 px del Figma): viene del primitivo `Table` (T-06), fuera del alcance mínimo.
+- Separación del icono de lupa (4 px contra 8 px): se reutiliza el espaciado del buscador del Sidebar para no agregar un token nuevo.
+
+**Pendientes de decisión del usuario (no se resolvieron por cuenta propia):**
+- Estructura de la columna derecha de B2: en el Figma el rail ocupa todo el alto, con un separador de 1 px, y el Topbar mide 795 px. En la app el Topbar abarca todo el ancho y el rail está dentro de la página. Corregirlo implica un slot de rail en `LayoutBackoffice` (T-16) que afecta a otras pantallas.
+- Botón "Nueva cotización" del Topbar (D-B02-4 y DP-6 de T-16).
+- P-C3 (Badge Suspendida, 4,42) y P-C4 (borde de campos, 1,48): requieren cambiar tokens y se alejarían del Figma en todas las pantallas.
 
 ## 14. Riesgos y errores comunes
 

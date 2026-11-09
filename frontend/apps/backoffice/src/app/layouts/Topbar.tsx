@@ -1,3 +1,4 @@
+import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { useEffect, useRef, type ReactNode } from 'react';
 
 export interface TopbarProps {
@@ -57,7 +58,7 @@ export function Topbar({
         <form
           role="search"
           aria-label="Buscar en el panel"
-          className="w-[280px]"
+          className="relative w-[280px]"
           onSubmit={(evento) => {
             evento.preventDefault();
             const datos = new FormData(evento.currentTarget);
@@ -67,12 +68,18 @@ export function Topbar({
           <label htmlFor="buscador-topbar" className="sr-only">
             {buscadorPlaceholder}
           </label>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-sp-12 inline-flex items-center text-text-secondary"
+          >
+            <MagnifyingGlassIcon size={16} weight="regular" />
+          </span>
           <input
             id="buscador-topbar"
             name="q"
             type="search"
             placeholder={buscadorPlaceholder}
-            className="h-9 w-full rounded-input border border-border-strong bg-surface-panel px-sp-12 text-text-primary"
+            className="h-9 w-full rounded-input border border-border-strong bg-surface-panel pl-sp-32 pr-sp-12 text-body-sm text-text-primary placeholder:text-text-secondary"
           />
         </form>
       )}

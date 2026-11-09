@@ -40,7 +40,7 @@ function ContenidoKpi({ indicador, nota, chip, degradar }: Omit<KpiCardProps, 't
   return (
     <>
       <CifraKpi valor={indicador.isError ? undefined : indicador.data} />
-      {nota ? <p className="text-body-sm text-text-secondary">{nota}</p> : null}
+      {nota ? <p className="text-caption text-text-secondary">{nota}</p> : null}
       {chip ? (
         <div>
           <Chip tipo="destacado" label={chip} />
