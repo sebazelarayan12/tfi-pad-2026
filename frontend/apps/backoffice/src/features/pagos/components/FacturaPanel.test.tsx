@@ -8,6 +8,20 @@ import { renderConProveedores } from '../test/utils';
 import { FacturaPanel } from './FacturaPanel';
 
 describe('FacturaPanel', () => {
+  it('ofrece Ver PDF solo cuando la factura está autorizada', async () => {
+    renderConProveedores(<FacturaPanel pagoId={PAGO_UNO_ID} />);
+
+    expect(await screen.findByRole('button', { name: 'Ver PDF' })).toBeEnabled();
+  });
+
+  it('no ofrece Ver PDF mientras espera el CAE', async () => {
+    servidorMock.use(facturaPendienteCae);
+    renderConProveedores(<FacturaPanel pagoId={PAGO_UNO_ID} />);
+
+    await screen.findByText('Pendiente CAE');
+    expect(screen.queryByRole('button', { name: 'Ver PDF' })).not.toBeInTheDocument();
+  });
+
   it('muestra Pendiente CAE sin CAE ni vencimiento', async () => {
     servidorMock.use(facturaPendienteCae);
     renderConProveedores(<FacturaPanel pagoId={PAGO_UNO_ID} />);

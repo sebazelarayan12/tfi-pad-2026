@@ -163,14 +163,16 @@ public sealed class PolizaServiceEmisionTests : IDisposable
     }
 
     [Fact]
-    public async Task Emitir_VehiculoNoValidadoDnrpa_Lanza()
+    public async Task Emitir_VehiculoNoValidadoDnrpa_Permite()
     {
         await using var context = _fixture.CreateContext();
         var escenario = await CrearEscenarioAsync(context, ajustarVehiculo: v => v.ValidadoDnrpa = false);
+        var service = CrearServicio(context);
 
-        var ex = await EmitirYEsperarErrorAsync(context, escenario.Cotizacion.Id);
+        var poliza = await service.EmitirAsync(
+            new EmitirPolizaRequest(escenario.Cotizacion.Id, 6), CancellationToken.None);
 
-        Assert.Contains("DNRPA", ex.Message);
+        Assert.Equal(EstadoPoliza.Pendiente, poliza.Estado);
     }
 
     [Fact]

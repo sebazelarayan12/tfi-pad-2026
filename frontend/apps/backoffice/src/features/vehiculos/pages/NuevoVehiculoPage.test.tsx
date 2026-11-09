@@ -4,7 +4,7 @@ import { servidorMock } from '@nexa/api/mocks/server';
 import { Toaster, toast } from '@nexa/ui';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -61,6 +61,15 @@ function problema(status: number, datos: object = {}) {
   );
 }
 
+type Usuario = ReturnType<typeof userEvent.setup>;
+async function completarDatos(usuario: Usuario) {
+  await usuario.type(screen.getByRole('textbox', { name: /Marca/ }), 'Toyota');
+  await usuario.type(screen.getByRole('textbox', { name: /Modelo/ }), 'Hilux');
+  await usuario.type(screen.getByRole('textbox', { name: /Año/ }), '2023');
+  await usuario.type(screen.getByRole('textbox', { name: /Número de motor/ }), 'MOT123456');
+  await usuario.type(screen.getByRole('textbox', { name: /Número de chasis/ }), 'CHA123456');
+}
+
 const botonGuardar = () => screen.getByRole('button', { name: 'Guardar vehículo' });
 async function campoHabilitado() {
   const campo = screen.getByRole('textbox', { name: 'Patente' });
@@ -77,10 +86,11 @@ it('muestra al cliente, las reglas y las opciones de uso accesibles con foco ini
   expect(patente).toHaveFocus();
   const uso = screen.getByRole('combobox', { name: 'Uso' });
   expect(uso).toHaveValue('0');
-  expect(screen.getAllByRole('option').map((opcion) => opcion.textContent)).toEqual([
-    'Particular',
-    'Comercial',
-  ]);
+  expect(
+    within(uso)
+      .getAllByRole('option')
+      .map((opcion) => opcion.textContent),
+  ).toEqual(['Particular', 'Comercial']);
   expect(screen.getByRole('heading', { name: 'Reglas' })).toBeInTheDocument();
   expect(screen.queryByText('Validar en DNRPA')).not.toBeInTheDocument();
   expect(screen.queryByText('Datos informados por DNRPA')).not.toBeInTheDocument();
@@ -120,7 +130,17 @@ it('bloquea una patente inválida, describe el error y no envía el POST', async
 it('manda el body exacto con uso numérico, bloquea el doble clic y navega con el aviso', async () => {
   const post = vi.fn(async ({ request }: { request: Request }) => {
     const cuerpo: unknown = await request.json();
-    expect(cuerpo).toEqual({ clienteId: CLIENTE_JUAN_ID, patente: 'AE789FG', uso: 1 });
+    expect(cuerpo).toEqual({
+      clienteId: CLIENTE_JUAN_ID,
+      patente: 'AE789FG',
+      uso: 1,
+      marca: 'Toyota',
+      modelo: 'Hilux',
+      anio: 2023,
+      tipo: 2,
+      numeroMotor: 'MOT123456',
+      numeroChasis: 'CHA123456',
+    });
     await delay(200);
     return HttpResponse.json({ patente: 'AE789FG' }, { status: 201 });
   });
@@ -130,6 +150,8 @@ it('manda el body exacto con uso numérico, bloquea el doble clic y navega con e
   const patente = await campoHabilitado();
   await usuario.type(patente, ' ae789fg ');
   expect(patente).toHaveValue(' AE789FG ');
+  await completarDatos(usuario);
+  await usuario.selectOptions(screen.getByRole('combobox', { name: /Tipo/ }), '2');
   await usuario.selectOptions(screen.getByRole('combobox', { name: 'Uso' }), '1');
   await usuario.dblClick(botonGuardar());
   await waitFor(() => expect(botonGuardar()).toBeDisabled());
@@ -161,6 +183,7 @@ it.each(['patente', 'Patente'])(
     const { usuario } = montar();
     const patente = await campoHabilitado();
     await usuario.type(patente, 'AE789FG');
+    await completarDatos(usuario);
     await usuario.click(botonGuardar());
     expect(await screen.findByText(errorPatente)).toBeInTheDocument();
     expect(patente).toHaveAccessibleDescription(errorPatente);
@@ -193,6 +216,7 @@ it.each([
     const { usuario, router } = montar();
     const patente = await campoHabilitado();
     await usuario.type(patente, 'AE789FG');
+    await completarDatos(usuario);
     await usuario.click(botonGuardar());
     expect(await screen.findByText(mensaje)).toBeInTheDocument();
     expect(patente).not.toHaveAttribute('aria-invalid');
@@ -225,6 +249,7 @@ it('si el cliente desaparece entre la consulta y el guardado muestra el estado d
   servidorMock.use(http.post(postVehiculos, () => problema(404)));
   const { usuario } = montar();
   await usuario.type(await campoHabilitado(), 'AE789FG');
+  await completarDatos(usuario);
   await usuario.click(botonGuardar());
   expect(await screen.findByRole('heading', { name: 'Cliente no encontrado' })).toBeInTheDocument();
   expect(screen.queryByRole('form', { name: 'Alta de vehículo' })).not.toBeInTheDocument();

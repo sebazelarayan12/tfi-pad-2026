@@ -8,22 +8,19 @@ using Aseguradora.Domain.Interfaces;
 namespace Aseguradora.Application.Services;
 
 /// <summary>
-/// Handles vehicle registration and validation against DNRPA (CU06, RN03).
+/// Handles vehicle registration (CU06). DNRPA is not queried: the data is typed in by the employee.
 /// </summary>
 public sealed class VehiculoService(
     IRepository<Vehiculo> vehiculos,
     IRepository<Cliente> clientes,
     IRepository<Poliza> polizas,
-    IDnrpaService dnrpa,
     IUnitOfWork unitOfWork) : IVehiculoService
 {
-    /// <summary>Error code included when DNRPA does not know the requested license plate (section 9.4).</summary>
-    public const string CodigoVehiculoNoEncontrado = "VEHICULO_NO_ENCONTRADO";
+    private const int AnioMinimo = 1950;
 
     private readonly IRepository<Vehiculo> _vehiculos = vehiculos ?? throw new ArgumentNullException(nameof(vehiculos));
     private readonly IRepository<Cliente> _clientes = clientes ?? throw new ArgumentNullException(nameof(clientes));
     private readonly IRepository<Poliza> _polizas = polizas ?? throw new ArgumentNullException(nameof(polizas));
-    private readonly IDnrpaService _dnrpa = dnrpa ?? throw new ArgumentNullException(nameof(dnrpa));
     private readonly IUnitOfWork _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
 
     /// <inheritdoc />
@@ -41,6 +38,19 @@ public sealed class VehiculoService(
         if (request.Uso is null || !Enum.IsDefined(request.Uso.Value))
             throw new BusinessRuleException("El uso del vehículo es obligatorio y debe ser válido.");
 
+        if (string.IsNullOrWhiteSpace(request.Marca) || string.IsNullOrWhiteSpace(request.Modelo))
+            throw new BusinessRuleException("La marca y el modelo son obligatorios.");
+
+        if (string.IsNullOrWhiteSpace(request.NumeroMotor) || string.IsNullOrWhiteSpace(request.NumeroChasis))
+            throw new BusinessRuleException("El número de motor y el de chasis son obligatorios.");
+
+        var anioMaximo = DateTime.UtcNow.Year + 1;
+        if (request.Anio is null || request.Anio < AnioMinimo || request.Anio > anioMaximo)
+            throw new BusinessRuleException($"El año debe estar entre {AnioMinimo} y {anioMaximo}.");
+
+        if (request.Tipo is null || !Enum.IsDefined(request.Tipo.Value))
+            throw new BusinessRuleException("El tipo de vehículo es obligatorio y debe ser válido.");
+
         var cliente = await _clientes.GetByIdAsync(request.ClienteId, ct)
             ?? throw new NotFoundException($"El cliente {request.ClienteId} no existe.");
 
@@ -51,26 +61,19 @@ public sealed class VehiculoService(
         if (patenteDuplicada)
             throw new BusinessRuleException($"Ya existe un vehículo registrado con la patente '{patente}' (RN03).");
 
-        var datosDnrpa = await _dnrpa.ObtenerVehiculoAsync(patente, ct)
-            ?? throw new BusinessRuleException($"{CodigoVehiculoNoEncontrado}: La patente '{patente}' no figura en el registro de DNRPA.");
-
-        if (!string.Equals(datosDnrpa.TitularDni, cliente.Dni, StringComparison.Ordinal))
-            throw new BusinessRuleException(
-                $"RN03: El titular registral en DNRPA (DNI {datosDnrpa.TitularDni}) no coincide con el DNI del cliente ({cliente.Dni}).");
-
         var vehiculo = new Vehiculo
         {
             Id = Guid.NewGuid(),
             ClienteId = cliente.Id,
             Patente = patente,
-            Marca = datosDnrpa.Marca,
-            Modelo = datosDnrpa.Modelo,
-            Anio = datosDnrpa.Anio,
-            Tipo = datosDnrpa.Tipo,
+            Marca = request.Marca.Trim(),
+            Modelo = request.Modelo.Trim(),
+            Anio = request.Anio.Value,
+            Tipo = request.Tipo.Value,
             Uso = request.Uso.Value,
-            NumeroMotor = datosDnrpa.NumeroMotor,
-            NumeroChasis = datosDnrpa.NumeroChasis,
-            ValidadoDnrpa = true,
+            NumeroMotor = request.NumeroMotor.Trim(),
+            NumeroChasis = request.NumeroChasis.Trim(),
+            ValidadoDnrpa = false,
             Activo = true
         };
 

@@ -1,3 +1,4 @@
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.Security.DTOs;
 
@@ -11,6 +12,8 @@ namespace Aseguradora.Application.Security;
 public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService tokens)
 {
     private const string MensajeEmailDuplicado = "El email ya está registrado.";
+    private const string MensajeUltimoAdministradorRol = "No se puede quitar el rol al último administrador activo.";
+    private const string MensajeUltimoAdministradorActivo = "No se puede desactivar al último administrador activo.";
     private const string MensajePasswordIgual = "La contraseña nueva debe ser distinta de la actual.";
 
     private readonly IUsuarioStore _usuarios = usuarios ?? throw new ArgumentNullException(nameof(usuarios));
@@ -29,7 +32,8 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
         // Verify even when the email does not exist: the store checks the password against a
         // dummy hash, so both paths take a similar time (no account enumeration by response time).
         var passwordValida = await _usuarios.VerificarPasswordAsync(usuario, solicitud.Password, ct);
-        if (usuario is null || !passwordValida)
+        // A disabled account answers like a wrong password, so the response does not reveal its state.
+        if (usuario is null || !passwordValida || !usuario.Activo)
             throw new CredencialesInvalidasException();
 
         var roles = await _usuarios.ObtenerRolesAsync(usuario, ct);
@@ -95,5 +99,97 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
             ct: ct);
 
         return new UsuarioResponse(creado.Id, creado.Email, solicitud.Rol);
+    }
+
+    /// <summary>The account behind a valid token (PB-04), or <see cref="CredencialesInvalidasException"/> when it no longer exists.</summary>
+    public async Task<YoResponse> ObtenerYoAsync(string usuarioId, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(usuarioId);
+
+        var cuenta = await _usuarios.BuscarPorIdAsync(usuarioId, ct) ?? throw new CredencialesInvalidasException();
+        // A token issued before the account was disabled stops working here, which closes the session.
+        if (!cuenta.Activo)
+            throw new CredencialesInvalidasException();
+
+        var roles = await _usuarios.ObtenerRolesAsync(cuenta, ct);
+        var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? throw new CredencialesInvalidasException();
+
+        return new YoResponse(cuenta.Id, cuenta.Email, cuenta.Nombre, cuenta.Apellido, rol);
+    }
+
+    /// <summary>
+    /// Changes name, surname and role of an account (PB-04). The last active administrator cannot lose the
+    /// role, so the system is never left without one.
+    /// </summary>
+    public async Task<UsuarioListItemResponse> ActualizarUsuarioAsync(
+        string id, ActualizarUsuarioRequest solicitud, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(solicitud);
+
+        if (!Roles.EsAsignable(solicitud.Rol))
+            throw new BusinessRuleException("El rol debe ser Administrador o Empleado.");
+
+        var actual = await _usuarios.BuscarListadoAsync(id, ct) ?? throw NoExiste();
+        if (actual.Rol == Roles.Administrador && solicitud.Rol != Roles.Administrador && actual.Activo)
+            await ExigirOtroAdministradorActivoAsync(MensajeUltimoAdministradorRol, ct);
+
+        await _usuarios.ActualizarAsync(id, solicitud.Nombre.Trim(), solicitud.Apellido.Trim(), solicitud.Rol, ct);
+        return await LeerAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Enables or disables an account (PB-04). Nobody can disable their own account, and the last active
+    /// administrator cannot be disabled.
+    /// </summary>
+    public async Task<UsuarioListItemResponse> CambiarActivoAsync(
+        string id, string actorId, CambiarActivoRequest solicitud, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actorId);
+        ArgumentNullException.ThrowIfNull(solicitud);
+
+        var actual = await _usuarios.BuscarListadoAsync(id, ct) ?? throw NoExiste();
+        if (!solicitud.Activo && actual.Activo)
+        {
+            if (id == actorId)
+                throw new BusinessRuleException("No podés desactivar tu propia cuenta.");
+            if (actual.Rol == Roles.Administrador)
+                await ExigirOtroAdministradorActivoAsync(MensajeUltimoAdministradorActivo, ct);
+        }
+
+        await _usuarios.EstablecerActivoAsync(id, solicitud.Activo, ct);
+        return await LeerAsync(id, ct);
+    }
+
+    private async Task ExigirOtroAdministradorActivoAsync(string mensaje, CancellationToken ct)
+    {
+        // The account being changed is an active administrator, so it counts for one.
+        if (await _usuarios.ContarAdministradoresActivosAsync(ct) <= 1)
+            throw new BusinessRuleException(mensaje);
+    }
+
+    private async Task<UsuarioListItemResponse> LeerAsync(string id, CancellationToken ct)
+    {
+        var u = await _usuarios.BuscarListadoAsync(id, ct) ?? throw NoExiste();
+        return new UsuarioListItemResponse(
+            u.Cuenta.Id, u.Cuenta.Email, u.Cuenta.Nombre, u.Cuenta.Apellido, u.Rol, u.Activo, null);
+    }
+
+    private static NotFoundException NoExiste() => new("El usuario no existe.");
+
+    /// <summary>Lists employee and administrator accounts, one page at a time (PB-04).</summary>
+    public async Task<PaginaResponse<UsuarioListItemResponse>> ListarUsuariosAsync(
+        UsuarioFiltro filtro, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(filtro);
+
+        var pagina = await _usuarios.ListarAsync(filtro.Pagina, filtro.Tamano, ct);
+        var items = pagina.Items
+            .Select(u => new UsuarioListItemResponse(
+                u.Cuenta.Id, u.Cuenta.Email, u.Cuenta.Nombre, u.Cuenta.Apellido, u.Rol, u.Activo, null))
+            .ToList();
+
+        return new PaginaResponse<UsuarioListItemResponse>(items, pagina.Pagina, pagina.TamanoPagina, pagina.Total);
     }
 }

@@ -28,7 +28,6 @@ public sealed class VehiculosControllerTests : IDisposable
     public void Dispose() => _sqlite.Dispose();
 
     private AseguradoraWebFactory CrearFactory(
-        IDnrpaService? dnrpaOverride = null,
         bool usarAutenticacionReal = false) =>
         new()
         {
@@ -39,19 +38,8 @@ public sealed class VehiculosControllerTests : IDisposable
                 services.RemoveAll<AseguradoraDbContext>();
                 services.AddScoped<AseguradoraDbContext>(_ => _sqlite.CreateContext());
 
-                if (dnrpaOverride is not null)
-                {
-                    services.RemoveAll<IDnrpaService>();
-                    services.AddScoped<IDnrpaService>(_ => dnrpaOverride);
-                }
             }
         };
-
-    private sealed class DnrpaCaidoStub : IDnrpaService
-    {
-        public Task<DatosDnrpa?> ObtenerVehiculoAsync(string patente, CancellationToken ct = default) =>
-            throw new ExternalServiceException("El servicio DNRPA no está disponible.");
-    }
 
     [Fact]
     public async Task POST_valido_devuelve_201_con_location()
@@ -63,6 +51,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "ae789fg",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
 
@@ -71,7 +65,7 @@ public sealed class VehiculosControllerTests : IDisposable
         Assert.NotNull(creado);
         Assert.Equal("AE789FG", creado.Patente);
         Assert.Equal("Toyota", creado.Marca);
-        Assert.True(creado.ValidadoDnrpa);
+        Assert.False(creado.ValidadoDnrpa);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains($"/api/vehiculos/{creado.Id}", response.Headers.Location.ToString(), StringComparison.OrdinalIgnoreCase);
     }
@@ -86,52 +80,18 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AB123CD",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await using var context = _sqlite.CreateContext();
         Assert.Equal(1, await context.Vehiculos.CountAsync());
-    }
-
-    [Fact]
-    public async Task POST_con_titular_distinto_devuelve_400_con_mensaje_RN03()
-    {
-        await using var factory = CrearFactory();
-        var empleado = factory.CrearCliente(Roles.Empleado);
-
-        var response = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
-        {
-            ClienteId = SeedData.ClienteId,
-            Patente = "AC456EF",
-            Uso = UsoVehiculo.Particular
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var detail = doc.RootElement.GetProperty("detail").GetString();
-        Assert.NotNull(detail);
-        Assert.Contains("RN03", detail, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task POST_con_patente_inexistente_en_dnrpa_devuelve_400_con_VEHICULO_NO_ENCONTRADO()
-    {
-        await using var factory = CrearFactory();
-        var empleado = factory.CrearCliente(Roles.Empleado);
-
-        var response = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
-        {
-            ClienteId = SeedData.ClienteId,
-            Patente = "ZZ999ZZ",
-            Uso = UsoVehiculo.Particular
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var detail = doc.RootElement.GetProperty("detail").GetString();
-        Assert.NotNull(detail);
-        Assert.Contains(VehiculoService.CodigoVehiculoNoEncontrado, detail, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -144,6 +104,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = Guid.NewGuid(),
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
 
@@ -167,6 +133,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
 
@@ -198,28 +170,16 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AB12CDE",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task POST_con_dnrpa_lanzando_ExternalServiceException_devuelve_502_y_no_guarda()
-    {
-        await using var factory = CrearFactory(dnrpaOverride: new DnrpaCaidoStub());
-        var empleado = factory.CrearCliente(Roles.Empleado);
-
-        var response = await empleado.PostAsJsonAsync(RutaVehiculos, new VehiculoAltaRequest
-        {
-            ClienteId = SeedData.ClienteId,
-            Patente = "AE789FG",
-            Uso = UsoVehiculo.Particular
-        });
-
-        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
-        await using var context = _sqlite.CreateContext();
-        Assert.Equal(1, await context.Vehiculos.CountAsync());
     }
 
     [Fact]
@@ -235,6 +195,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         };
 
@@ -338,6 +304,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
         var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();
@@ -403,6 +375,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
         var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();
@@ -423,6 +401,12 @@ public sealed class VehiculosControllerTests : IDisposable
         {
             ClienteId = SeedData.ClienteId,
             Patente = "AE789FG",
+            Marca = "Toyota",
+            Modelo = "Hilux SRX",
+            Anio = 2023,
+            Tipo = TipoVehiculo.Camioneta,
+            NumeroMotor = "MOT123456",
+            NumeroChasis = "CHA123456",
             Uso = UsoVehiculo.Particular
         });
         var creado = await alta.Content.ReadFromJsonAsync<VehiculoResponse>();

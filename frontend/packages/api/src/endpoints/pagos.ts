@@ -1,4 +1,4 @@
-import type { ApiClient } from '../client';
+import type { ApiBlob, ApiClient } from '../client';
 import type { PaginaResponse } from '../dto/comunes';
 import type {
   FacturaResponse,
@@ -39,6 +39,11 @@ export function obtenerPago(api: ApiClient, id: string): Promise<PagoResponse> {
 /** `GET /api/pagos/{id}/factura`: factura de un pago, incluida `PENDIENTE_CAE`. */
 export function obtenerFacturaDePago(api: ApiClient, id: string): Promise<FacturaResponse> {
   return api.get<FacturaResponse>(`/api/pagos/${id}/factura`);
+}
+
+/** `GET /api/pagos/{id}/factura/pdf`: PDF de la factura autorizada de un pago. */
+export function obtenerPdfDeFactura(api: ApiClient, id: string): Promise<ApiBlob> {
+  return api.get(`/api/pagos/${id}/factura/pdf`, { responseType: 'blob' });
 }
 
 /** `GET /api/pagos`: listado paginado de pagos, del más nuevo al más viejo, para la tabla de B-19. */

@@ -49,7 +49,17 @@ const api = createApiClient({
   baseUrl: 'https://api.test',
   getToken: () => tokensMockClientes.empleado,
 });
-const alta: VehiculoAltaRequest = { clienteId: CLIENTE_JUAN_ID, patente: 'AE789FG', uso: 0 };
+const alta: VehiculoAltaRequest = {
+  clienteId: CLIENTE_JUAN_ID,
+  patente: 'AE789FG',
+  uso: 0,
+  marca: 'Toyota',
+  modelo: 'Hilux SRX',
+  anio: 2023,
+  tipo: 2,
+  numeroMotor: 'MOT123456',
+  numeroChasis: 'CHA123456',
+};
 const reloj = new Date('2026-11-06T18:00:00Z');
 beforeAll(() => servidorMock.listen({ onUnhandledRequest: 'error' }));
 beforeEach(() => {
@@ -111,13 +121,15 @@ describe('vehículos', () => {
     const creado = await crearVehiculo(api, cuerpo);
     expect(cuerpo.patente).toBe(' ae789fg ');
     expect(creado).toMatchObject({
-      ...alta,
+      clienteId: alta.clienteId,
+      patente: 'AE789FG',
+      uso: 0,
       tipo: 2,
       marca: 'Toyota',
       modelo: 'Hilux SRX',
       anio: 2023,
       activo: true,
-      validadoDnrpa: true,
+      validadoDnrpa: false,
     });
     expect(await obtenerVehiculo(api, creado.id)).toEqual(creado);
     expect(
@@ -152,14 +164,6 @@ describe('vehículos', () => {
     [
       { ...alta, patente: 'ABC123' },
       "Ya existe un vehículo registrado con la patente 'ABC123' (RN03).",
-    ],
-    [
-      { ...alta, patente: 'ZZ999ZZ' },
-      "VEHICULO_NO_ENCONTRADO: La patente 'ZZ999ZZ' no figura en el registro de DNRPA.",
-    ],
-    [
-      { ...alta, patente: 'AC456EF' },
-      'RN03: El titular registral en DNRPA (DNI 27111222) no coincide con el DNI del cliente (30123456).',
     ],
   ])('alta rechaza sin persistir cada regla de negocio %#', async (cuerpo, detail) => {
     await expect(api.post('/api/vehiculos', cuerpo)).rejects.toMatchObject({ status: 400, detail });

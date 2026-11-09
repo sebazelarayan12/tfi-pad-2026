@@ -1,6 +1,8 @@
 # B6 · Nuevo vehículo (backoffice)
 
-Pantalla del backoffice para dar de alta un vehículo a un cliente existente, con validación en DNRPA (CU06, RN03).
+Pantalla del backoffice para dar de alta un vehículo a un cliente existente (CU06, RN03).
+
+> **Cambio posterior al Figma:** como no hay acceso a DNRPA, el alta ya no consulta ni valida contra DNRPA ni compara el titular con el DNI del cliente. El formulario pide patente, marca, modelo, año, tipo, motor, chasis y uso, y el vehículo se guarda con `validadoDnrpa = false`. El resto de este documento describe el diseño original del Figma.
 
 Fuente de verdad: Figma `02 Backoffice`, frame B6 (nodo 22:881). Contrato: `backend/Aseguradora.Application/Dtos/VehiculoAltaRequest.cs`, `VehiculoResponse.cs`, `backend/Aseguradora.Api/Controllers/VehiculosController.cs`, y `docs/tareas-divididas.md` US-F2-04. Estado de endpoints según `development`. Textos verificados contra la captura del frame (`get_screenshot`), que resuelve una diferencia entre el árbol del nodo y el código de referencia: el botón dice **Validar en DNRPA** y el de acción final **Guardar vehículo**.
 

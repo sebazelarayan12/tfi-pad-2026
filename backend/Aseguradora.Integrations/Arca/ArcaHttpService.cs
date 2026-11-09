@@ -40,19 +40,23 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
             ["MONOTRIBUTO"] = 6
         };
 
-    // AFIP document type codes, the ones FacturAR shows in its manual ("99", "CUIT").
+    // FacturAR names the document type in text ("CUIT") besides the "99" of a final consumer, and rejects the
+    // AFIP numeric codes ("96" for a DNI answered 400 CUIT_INVALIDO), so the type is sent by name.
     private static readonly IReadOnlyDictionary<string, string> TiposDocumento =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["DNI"] = "96",
-            ["CUIT"] = "80",
-            ["CUIL"] = "86"
+            ["DNI"] = "DNI",
+            ["CUIT"] = "CUIT",
+            ["CUIL"] = "CUIL"
         };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>Name used in log entries and error messages.</summary>
     protected override string Servicio => "FacturAR";
+
+    private const int TamanoPaginaBusqueda = 100;
+    private const int MaximoPaginasBusqueda = 20;
 
     /// <inheritdoc />
     public async Task<ArcaFacturaResponse> EmitirFacturaAsync(ArcaFacturaRequest request, CancellationToken ct)
@@ -83,6 +87,64 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(numeroComprobante);
         throw new ExternalServiceException($"{Servicio}: la consulta por número de comprobante no está disponible en el servicio externo.");
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The application stores the number and the CAE of an invoice, not FacturAR's own id, so the voucher is
+    /// found in the issuing list (newest first) and its PDF is then downloaded with the API key.
+    /// </remarks>
+    public async Task<byte[]> ObtenerPdfAsync(string numeroComprobante, char tipo, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(numeroComprobante);
+        var partes = numeroComprobante.Split('-');
+        if (partes.Length != 2 || !int.TryParse(partes[0], out var puntoVenta) || !long.TryParse(partes[1], out var numero))
+            throw new ArgumentException($"Número de comprobante inválido: {numeroComprobante}.", nameof(numeroComprobante));
+        if (!TiposComprobante.TryGetValue(tipo.ToString(), out var codigoTipo))
+            throw new ArgumentException($"Tipo de comprobante desconocido: {tipo}.", nameof(tipo));
+
+        var id = await BuscarIdAsync(codigoTipo, puntoVenta, numero, ct)
+            ?? throw new NotFoundException($"{Servicio}: no se encontró el comprobante {numeroComprobante}.");
+
+        using var pedido = new HttpRequestMessage(HttpMethod.Get, $"/v1/comprobantes/{id}/pdf");
+        using var respuesta = await EnviarAsync(pedido, ct, esIdempotente: true);
+        if (respuesta.StatusCode == HttpStatusCode.NotFound)
+            throw new NotFoundException($"{Servicio}: no se encontró el comprobante {numeroComprobante}.");
+        if (!respuesta.IsSuccessStatusCode)
+            throw await TraducirErrorAsync(respuesta, ct);
+
+        return await respuesta.Content.ReadAsByteArrayAsync(ct);
+    }
+
+    private async Task<Guid?> BuscarIdAsync(int codigoTipo, int puntoVenta, long numero, CancellationToken ct)
+    {
+        for (var pagina = 1; pagina <= MaximoPaginasBusqueda; pagina++)
+        {
+            using var pedido = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"/v1/comprobantes?tipo={codigoTipo}&puntoVenta={puntoVenta}&page={pagina}&pageSize={TamanoPaginaBusqueda}");
+            using var respuesta = await EnviarAsync(pedido, ct, esIdempotente: true);
+            if (!respuesta.IsSuccessStatusCode)
+                throw await TraducirErrorAsync(respuesta, ct);
+
+            ListaComprobantes? lista;
+            try
+            {
+                lista = await respuesta.Content.ReadFromJsonAsync<ListaComprobantes>(JsonOptions, ct);
+            }
+            catch (JsonException ex)
+            {
+                throw new ExternalServiceException($"{Servicio}: el servicio externo devolvió un JSON inválido.", ex);
+            }
+
+            var encontrado = lista?.Items?.FirstOrDefault(i => i.Numero == numero);
+            if (encontrado is not null)
+                return encontrado.Id;
+            if (lista is null || pagina >= lista.TotalPages)
+                return null;
+        }
+
+        return null;
     }
 
     private PedidoComprobante Mapear(ArcaFacturaRequest request)
@@ -146,9 +208,12 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
     private async Task<ExternalServiceException> TraducirErrorAsync(HttpResponseMessage respuesta, CancellationToken ct)
     {
         string? codigo = null;
+        string? mensaje = null;
         try
         {
-            codigo = (await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct))?.Codigo;
+            var error = await respuesta.Content.ReadFromJsonAsync<RespuestaError>(JsonOptions, ct);
+            codigo = error?.Codigo;
+            mensaje = error?.Mensaje;
         }
         catch (JsonException)
         {
@@ -158,7 +223,7 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
         var estado = (int)respuesta.StatusCode;
         return respuesta.StatusCode == HttpStatusCode.Unauthorized
             ? new ExternalServiceException($"{Servicio}: el servicio externo rechazó la API key (401 {codigo}).")
-            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}).");
+            : new ExternalServiceException($"{Servicio}: respuesta inesperada {estado} del servicio externo ({codigo ?? "sin código"}){(string.IsNullOrWhiteSpace(mensaje) ? "" : $": {mensaje}")}.");
     }
 
     private sealed record PedidoComprobante(
@@ -180,5 +245,9 @@ public sealed class ArcaHttpService(HttpClient httpClient, ILogger<ArcaHttpServi
         DateTime? CaeVencimiento,
         string? Estado);
 
-    private sealed record RespuestaError(string? Codigo);
+    private sealed record ListaComprobantes(IReadOnlyList<ItemComprobante>? Items, int TotalPages);
+
+    private sealed record ItemComprobante(Guid Id, long Numero);
+
+    private sealed record RespuestaError(string? Codigo, string? Mensaje);
 }

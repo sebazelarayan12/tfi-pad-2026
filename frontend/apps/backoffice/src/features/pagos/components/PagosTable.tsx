@@ -48,8 +48,8 @@ const COLUMNAS: ReadonlyArray<TableColumn<PagoListadoResponse>> = [
   {
     key: 'factura',
     header: 'Factura',
-    width: 144,
-    render: (pago) => <FacturaCell factura={pago.factura} />,
+    width: 230,
+    render: (pago) => <FacturaCell pagoId={pago.id} factura={pago.factura} />,
   },
 ];
 

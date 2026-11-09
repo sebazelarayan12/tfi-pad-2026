@@ -7,7 +7,7 @@ Estado de los servicios de otros grupos y cómo pasar de mock a real (US-T-04). 
 | Servicio | Interfaz | Clave de configuración | Mock | Real | Responsable | Estado |
 |----------|----------|------------------------|------|------|-------------|--------|
 | Renaper | `IRenaperService` | `Integraciones:Renaper` | `RenaperMockService` | `RenaperHttpService` | Grupo OpenRENAPER | Real implementado contra OpenRENAPER (sin clave); activar con `UsarMock=false`. Ver "Particularidades" |
-| DNRPA | `IDnrpaService` | `Integraciones:Dnrpa` | `DnrpaMockService` | `DnrpaHttpService` | Sin grupo | Mock definitivo (no hay servicio real accesible) |
+| DNRPA | `IDnrpaService` | `Integraciones:Dnrpa` | `DnrpaMockService` | `DnrpaHttpService` | Sin grupo | Mock definitivo (no hay servicio real accesible). **El alta de vehículo ya no lo consulta**: marca, modelo, año, tipo, motor y chasis se cargan a mano y el vehículo queda con `ValidadoDnrpa = false`. |
 | ARCA | `IArcaService` | `Integraciones:Arca` | `ArcaMockService` | `ArcaHttpService` | Grupo FacturAR | Real implementado contra FacturAR; falta su API key para activarlo. Ver "Particularidades" |
 | Pasarela 1 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela1` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 1 | Mock; real pendiente |
 | Pasarela 2 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela2` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 2 | Mock; real pendiente |
@@ -36,7 +36,9 @@ Para las pasarelas, `<Servicio>` es `Pasarelas__pasarela1` o `Pasarelas__pasarel
 - Un DNI compartido por varias personas responde 409; se reintenta por el CUIL cargado.
 - Límite de 15 consultas por minuto por IP y disponibilidad bajo demanda (no 24/7): una caída no bloquea el alta (queda sin validar).
 
-**FacturAR** (`POST /v1/comprobantes`, header `X-Api-Key` con una clave `fak_...` y `Idempotency-Key` = número de pago). La empresa emisora sale de la clave, así que `Facturacion:Cuit` no se envía; `Facturacion:PuntoVenta` debe existir y estar activo en su portal. Se emite Factura B (tipo 6) con IVA incluido. No hay consulta por número de comprobante (`ConsultarFacturaAsync` falla), y el PDF no se guarda.
+**FacturAR** (`POST /v1/comprobantes`, header `X-Api-Key` con una clave `fak_...` y `Idempotency-Key` = número de pago). La empresa emisora sale de la clave, así que `Facturacion:Cuit` no se envía; `Facturacion:PuntoVenta` debe existir y estar activo en su portal. Se emite Factura B (tipo 6) con IVA incluido. No hay consulta por número de comprobante (`ConsultarFacturaAsync` falla), y el PDF no se guarda. Para verlo, `GET /api/pagos/{id}/factura/pdf` busca el comprobante de FacturAR por tipo, punto de venta y número (`GET /v1/comprobantes`, páginas de 100) y descarga `GET /v1/comprobantes/{id}/pdf`; solo para facturas con CAE. En el backoffice es el botón "Ver PDF" del panel de factura.
+
+Probado contra facturAR real (09/11/2026): el `documentoTipo` del receptor se manda **por nombre** (`DNI`, `CUIT`, `CUIL`); los códigos numéricos de AFIP (`96` para DNI) responden 400 `CUIT_INVALIDO`. Cuando facturAR rechaza una emisión, la API deja `ARCA_EMISION_FALLIDA` con el motivo en el log y la factura queda `Pendiente CAE`; el reintento automático (cada `FACTURACION_INTERVALO_REINTENTO_MINUTOS`) la emite sola cuando se corrige la causa. El servicio no devuelve PDF: no hay enlace a la factura.
 
 ## Pasar un servicio de mock a real
 

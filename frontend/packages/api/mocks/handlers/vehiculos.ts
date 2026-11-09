@@ -105,25 +105,28 @@ export function crearHandlersVehiculos(registros: VehiculoResponse[] = crearEsta
         );
       if (registros.some((v) => v.patente === patente))
         return responderProblema(request, problemaNegocio(duplicado(patente)));
-      const dato = dnrpaFixture.find((v) => v.patente === patente);
-      if (!dato) return responderProblema(request, problemaNegocio(desconocido(patente)));
-      if (dato.dni !== cliente.dni)
+      if (
+        typeof cuerpo.marca !== 'string' ||
+        !cuerpo.marca.trim() ||
+        typeof cuerpo.modelo !== 'string' ||
+        !cuerpo.modelo.trim()
+      )
         return responderProblema(
           request,
-          problemaNegocio(
-            `RN03: El titular registral en DNRPA (DNI ${dato.dni}) no coincide con el DNI del cliente (${cliente.dni}).`,
-          ),
+          problemaNegocio('La marca y el modelo son obligatorios.'),
         );
+      if (typeof cuerpo.anio !== 'number' || cuerpo.anio < 1950 || cuerpo.anio > 2100)
+        return responderProblema(request, problemaNegocio('El año no es válido.'));
       const creado: VehiculoResponse = {
         id: crypto.randomUUID(),
         clienteId: cliente.id,
         patente,
-        marca: dato.marca,
-        modelo: dato.modelo,
-        anio: dato.anio,
-        tipo: dato.tipo,
+        marca: cuerpo.marca.trim(),
+        modelo: cuerpo.modelo.trim(),
+        anio: cuerpo.anio,
+        tipo: (cuerpo.tipo ?? 0) as 0 | 1 | 2,
         uso: cuerpo.uso as 0 | 1,
-        validadoDnrpa: true,
+        validadoDnrpa: false,
         activo: true,
       };
       registros.push(creado);
