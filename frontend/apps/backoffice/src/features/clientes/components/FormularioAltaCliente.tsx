@@ -145,13 +145,13 @@ export function FormularioAltaCliente() {
   const bloqueado = alta.isPending;
 
   return (
-    <div className="flex flex-col gap-sp-32 xl:flex-row xl:items-start">
+    <div className="flex flex-col gap-sp-24 xl:flex-row">
       <form
         noValidate
         aria-label="Nuevo cliente"
         aria-busy={bloqueado}
         onSubmit={(evento) => void handleSubmit(enviar)(evento)}
-        className="flex min-w-0 max-w-[720px] flex-1 flex-col gap-sp-32"
+        className="flex min-w-0 flex-1 flex-col gap-sp-24"
       >
         <SeccionDatosPersonales
           form={form}
@@ -167,8 +167,12 @@ export function FormularioAltaCliente() {
             />
           }
         />
-        <SeccionContacto form={form} deshabilitado={bloqueado} />
-        <SeccionDomicilio form={form} deshabilitado={bloqueado} esDatoRenaper={esDatoRenaper} />
+        <div className="border-t border-border-hairline pt-sp-24">
+          <SeccionContacto form={form} deshabilitado={bloqueado} />
+        </div>
+        <div className="border-t border-border-hairline pt-sp-24">
+          <SeccionDomicilio form={form} deshabilitado={bloqueado} esDatoRenaper={esDatoRenaper} />
+        </div>
         {fallecido ? (
           <p id={ID_AVISO_FALLECIDO} className="text-body-sm text-status-cancelada-text">
             {TEXTOS_RENAPER.fallecido}
@@ -191,7 +195,10 @@ export function FormularioAltaCliente() {
           />
         ) : null}
       </form>
-      <aside aria-label="Validación de Renaper" className="w-full xl:w-[320px] xl:shrink-0">
+      <aside
+        aria-label="Validación de Renaper"
+        className="w-full xl:w-[320px] xl:shrink-0 xl:border-l xl:border-border-hairline xl:pl-sp-24"
+      >
         <WidgetValidacionRenaper resultado={resultado} />
       </aside>
     </div>

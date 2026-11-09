@@ -71,7 +71,7 @@ async function campoHabilitado() {
 it('muestra al cliente, las reglas y las opciones de uso accesibles con foco inicial en Patente', async () => {
   const { container } = montar();
   const patente = await campoHabilitado();
-  expect(screen.getByRole('heading', { level: 1, name: 'Nuevo vehículo' })).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Nuevo vehículo' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Juan Carlos Pérez' })).toHaveAttribute('href', ficha);
   expect(screen.getByText('30.123.456')).toBeInTheDocument();
   expect(patente).toHaveFocus();

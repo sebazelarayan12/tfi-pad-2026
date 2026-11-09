@@ -20,7 +20,7 @@ export function ClienteEncabezado({ cliente, acciones }: ClienteEncabezadoProps)
     <header className="flex flex-wrap items-center gap-sp-16">
       <div
         aria-hidden="true"
-        className="flex size-14 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-h3 text-text-primary"
+        className="flex size-14 shrink-0 items-center justify-center rounded-full bg-accent-lime text-h3 text-text-primary"
       >
         {iniciales(cliente.nombre, cliente.apellido)}
       </div>

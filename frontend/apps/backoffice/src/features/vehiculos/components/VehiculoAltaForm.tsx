@@ -68,7 +68,7 @@ export function VehiculoAltaForm({ habilitado, guardando, onGuardar, onCancelar 
     <form
       noValidate
       aria-label="Alta de vehículo"
-      className="flex min-w-0 flex-col gap-sp-24 rounded-card border border-border-hairline bg-surface-panel p-sp-24"
+      className="flex min-w-0 flex-col gap-sp-24"
       onSubmit={(evento) => void handleSubmit(guardar)(evento)}
     >
       <div className="grid items-start gap-sp-16 sm:grid-cols-2">
@@ -93,14 +93,16 @@ export function VehiculoAltaForm({ habilitado, guardando, onGuardar, onCancelar 
           control={control}
           name="uso"
           render={({ field }) => (
-            <Select
-              {...field}
-              label="Uso"
-              options={opcionesUso}
-              required
-              helper="Comercial aplica factor 1,40 en la cotización."
-              disabled={deshabilitado}
-            />
+            <div className="sm:col-start-1">
+              <Select
+                {...field}
+                label="Uso"
+                options={opcionesUso}
+                required
+                helper="Comercial aplica factor 1,40 en la cotización."
+                disabled={deshabilitado}
+              />
+            </div>
           )}
         />
       </div>
