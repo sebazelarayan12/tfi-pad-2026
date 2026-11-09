@@ -96,6 +96,17 @@ public class RenaperHttpServiceTests
         Assert.Null(persona.FechaFallecimiento);
     }
 
+    [Theory]
+    [InlineData("Sebastian ZELARAYAN", "Sebastian", "ZELARAYAN")]
+    [InlineData("Juan Carlos DE LA CRUZ", "Juan Carlos", "DE LA CRUZ")]
+    [InlineData("PEREZ JUAN CARLOS", "PEREZ JUAN CARLOS", null)]
+    [InlineData("Sebastian", "Sebastian", null)]
+    [InlineData("ZELARAYAN Sebastian", "ZELARAYAN Sebastian", null)]
+    public void Separa_el_nombre_solo_cuando_el_formato_es_inequivoco(string completo, string nombre, string? apellido)
+    {
+        Assert.Equal((nombre, apellido), RenaperHttpService.SepararNombre(completo));
+    }
+
     [Fact]
     public async Task Consulta_por_cuil_usa_tipo_cuit()
     {

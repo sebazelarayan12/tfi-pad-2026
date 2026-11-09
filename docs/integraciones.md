@@ -32,7 +32,7 @@ Para las pasarelas, `<Servicio>` es `Pasarelas__pasarela1` o `Pasarelas__pasarel
 
 - RN01 (mayor de 18) se verifica con la `edad` de Renaper. Si no la publica, el cliente se registra con `ValidadoRenaper=false`.
 - RN02 (fallecido) no se puede verificar: la fuente no informa estado.
-- No hay domicilio ni fecha de nacimiento ni apellido separado: se conserva lo que cargó el empleado. Solo se pisan el CUIL y el sexo cuando vienen.
+- No hay domicilio ni fecha de nacimiento: se conserva lo que cargó el empleado. El nombre llega en un solo texto; si viene como `Nombre APELLIDO` (apellido en mayúsculas) se separa y se precargan nombre y apellido, si no (todo en mayúsculas, empresa) no se adivina y solo se pisan CUIL y sexo.
 - Un DNI compartido por varias personas responde 409; se reintenta por el CUIL cargado.
 - Límite de 15 consultas por minuto por IP y disponibilidad bajo demanda (no 24/7): una caída no bloquea el alta (queda sin validar).
 

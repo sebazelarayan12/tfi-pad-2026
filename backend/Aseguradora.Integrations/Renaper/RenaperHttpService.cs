@@ -108,11 +108,13 @@ public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHtt
             ? respuesta.Dni.Trim()
             : tipo == TipoDni ? numero : DniDelCuil(cuil ?? numero);
 
+        var (nombre, apellido) = SepararNombre(respuesta.Nombre.Trim());
+
         return new PersonaRenaper(
             Dni: dni,
             Cuil: cuil ?? (tipo == TipoCuit ? numero : null),
-            Nombre: respuesta.Nombre.Trim(),
-            Apellido: null,
+            Nombre: nombre,
+            Apellido: apellido,
             FechaNacimiento: null,
             Sexo: MapearSexo(respuesta.Sexo),
             Domicilio: null,
@@ -127,6 +129,25 @@ public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHtt
     /// </summary>
     private static string DniDelCuil(string cuil) =>
         cuil.Length == 11 && cuil[..2] is "20" or "23" or "24" or "27" ? cuil.Substring(2, 8).TrimStart('0') : cuil;
+
+    /// <summary>
+    /// The source publishes one text. When it is written as "Nombre APELLIDO" (given names in mixed case,
+    /// surnames in capitals) the two parts are split; any other shape (all capitals, no capitals, a company)
+    /// is ambiguous, so the whole text stays as the name and no surname is guessed.
+    /// </summary>
+    public static (string Nombre, string? Apellido) SepararNombre(string completo)
+    {
+        var palabras = completo.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var primeraMayuscula = Array.FindIndex(palabras, EsMayuscula);
+        var hayMinusculas = palabras.Any(p => !EsMayuscula(p));
+        if (!hayMinusculas || primeraMayuscula <= 0 || palabras[primeraMayuscula..].Any(p => !EsMayuscula(p)))
+            return (completo, null);
+
+        return (string.Join(' ', palabras[..primeraMayuscula]), string.Join(' ', palabras[primeraMayuscula..]));
+    }
+
+    private static bool EsMayuscula(string palabra) =>
+        palabra.Any(char.IsLetter) && palabra.ToUpperInvariant() == palabra;
 
     private static char? MapearSexo(string? sexo) => sexo?.Trim().ToUpperInvariant() switch
     {
