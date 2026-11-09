@@ -1,4 +1,5 @@
 using Aseguradora.Api.Security;
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Dtos;
 using Aseguradora.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,8 +14,16 @@ namespace Aseguradora.Api.Controllers;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]
 [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-public sealed class PagosController(IPagoService pagos) : ControllerBase
+public sealed class PagosController(IPagoService pagos, IPagoConsultaService consulta) : ControllerBase
 {
+    /// <summary>Lista pagos, del más nuevo al más viejo, filtrados por estado, medio y número de póliza.</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(PaginaResponse<PagoListadoResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PaginaResponse<PagoListadoResponse>>> Listar(
+        [FromQuery] PagoFiltro filtro, CancellationToken ct) =>
+        Ok(await consulta.ListarAsync(filtro, ct));
+
     /// <summary>Consulta a la pasarela y aplica el resultado de un pago cuyo aviso no llegó.</summary>
     [HttpPost("{id:guid}/conciliar")]
     [ProducesResponseType(typeof(PagoResponse), StatusCodes.Status200OK)]

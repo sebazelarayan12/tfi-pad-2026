@@ -1,8 +1,8 @@
 import {
-  listarPagosMock,
+  listarPagos,
   pagosKeys,
   useApiClient,
-  type PagoListadoFiltroMock,
+  type PagoListadoFiltro,
   type PagoListadoResponse,
   type PaginaResponse,
 } from '@nexa/api';
@@ -14,7 +14,7 @@ import type { FiltrosPagos } from '../types/filtrosPagos';
 export const TAMANO_PAGINA_PAGOS = 10;
 
 /** "Todos" se omite; nunca se envía un rango de fechas (el back no tiene ese filtro, D-B19-02). */
-function aQuery({ medio, estado, pagina }: FiltrosPagos): PagoListadoFiltroMock {
+function aQuery({ medio, estado, pagina }: FiltrosPagos): PagoListadoFiltro {
   return {
     pagina,
     tamano: TAMANO_PAGINA_PAGOS,
@@ -23,14 +23,14 @@ function aQuery({ medio, estado, pagina }: FiltrosPagos): PagoListadoFiltroMock 
   };
 }
 
-/** MOCK (PB-05): `GET /api/pagos` no existe en el back; lo responde el handler MSW. */
+/** Listado de pagos de B-19 (`GET /api/pagos`). */
 export function usePagosListado(filtros: FiltrosPagos) {
   const api = useApiClient();
   const query = aQuery(filtros);
 
   return useQuery<PaginaResponse<PagoListadoResponse>>({
     queryKey: pagosKeys.lista(query),
-    queryFn: () => listarPagosMock(api, query),
+    queryFn: () => listarPagos(api, query),
     placeholderData: keepPreviousData,
   });
 }

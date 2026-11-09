@@ -78,23 +78,17 @@ export interface PagoResumenMock {
   cuotaIds: string[];
 }
 
-/**
- * MOCK (PB-05): filtros de `GET /api/pagos`.
- * Solo los implementa el handler MSW; el back no expone este endpoint.
- */
-export interface PagoListadoFiltroMock {
+/** Filtros de `GET /api/pagos`; los valores de estado y medio van en mayúsculas, como en las respuestas. */
+export interface PagoListadoFiltro {
   estado?: EstadoPago;
   medio?: MedioPagoApi;
-  /** PB-06: el back real todavía no filtra por número de póliza. */
+  /** Número de póliza exacto, sin distinguir mayúsculas. */
   numeroPoliza?: string;
   pagina?: number;
   tamano?: number;
 }
 
-/**
- * MOCK (PB-05): fila de `GET /api/pagos` para la tabla de B11 §9 (RV-D13).
- * La UI de B-19 la consume hasta que PB-05 se publique.
- */
+/** Fila de `GET /api/pagos` para la tabla de B11 §9 (RV-D13). */
 export interface PagoListadoResponse {
   id: string;
   numero: string;

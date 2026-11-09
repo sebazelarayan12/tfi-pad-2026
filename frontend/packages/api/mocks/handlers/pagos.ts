@@ -185,10 +185,10 @@ function facturaNoExisteResponse(): Response {
 
 /**
  * Handlers de `POST /api/pagos/caja`, `GET /api/pagos/{id}`,
- * `GET /api/pagos/{id}/factura` y los mocks de PB-05.
+ * `GET /api/pagos/{id}/factura` y los listados de pagos.
  *
  * Los tres endpoints reales usan `Politicas.Empleado`; sin token devuelven 401.
- * Los listados de pagos solo existen en MSW hasta que PB-05 se publique.
+ * Con `VITE_USE_MOCKS=true` estos handlers reemplazan al back; con el back real no se usan.
  */
 export const handlers: HttpHandler[] = [
   http.post('*/api/pagos/caja', async ({ request }) => {

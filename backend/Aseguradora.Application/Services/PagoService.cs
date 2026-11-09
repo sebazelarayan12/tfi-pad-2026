@@ -84,6 +84,12 @@ public sealed class PagoService(
     {
         var pago = await pagos.GetByIdAsync(id, ct) ?? throw new NotFoundException("El pago no existe.");
         var factura = (await facturas.FindAsync(f => f.PagoId == id, ct)).SingleOrDefault();
+        return MapearPago(pago, factura);
+    }
+
+    /// <summary>Mapea un pago y su factura (si existe) al contrato público; lo comparte la consulta por póliza.</summary>
+    internal static PagoResponse MapearPago(Pago pago, Factura? factura)
+    {
         return new PagoResponse(pago.Id, pago.ClienteId, pago.Numero, pago.Estado switch
             {
                 EstadoPago.Pendiente => ValoresPagoResponse.Pendiente,
@@ -118,13 +124,13 @@ public sealed class PagoService(
         return MapearFactura(factura);
     }
 
-    private static FacturaResponse MapearFactura(Factura factura) => new(
+    internal static FacturaResponse MapearFactura(Factura factura) => new(
         factura.Id, factura.PagoId, factura.Numero, factura.Tipo, factura.Importe,
         factura.Estado == EstadoFactura.PendienteCae ? ValoresPagoResponse.PendienteCae : ValoresPagoResponse.Autorizada,
         factura.Cae, factura.VencimientoCae, ComoUtc(factura.FechaEmision));
 
     // SQL Server datetime2 conserva los ticks UTC pero materializa DateTimeKind.Unspecified.
-    private static DateTime ComoUtc(DateTime fecha) => fecha.Kind == DateTimeKind.Unspecified
+    internal static DateTime ComoUtc(DateTime fecha) => fecha.Kind == DateTimeKind.Unspecified
         ? DateTime.SpecifyKind(fecha, DateTimeKind.Utc)
         : fecha.ToUniversalTime();
 
