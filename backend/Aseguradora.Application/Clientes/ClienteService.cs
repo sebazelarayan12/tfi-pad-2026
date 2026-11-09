@@ -75,7 +75,7 @@ public sealed class ClienteService(
         if (await _clientes.AnyAsync(c => c.Email.ToLower() == email.ToLower(), ct))
             throw new BusinessRuleException($"RN01: Ya existe un cliente con el email '{email}'.");
 
-        var (persona, renaperDisponible) = await ObtenerPersonaTolerandoCaidaAsync(dni, ct);
+        var (persona, renaperDisponible) = await ObtenerPersonaTolerandoCaidaAsync(dni, request.Cuil, ct);
 
         if (persona is not null)
             ValidarPersonaVigente(persona);
@@ -83,7 +83,7 @@ public sealed class ClienteService(
         if (persona is null && renaperDisponible)
             throw new BusinessRuleException($"El DNI '{dni}' no figura en Renaper.");
 
-        ValidarMayorDeEdad(persona?.FechaNacimiento ?? fechaNacimientoIngresada);
+        ValidarMayorDeEdad(persona, fechaNacimientoIngresada);
 
         var cliente = new Cliente
         {
@@ -101,8 +101,9 @@ public sealed class ClienteService(
             Localidad = request.Localidad.Trim(),
             Provincia = request.Provincia.Trim(),
             CodigoPostal = request.CodigoPostal.Trim(),
-            ValidadoRenaper = persona is not null,
-            FechaValidacionRenaper = persona is not null ? _reloj.GetUtcNow().UtcDateTime : null,
+            // Without a birth date or an age, Renaper could not check RN01: the client stays unvalidated.
+            ValidadoRenaper = persona is not null && EdadVerificable(persona),
+            FechaValidacionRenaper = persona is not null && EdadVerificable(persona) ? _reloj.GetUtcNow().UtcDateTime : null,
             Activo = true
         };
 
@@ -142,15 +143,18 @@ public sealed class ClienteService(
         var cliente = await _clientes.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"El cliente {id} no existe.", CodigoClienteNoEncontrado);
 
-        var persona = await _renaper.ObtenerPorDniAsync(cliente.Dni, ct)
+        var persona = await ConsultarRenaperAsync(cliente.Dni, cliente.Cuil, ct)
             ?? throw new BusinessRuleException($"El DNI '{cliente.Dni}' no figura en Renaper.");
 
         ValidarPersonaVigente(persona);
-        ValidarMayorDeEdad(persona.FechaNacimiento);
+        ValidarMayorDeEdad(persona, cliente.FechaNacimiento);
 
         AplicarDatosRenaper(cliente, persona);
-        cliente.ValidadoRenaper = true;
-        cliente.FechaValidacionRenaper = _reloj.GetUtcNow().UtcDateTime;
+        if (EdadVerificable(persona))
+        {
+            cliente.ValidadoRenaper = true;
+            cliente.FechaValidacionRenaper = _reloj.GetUtcNow().UtcDateTime;
+        }
 
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -327,13 +331,36 @@ public sealed class ClienteService(
         return cliente;
     }
 
+    /// <summary>
+    /// Asks Renaper by DNI and, when the DNI is shared by several people, settles it by CUIL
+    /// (the CUIL the employee typed or the one already stored for the client).
+    /// </summary>
+    private async Task<PersonaRenaper?> ConsultarRenaperAsync(string dni, string? cuil, CancellationToken ct)
+    {
+        try
+        {
+            return await _renaper.ObtenerPorDniAsync(dni, ct);
+        }
+        catch (PersonaAmbiguaException) when (CuilNormalizado(cuil) is not null)
+        {
+            return await _renaper.ObtenerPorCuilAsync(CuilNormalizado(cuil)!, ct);
+        }
+    }
+
+    private static string? CuilNormalizado(string? cuil)
+    {
+        var digitos = new string((cuil ?? string.Empty).Where(char.IsAsciiDigit).ToArray());
+        return digitos.Length == 11 ? digitos : null;
+    }
+
     private async Task<(PersonaRenaper? Persona, bool Disponible)> ObtenerPersonaTolerandoCaidaAsync(
         string dni,
+        string? cuil,
         CancellationToken ct)
     {
         try
         {
-            return (await _renaper.ObtenerPorDniAsync(dni, ct), true);
+            return (await ConsultarRenaperAsync(dni, cuil, ct), true);
         }
         catch (ExternalServiceException exception)
         {
@@ -349,11 +376,25 @@ public sealed class ClienteService(
             throw new BusinessRuleException(MensajeFallecido);
     }
 
-    private void ValidarMayorDeEdad(DateOnly fechaNacimiento)
+    /// <summary>
+    /// RN01 with the best evidence available: Renaper's birth date, else Renaper's age, else the date the
+    /// employee typed (Renaper may not publish either).
+    /// </summary>
+    private void ValidarMayorDeEdad(PersonaRenaper? persona, DateOnly fechaNacimientoIngresada)
     {
-        if (!EsMayorDeEdad(fechaNacimiento))
+        var mayor = persona switch
+        {
+            { FechaNacimiento: { } fecha } => EsMayorDeEdad(fecha),
+            { Edad: { } edad } => edad >= EdadMinima,
+            _ => EsMayorDeEdad(fechaNacimientoIngresada)
+        };
+
+        if (!mayor)
             throw new BusinessRuleException($"RN01: El cliente debe tener {EdadMinima} años o más.");
     }
+
+    private static bool EdadVerificable(PersonaRenaper persona) =>
+        persona.FechaNacimiento is not null || persona.Edad is not null;
 
     private bool EsMayorDeEdad(DateOnly fechaNacimiento)
     {
@@ -374,16 +415,29 @@ public sealed class ClienteService(
 
     private static void AplicarDatosRenaper(Cliente cliente, PersonaRenaper persona)
     {
-        cliente.Nombre = persona.Nombre.Trim();
-        cliente.Apellido = persona.Apellido.Trim();
-        cliente.Cuil = persona.Cuil.Trim();
-        cliente.FechaNacimiento = persona.FechaNacimiento;
-        cliente.Sexo = char.ToUpperInvariant(persona.Sexo);
-        cliente.Calle = persona.Domicilio.Calle.Trim();
-        cliente.Numero = persona.Domicilio.Numero.Trim();
-        cliente.Localidad = persona.Domicilio.Localidad.Trim();
-        cliente.Provincia = persona.Domicilio.Provincia.Trim();
-        cliente.CodigoPostal = persona.Domicilio.CodigoPostal.Trim();
+        // Renaper only overwrites what it publishes; the rest keeps what the employee typed.
+        // The real source gives one name string, so name and last name are replaced together or not at all.
+        if (!string.IsNullOrWhiteSpace(persona.Apellido))
+        {
+            cliente.Nombre = persona.Nombre.Trim();
+            cliente.Apellido = persona.Apellido.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(persona.Cuil))
+            cliente.Cuil = persona.Cuil.Trim();
+        if (persona.FechaNacimiento is { } fechaNacimiento)
+            cliente.FechaNacimiento = fechaNacimiento;
+        if (persona.Sexo is { } sexo)
+            cliente.Sexo = char.ToUpperInvariant(sexo);
+
+        if (persona.Domicilio is { } domicilio)
+        {
+            cliente.Calle = domicilio.Calle.Trim();
+            cliente.Numero = domicilio.Numero.Trim();
+            cliente.Localidad = domicilio.Localidad.Trim();
+            cliente.Provincia = domicilio.Provincia.Trim();
+            cliente.CodigoPostal = domicilio.CodigoPostal.Trim();
+        }
     }
 
     private static ClienteResponse Mapear(Cliente cliente) => new(
@@ -412,14 +466,16 @@ public sealed class ClienteService(
         Apellido: persona.Apellido,
         FechaNacimiento: persona.FechaNacimiento,
         Sexo: persona.Sexo,
-        Domicilio: new DomicilioRenaperResponse(
-            Calle: persona.Domicilio.Calle,
-            Numero: persona.Domicilio.Numero,
-            Piso: persona.Domicilio.Piso,
-            Depto: persona.Domicilio.Depto,
-            Localidad: persona.Domicilio.Localidad,
-            Provincia: persona.Domicilio.Provincia,
-            CodigoPostal: persona.Domicilio.CodigoPostal),
+        Domicilio: persona.Domicilio is { } domicilio
+            ? new DomicilioRenaperResponse(
+                Calle: domicilio.Calle,
+                Numero: domicilio.Numero,
+                Piso: domicilio.Piso,
+                Depto: domicilio.Depto,
+                Localidad: domicilio.Localidad,
+                Provincia: domicilio.Provincia,
+                CodigoPostal: domicilio.CodigoPostal)
+            : null,
         Estado: persona.Estado == EstadoRenaper.Fallecido ? "FALLECIDO" : "VIGENTE",
         FechaFallecimiento: persona.FechaFallecimiento);
 }

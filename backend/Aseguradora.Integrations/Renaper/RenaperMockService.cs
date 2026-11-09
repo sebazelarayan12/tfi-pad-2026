@@ -78,4 +78,12 @@ public sealed class RenaperMockService : IRenaperService
         Personas.TryGetValue(dni.Trim(), out var persona);
         return Task.FromResult(persona);
     }
+
+    /// <inheritdoc />
+    public Task<PersonaRenaper?> ObtenerPorCuilAsync(string cuil, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cuil);
+
+        return Task.FromResult(Personas.Values.FirstOrDefault(p => p.Cuil == cuil.Trim()));
+    }
 }

@@ -86,7 +86,8 @@ Variables que lee `docker-compose.yml`:
 | `SWAGGER_HABILITADO` | Publicar Swagger | `false` |
 | `SEED_ADMINISTRADOR_EMAIL` y `SEED_ADMINISTRADOR_PASSWORD` | Administrador inicial | Los del equipo |
 | `APIKEY_PASARELA1` y `APIKEY_PASARELA2` | Claves que las pasarelas envían en `X-Api-Key` para llamar al webhook. Las define Nexa y se entregan a cada grupo | Aleatorias |
-| `INTEGRACIONES_RENAPER_APIKEY`, `INTEGRACIONES_DNRPA_APIKEY`, `INTEGRACIONES_ARCA_APIKEY`, `INTEGRACIONES_PASARELA1_APIKEY` y `INTEGRACIONES_PASARELA2_APIKEY` | Claves con las que la API llama a los servicios de otros grupos. Las emite cada grupo | Las reales cuando existan; mientras tanto, un valor cualquiera |
+| `INTEGRACIONES_DNRPA_APIKEY`, `INTEGRACIONES_ARCA_APIKEY`, `INTEGRACIONES_PASARELA1_APIKEY` y `INTEGRACIONES_PASARELA2_APIKEY` | Claves con las que la API llama a los servicios de otros grupos. Las emite cada grupo | Las reales cuando existan; mientras tanto, un valor cualquiera |
+| `INTEGRACIONES_RENAPER_USAR_MOCK`, `INTEGRACIONES_RENAPER_BASEURL`, `INTEGRACIONES_ARCA_USAR_MOCK` y `INTEGRACIONES_ARCA_BASEURL` | Pasan Renaper (OpenRENAPER, sin clave) y ARCA (FacturAR) de mock a real. Ver `docs/integraciones.md` | `true` y la URL de cada grupo; con `false` el servicio se llama de verdad |
 | `CORS_ORIGIN_BACKOFFICE` y `CORS_ORIGIN_PUBLIC` | Orígenes permitidos (dominios de Cloudflare Pages de los dos fronts) | Dominios de Pages |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Token del conector del túnel | Ver el paso 6 |
 
