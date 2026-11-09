@@ -50,6 +50,27 @@ public interface IUsuarioStore
         string passwordNueva,
         CancellationToken ct = default);
 
+    /// <summary>Lists accounts ordered by email, one page at a time (PB-04).</summary>
+    Task<Comun.PaginaResponse<UsuarioListado>> ListarAsync(int pagina, int tamano, CancellationToken ct = default);
+
+    /// <summary>The account with its role and state, or <c>null</c> when the id does not exist (PB-04).</summary>
+    Task<UsuarioListado?> BuscarListadoAsync(string id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Changes name, surname and role. The role is replaced, never added. Throws
+    /// <see cref="Exceptions.BusinessRuleException"/> when Identity rejects the change (PB-04).
+    /// </summary>
+    Task ActualizarAsync(string id, string nombre, string apellido, string rol, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enables or disables sign-in for the account (a disabled account is locked out). Existing
+    /// data is kept (PB-04).
+    /// </summary>
+    Task EstablecerActivoAsync(string id, bool activo, CancellationToken ct = default);
+
+    /// <summary>Number of active accounts with the administrator role.</summary>
+    Task<int> ContarAdministradoresActivosAsync(CancellationToken ct = default);
+
     /// <summary>True when an account with that email already exists.</summary>
     Task<bool> EmailExisteAsync(string email, CancellationToken ct = default);
 }
