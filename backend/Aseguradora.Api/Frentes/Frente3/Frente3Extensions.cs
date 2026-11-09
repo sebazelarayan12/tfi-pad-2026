@@ -25,6 +25,7 @@ public static class Frente3Extensions
         services.AddScoped<INumeradorPolizas, NumeradorPolizasSql>();
         services.AddScoped<IPolizaService, PolizaService>();
         services.AddScoped<IResumenInicioService, ResumenInicioService>();
+        services.AddScoped<ICuotaConsultaService, CuotaConsultaService>();
         services.AddScoped<ISeeder, SeedFrente3>();
 
         // CU14: daily expiry process (US-F3-05).

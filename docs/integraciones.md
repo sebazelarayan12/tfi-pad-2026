@@ -38,6 +38,8 @@ Para las pasarelas, `<Servicio>` es `Pasarelas__pasarela1` o `Pasarelas__pasarel
 
 **FacturAR** (`POST /v1/comprobantes`, header `X-Api-Key` con una clave `fak_...` y `Idempotency-Key` = número de pago). La empresa emisora sale de la clave, así que `Facturacion:Cuit` no se envía; `Facturacion:PuntoVenta` debe existir y estar activo en su portal. Se emite Factura B (tipo 6) con IVA incluido. No hay consulta por número de comprobante (`ConsultarFacturaAsync` falla), y el PDF no se guarda.
 
+Probado contra facturAR real (09/11/2026): el `documentoTipo` del receptor se manda **por nombre** (`DNI`, `CUIT`, `CUIL`); los códigos numéricos de AFIP (`96` para DNI) responden 400 `CUIT_INVALIDO`. Cuando facturAR rechaza una emisión, la API deja `ARCA_EMISION_FALLIDA` con el motivo en el log y la factura queda `Pendiente CAE`; el reintento automático (cada `FACTURACION_INTERVALO_REINTENTO_MINUTOS`) la emite sola cuando se corrige la causa. El servicio no devuelve PDF: no hay enlace a la factura.
+
 ## Pasar un servicio de mock a real
 
 1. El otro grupo publica su API y nos pasa URL base, clave y contrato.
