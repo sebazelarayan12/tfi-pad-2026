@@ -18,7 +18,9 @@ export function PlanRow({
       aria-current={seleccionado ? 'true' : undefined}
       className={`relative h-[52px] ${seleccionado ? 'bg-accent-lime-soft' : 'bg-surface-panel hover:bg-surface-subtle'}`}
     >
-      <td className={`${celda} font-mono`}>{plan.codigo}</td>
+      <td className={`${celda} font-mono`}>
+        <span className="rounded-pill bg-surface-subtle px-sp-8 py-sp-4">{plan.codigo}</span>
+      </td>
       <td className={`${celda} break-words`}>{plan.nombre}</td>
       <td className={`${celda} tabular-nums`}>{formatearImporte(plan.primaBase)}</td>
       <td className={celda}>
