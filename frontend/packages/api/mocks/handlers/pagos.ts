@@ -200,6 +200,12 @@ export const handlers: HttpHandler[] = [
     return HttpResponse.json(PAGO_APROBADO, { status: 201 });
   }),
 
+  http.get('*/api/pagos/:id/factura/pdf', ({ request, params }) => {
+    if (!autorizado(request)) return problema(401, problemaSinSesion());
+    if (String(params.id) !== PAGO_UNO_ID) return facturaNoExisteResponse();
+    return new HttpResponse('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf' } });
+  }),
+
   http.get('*/api/pagos/:id/factura', ({ request, params }) => {
     if (!autorizado(request)) return problema(401, problemaSinSesion());
     if (String(params.id) !== PAGO_UNO_ID) return facturaNoExisteResponse();
