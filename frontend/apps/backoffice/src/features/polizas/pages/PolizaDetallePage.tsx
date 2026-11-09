@@ -63,7 +63,7 @@ function DetalleCargado({ poliza }: { poliza: PolizaDetalleResponse }) {
     <div className="flex flex-col gap-sp-32 lg:flex-row lg:items-start">
       <div className="flex min-w-0 flex-1 flex-col gap-sp-24">
         <PolizaEncabezado numero={poliza.numero} estado={poliza.estado} />
-        <PolizaAcciones />
+        <PolizaAcciones poliza={poliza} />
         <CicloDeVida {...ciclo} />
         {poliza.estado === ESTADO_SUSPENDIDA ? <AvisoSuspension /> : null}
         <PolizaDatos poliza={poliza} cliente={cliente.data} anio={vehiculo.data?.anio} />
