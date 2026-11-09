@@ -94,13 +94,31 @@ No se agregan tests nuevos de comportamiento. Si una corrección cambia el DOM, 
 
 La persona responsable abre la app con MSW, recorre cada pantalla del grupo con el Figma al lado y confirma que se ven iguales (regla 7 de `docs/workflow.md`). Pasos: login (si es backoffice), navegar a cada pantalla, probar los estados de la sección 9 y el ancho móvil si aplica.
 
-## 13. Decisiones pendientes con su default
+## 13. Verificación visual
 
-- **DP-1 Diferencia por dato del back.** Default: manda el back; se documenta como excepción aceptada.
-- **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
-- **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
+Se confirmaron DP-1, DP-2 y DP-3. La comparación usa los frames B7 y B8 y la app con MSW a 1440 px. B7 §11 y B8 §11 indican que no hay frames móviles. Las capturas para el PR se guardan fuera del repositorio.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+| Pantalla | Diferencia corregida |
+|---|---|
+| B7 y B8 | El panel lateral ahora tiene borde divisorio y espacio interior en escritorio. |
+| B8 | La vigencia elegida usa el color lima y mantiene su anillo de foco. La fecha de inicio conserva la lectura solamente y muestra el icono de calendario. |
+| B8 | El resumen usa el espacio del frame. La prima usa Nexa/Mono-lg y la validez se muestra junto a ella. |
+| B8 | La vigencia queda fuera de una tarjeta. El borde de la tabla encierra las cuotas y el total, alineado con la columna Importe. |
+| B8 | La nota usa el fondo lima suave y el icono de información. Emitir y Cancelar se alinean al final del panel en escritorio. |
+
+| Pantalla | Diferencia aceptada | Motivo |
+|---|---|---|
+| B7 y B8 | Los clientes, vehículos, montos, descripciones y fechas difieren del ejemplo. | DP-1. Se usan los datos del contrato, simulados con MSW en las capturas, y el formato de T-09. |
+| B7 | Cliente y vehículo aparecen en la columna principal. Se muestra el botón Cotizar. | B-10 los define como contexto y acción del flujo real. |
+| B7 | Se omiten Recomendado, Guardar cotización y Cambiar datos. | B-10 §2 y B-11 §2. |
+| B7 | Antigüedad y conductor muestran sus factores sin años. | DP-B11-02 y PB-10. |
+| B8 | El frame preselecciona seis meses. El total y las filas aparecen al elegir. | DP-B12-02 y DP-B12-08. La captura muestra el estado después de elegir seis meses. |
+| B8 | Vencimientos A confirmar, sin texto auxiliar de fecha de fin, y cuotas con formato «1 de 6». | PB-20 y DP-B12-01, DP-B12-03 y DP-B12-07. |
+| B8 | Las validaciones aparecen como lista, sin checks. | DP-B12-04. El backend valida al emitir. |
+| B7 y B8 | El panel comienza bajo el encabezado común, la campana queda en la barra superior y Cotización aparece bajo el título en B8. El menú lateral refleja el rol y las rutas disponibles. | El layout compartido de backoffice controla el encabezado y la navegación. Su revisión visual corresponde a V-01. |
+| Ambas | Contrastes registrados en design-system §9. | DP-2 y FB7. |
+
+El recorrido en Edge con MSW verifica un solo POST de emisión con 201, llegada al detalle B-15 y carga de sus cuotas.
 
 ## 14. Riesgos y errores comunes
 

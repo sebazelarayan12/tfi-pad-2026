@@ -27,7 +27,7 @@ export function VigenciaSelector({
               onChange={() => onElegir(meses)}
               className="peer sr-only"
             />
-            <span className="inline-flex h-8 cursor-pointer items-center rounded-pill border border-border-strong bg-surface-panel px-sp-12 text-label text-text-primary peer-checked:border-action-primary peer-checked:bg-action-primary peer-checked:text-action-on-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-action-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+            <span className="inline-flex h-7 cursor-pointer items-center rounded-pill border border-border-strong bg-surface-panel px-sp-12 text-label text-text-primary peer-checked:border-transparent peer-checked:bg-accent-lime peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-action-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
               {meses === 1 ? '1 mes' : meses + ' meses'}
             </span>
           </label>

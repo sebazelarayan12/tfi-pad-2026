@@ -1,6 +1,7 @@
 import { formatearFechaHora, isApiError, parsearFechaUtc, type CotizacionDto } from '@nexa/api';
 import { AlertaError, ButtonLink, Input } from '@nexa/ui';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { useCallback, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRol } from '../../auth';
@@ -145,27 +146,36 @@ function FormularioEmision({
       >
         <div className="flex min-w-0 flex-1 flex-col gap-sp-24">
           <CotizacionResumen datos={datos} {...asociados} />
-          <section className="flex flex-col items-start gap-sp-16 rounded-card border border-border-hairline bg-surface-panel p-sp-20">
+          <section className="flex flex-col items-start gap-sp-12">
             <VigenciaSelector
               valor={vigencia}
               onElegir={setVigencia}
               disabled={emision.isPending}
             />
-            <Input label="Fecha de inicio" value={fechaInicio} readOnly />
+            <div className="relative w-full max-w-80">
+              <Input label="Fecha de inicio" value={fechaInicio} readOnly className="pr-sp-40" />
+              <CalendarBlankIcon
+                aria-hidden="true"
+                size={16}
+                className="pointer-events-none absolute bottom-sp-12 right-sp-12 text-text-secondary"
+              />
+            </div>
           </section>
           <CuotasPreview vigencia={vigencia} prima={datos.primaMensual} />
         </div>
         <aside
           aria-label="Validaciones y acciones"
-          className="flex w-full flex-col gap-sp-16 xl:w-[300px] xl:shrink-0"
+          className="flex w-full flex-col gap-sp-16 xl:w-[300px] xl:shrink-0 xl:self-stretch xl:border-l xl:border-border-hairline xl:pl-sp-24"
         >
           <ValidacionesPanel />
           <EmisionNota error={error} />
-          <AccionesEmision
-            habilitada={habilitada}
-            emitiendo={emision.isPending}
-            onCancelar={() => void navegar(regreso)}
-          />
+          <div className="mt-auto">
+            <AccionesEmision
+              habilitada={habilitada}
+              emitiendo={emision.isPending}
+              onCancelar={() => void navegar(regreso)}
+            />
+          </div>
         </aside>
       </form>
     </>

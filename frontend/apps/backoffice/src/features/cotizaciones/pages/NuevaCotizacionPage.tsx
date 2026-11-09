@@ -117,7 +117,7 @@ function CotizacionDelVehiculo({ vehiculoId }: { vehiculoId: string }) {
       <aside
         data-slot="rail"
         aria-label="Datos de la cotización"
-        className="w-full xl:w-[300px] xl:shrink-0"
+        className="w-full xl:w-[300px] xl:shrink-0 xl:border-l xl:border-border-hairline xl:pl-sp-24"
       >
         <DatosCotizacionWidget
           cliente={cliente.data}
