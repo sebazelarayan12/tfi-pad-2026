@@ -4,6 +4,7 @@ import { AlertaError, CardWidget, Dato } from '@nexa/ui';
 import { useFactura, usePago } from '../api/usePagos';
 import { EstadoFacturaBadge } from './EstadoFacturaBadge';
 import { mensajeDeErrorConsulta } from './mensajesError';
+import { VerFacturaPdf } from './VerFacturaPdf';
 
 export interface FacturaPanelProps {
   pagoId: string;
@@ -101,6 +102,7 @@ export function FacturaPanel({ pagoId }: FacturaPanelProps) {
           />
         ) : null}
         <Dato label="Fecha de emisión" value={formatearFechaHora(datos.fechaEmision)} />
+        {datos.estado === 'AUTORIZADA' ? <VerFacturaPdf pagoId={pagoId} /> : null}
       </div>
     </CardWidget>
   );

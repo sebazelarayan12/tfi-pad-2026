@@ -14,8 +14,21 @@ namespace Aseguradora.Api.Controllers;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]
 [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-public sealed class PagosController(IPagoService pagos, IPagoConsultaService consulta) : ControllerBase
+public sealed class PagosController(
+    IPagoService pagos, IPagoConsultaService consulta, IFacturaPdfService facturaPdf) : ControllerBase
 {
+    /// <summary>Descarga el PDF de la factura autorizada de un pago.</summary>
+    [HttpGet("{id:guid}/factura/pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> ObtenerFacturaPdf(Guid id, CancellationToken ct)
+    {
+        var pdf = await facturaPdf.ObtenerAsync(id, ct);
+        return File(pdf.Contenido, "application/pdf", pdf.NombreArchivo);
+    }
+
     /// <summary>Lista pagos, del más nuevo al más viejo, filtrados por estado, medio y número de póliza.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(PaginaResponse<PagoListadoResponse>), StatusCodes.Status200OK)]

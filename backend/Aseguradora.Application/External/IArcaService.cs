@@ -7,4 +7,6 @@ public interface IArcaService
     Task<ArcaFacturaResponse> EmitirFacturaAsync(ArcaFacturaRequest request, CancellationToken ct);
     /// <summary>Consulta una factura autorizada por su número de comprobante.</summary>
     Task<ArcaFacturaResponse> ConsultarFacturaAsync(string numeroComprobante, CancellationToken ct);
+    /// <summary>PDF de una factura ya autorizada, identificada por su número de comprobante ("0001-00000003") y su letra.</summary>
+    Task<byte[]> ObtenerPdfAsync(string numeroComprobante, char tipo, CancellationToken ct);
 }

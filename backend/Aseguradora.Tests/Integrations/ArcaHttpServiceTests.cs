@@ -278,4 +278,102 @@ public class ArcaHttpServiceTests
 
         Assert.Equal(0, handler.Llamadas);
     }
+
+    private const string IdComprobante = "4a4f3f4e-7d7a-4f4e-9a5e-2f6b8c9d0e1f";
+
+    private static string Pagina(int pagina, int totalPaginas, params long[] numeros)
+    {
+        var items = string.Join(",", numeros.Select(n =>
+            $"{{\"id\":\"{(n == 123 ? IdComprobante : Guid.NewGuid().ToString())}\",\"numero\":{n}}}"));
+        return $"{{\"items\":[{items}],\"page\":{pagina},\"pageSize\":100,\"total\":0,\"totalPages\":{totalPaginas}}}";
+    }
+
+    [Fact]
+    public async Task ObtenerPdf_busca_el_comprobante_por_numero_y_descarga_su_pdf_con_la_api_key()
+    {
+        var pedidos = new List<string>();
+        string? apiKey = null;
+        var handler = new ContadorHandler((pedido, _) =>
+        {
+            pedidos.Add(pedido.RequestUri!.PathAndQuery);
+            apiKey = pedido.Headers.GetValues("X-Api-Key").Single();
+            if (pedido.RequestUri.AbsolutePath.EndsWith("/pdf"))
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent(Encoding.ASCII.GetBytes("%PDF-1.4"))
+                });
+            }
+
+            return Task.FromResult(Json(HttpStatusCode.OK, Pagina(1, 1, 124, 123)));
+        });
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var pdf = await Arca(scope.ServiceProvider).ObtenerPdfAsync("0001-00000123", 'B', CancellationToken.None);
+
+        Assert.Equal("%PDF-1.4", Encoding.ASCII.GetString(pdf));
+        Assert.Equal(ApiKey, apiKey);
+        Assert.Equal(
+            ["/v1/comprobantes?tipo=6&puntoVenta=1&page=1&pageSize=100", $"/v1/comprobantes/{IdComprobante}/pdf"],
+            pedidos);
+    }
+
+    [Fact]
+    public async Task ObtenerPdf_sigue_con_la_pagina_siguiente_si_el_numero_no_esta_en_la_primera()
+    {
+        var paginas = new List<string>();
+        var handler = new ContadorHandler((pedido, _) =>
+        {
+            if (pedido.RequestUri!.AbsolutePath.EndsWith("/pdf"))
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent([1, 2, 3])
+                });
+            }
+
+            paginas.Add(pedido.RequestUri.Query);
+            return Task.FromResult(Json(
+                HttpStatusCode.OK,
+                paginas.Count == 1 ? Pagina(1, 2, 200) : Pagina(2, 2, 123)));
+        });
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var pdf = await Arca(scope.ServiceProvider).ObtenerPdfAsync("0001-00000123", 'B', CancellationToken.None);
+
+        Assert.Equal([1, 2, 3], pdf);
+        Assert.Equal(2, paginas.Count);
+        Assert.Contains("page=2", paginas[1]);
+    }
+
+    [Fact]
+    public async Task ObtenerPdf_con_un_numero_que_no_existe_lanza_NotFoundException_sin_pedir_el_pdf()
+    {
+        var handler = new ContadorHandler((_, _) => Task.FromResult(Json(HttpStatusCode.OK, Pagina(1, 1, 999))));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => Arca(scope.ServiceProvider).ObtenerPdfAsync("0001-00000123", 'B', CancellationToken.None));
+
+        Assert.Equal(1, handler.Llamadas);
+    }
+
+    [Theory]
+    [InlineData("sin-guion")]
+    [InlineData("abc-00000123")]
+    [InlineData("0001-xyz")]
+    public async Task ObtenerPdf_con_un_numero_mal_formado_falla_sin_llamar_al_servicio(string numero)
+    {
+        var handler = new ContadorHandler((_, _) => Task.FromResult(Json(HttpStatusCode.OK, Pagina(1, 1, 123))));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => Arca(scope.ServiceProvider).ObtenerPdfAsync(numero, 'B', CancellationToken.None));
+
+        Assert.Equal(0, handler.Llamadas);
+    }
 }

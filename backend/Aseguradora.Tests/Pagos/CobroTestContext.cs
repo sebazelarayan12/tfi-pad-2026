@@ -88,5 +88,11 @@ internal sealed class CobroTestContext : IDisposable
         }
         public Task<ArcaFacturaResponse> ConsultarFacturaAsync(string numeroComprobante, CancellationToken ct)
             => throw new NotSupportedException();
+        public (string Numero, char Tipo)? PdfPedido { get; private set; }
+        public Task<byte[]> ObtenerPdfAsync(string numeroComprobante, char tipo, CancellationToken ct)
+        {
+            PdfPedido = (numeroComprobante, tipo);
+            return Task.FromResult<byte[]>([37, 80, 68, 70]);
+        }
     }
 }
