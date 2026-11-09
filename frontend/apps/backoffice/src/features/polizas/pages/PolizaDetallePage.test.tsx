@@ -206,17 +206,15 @@ describe('PolizaDetallePage', () => {
     expect(lista.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('slots: las acciones y la columna derecha existen vacías, sin botones de otras tareas', async () => {
+  it('slots: la barra de acciones sigue vacía (B-16) y la columna derecha trae el rail (B-18)', async () => {
     servir();
     renderizar();
     await screen.findByRole('heading', { level: 1, name: 'POL-0000057' });
     expect(screen.getByRole('group', { name: 'Acciones de la póliza' })).toBeEmptyDOMElement();
-    expect(screen.getByRole('complementary', { name: 'Resumen de la póliza' })).toBeEmptyDOMElement();
-    for (const nombre of [/Cancelar/, /Cupón/, /Registrar pago/]) {
-      expect(screen.queryByRole('button', { name: nombre })).not.toBeInTheDocument();
-    }
+    const rail = screen.getByRole('complementary', { name: 'Resumen de la póliza' });
+    expect(within(rail).getByRole('heading', { name: 'Deuda vencida' })).toBeInTheDocument();
+    expect(within(rail).getByRole('heading', { name: 'Pagos' })).toBeInTheDocument();
   });
-
   it('404: muestra el detail del back y un enlace a Pólizas', async () => {
     servir(problema(404, { status: 404, detail: `La póliza ${ID} no existe.` }));
     renderizar();
