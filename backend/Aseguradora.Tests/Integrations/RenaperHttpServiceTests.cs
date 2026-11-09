@@ -150,6 +150,22 @@ public class RenaperHttpServiceTests
         Assert.Equal("30123456", persona?.Dni);
     }
 
+    [Fact]
+    public async Task Consulta_por_cuit_de_empresa_sin_dni_no_inventa_un_dni()
+    {
+        const string json = """
+            { "nombre": "TRANSPORTE DELLEPIANE SOCIEDAD ANONIMA", "dni": null, "cuit": "30712345671", "edad": null, "sexo": null, "provincia_ubicacion": null }
+            """;
+        var handler = new ContadorHandler((_, _) => Task.FromResult(JsonRespuesta(HttpStatusCode.OK, json)));
+        await using var provider = CrearProveedor(handler);
+        using var scope = provider.CreateScope();
+
+        var persona = await Renaper(scope.ServiceProvider).ObtenerPorCuilAsync("30712345671", CancellationToken.None);
+
+        Assert.Equal("30712345671", persona?.Dni);
+        Assert.Equal("30712345671", persona?.Cuil);
+    }
+
     [Theory]
     [InlineData("Femenino", 'F')]
     [InlineData("Masculino", 'M')]

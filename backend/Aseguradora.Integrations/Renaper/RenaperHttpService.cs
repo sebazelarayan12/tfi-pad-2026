@@ -121,8 +121,12 @@ public sealed class RenaperHttpService(HttpClient httpClient, ILogger<RenaperHtt
             Edad: respuesta.Edad is >= 0 ? respuesta.Edad : null);
     }
 
-    /// <summary>The eight middle digits of an individual's CUIL/CUIT are the DNI.</summary>
-    private static string DniDelCuil(string cuil) => cuil.Length == 11 ? cuil.Substring(2, 8).TrimStart('0') : cuil;
+    /// <summary>
+    /// The eight middle digits of an individual's CUIL/CUIT (prefix 20, 23, 24 or 27) are the DNI. A company
+    /// (prefix 30, 33, 34) has no DNI, so its CUIT is returned unchanged instead of inventing one.
+    /// </summary>
+    private static string DniDelCuil(string cuil) =>
+        cuil.Length == 11 && cuil[..2] is "20" or "23" or "24" or "27" ? cuil.Substring(2, 8).TrimStart('0') : cuil;
 
     private static char? MapearSexo(string? sexo) => sexo?.Trim().ToUpperInvariant() switch
     {
