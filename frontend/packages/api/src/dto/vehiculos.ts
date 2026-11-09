@@ -6,6 +6,12 @@ export interface VehiculoAltaRequest {
   clienteId: string;
   patente: string;
   uso: UsoVehiculo;
+  marca: string;
+  modelo: string;
+  anio: number;
+  tipo: TipoVehiculo;
+  numeroMotor: string;
+  numeroChasis: string;
 }
 
 export interface VehiculoResponse {

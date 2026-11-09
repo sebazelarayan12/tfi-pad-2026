@@ -83,7 +83,6 @@ function AltaConCliente({ clienteId }: { clienteId: string }) {
           <CardWidget title="Reglas">
             <ul className="flex flex-col gap-sp-8">
               <li>La patente es única.</li>
-              <li>El titular informado por DNRPA debe ser el cliente.</li>
               <li>Un vehículo tiene una sola póliza activa.</li>
             </ul>
           </CardWidget>
