@@ -1,3 +1,4 @@
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.Security;
 using Microsoft.AspNetCore.Identity;
@@ -123,8 +124,39 @@ public sealed class IdentityUsuarioStore(UserManager<Usuario> usuarios) : IUsuar
         return await usuarios.FindByEmailAsync(email) is not null;
     }
 
+    public async Task<PaginaResponse<UsuarioListado>> ListarAsync(
+        int pagina, int tamano, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var total = usuarios.Users.Count();
+        var filas = usuarios.Users
+            .OrderBy(u => u.Email)
+            .ThenBy(u => u.Id)
+            .Skip((pagina - 1) * tamano)
+            .Take(tamano)
+            .ToList();
+
+        var ahora = DateTimeOffset.UtcNow;
+        var items = new List<UsuarioListado>(filas.Count);
+        foreach (var usuario in filas)
+        {
+            var roles = await usuarios.GetRolesAsync(usuario);
+            var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? string.Empty;
+            var activo = usuario.LockoutEnd is null || usuario.LockoutEnd <= ahora;
+            items.Add(new UsuarioListado(ADatos(usuario), rol, activo));
+        }
+
+        return new PaginaResponse<UsuarioListado>(items, pagina, tamano, total);
+    }
+
     private static UsuarioCuenta ADatos(Usuario usuario) =>
-        new(usuario.Id, usuario.Email ?? usuario.UserName ?? string.Empty, usuario.DebeCambiarPassword);
+        new(
+            usuario.Id,
+            usuario.Email ?? usuario.UserName ?? string.Empty,
+            usuario.DebeCambiarPassword,
+            usuario.Nombre,
+            usuario.Apellido);
 
     private static string Describir(IdentityResult resultado) =>
         string.Join(" ", resultado.Errors.Select(error => error.Description));

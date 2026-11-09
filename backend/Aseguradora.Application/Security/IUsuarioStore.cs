@@ -50,6 +50,9 @@ public interface IUsuarioStore
         string passwordNueva,
         CancellationToken ct = default);
 
+    /// <summary>Lists accounts ordered by email, one page at a time (PB-04).</summary>
+    Task<Comun.PaginaResponse<UsuarioListado>> ListarAsync(int pagina, int tamano, CancellationToken ct = default);
+
     /// <summary>True when an account with that email already exists.</summary>
     Task<bool> EmailExisteAsync(string email, CancellationToken ct = default);
 }

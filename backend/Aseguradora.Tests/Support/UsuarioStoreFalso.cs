@@ -89,6 +89,19 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
         return Task.FromResult<IReadOnlyList<string>>([rol]);
     }
 
+    public Task<Aseguradora.Application.Comun.PaginaResponse<UsuarioListado>> ListarAsync(
+        int pagina, int tamano, CancellationToken ct = default)
+    {
+        var ordenadas = _cuentas.Values.OrderBy(cuenta => cuenta.Email, StringComparer.OrdinalIgnoreCase).ToList();
+        var items = ordenadas
+            .Skip((pagina - 1) * tamano)
+            .Take(tamano)
+            .Select(cuenta => new UsuarioListado(cuenta.ACuenta(), cuenta.Rol, Activo: true))
+            .ToList();
+        return Task.FromResult(new Aseguradora.Application.Comun.PaginaResponse<UsuarioListado>(
+            items, pagina, tamano, ordenadas.Count));
+    }
+
     public Task<bool> EmailExisteAsync(string email, CancellationToken ct = default) =>
         Task.FromResult(_cuentas.ContainsKey(email));
 
@@ -104,7 +117,11 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
         if (_cuentas.ContainsKey(email))
             throw new BusinessRuleException("El email ya está registrado.");
 
-        var cuenta = new Cuenta($"usuario-{_siguienteId++}", email, rol, password, debeCambiarPassword);
+        var cuenta = new Cuenta($"usuario-{_siguienteId++}", email, rol, password, debeCambiarPassword)
+        {
+            Nombre = nombre,
+            Apellido = apellido
+        };
         _cuentas[email] = cuenta;
         _creaciones.Add(new Creacion(email, password, rol, nombre, apellido, debeCambiarPassword));
         return Task.FromResult(cuenta.ACuenta());
@@ -132,6 +149,10 @@ public sealed class UsuarioStoreFalso : IUsuarioStore
 
         public bool DebeCambiarPassword { get; set; } = debeCambiarPassword;
 
-        public UsuarioCuenta ACuenta() => new(Id, Email, DebeCambiarPassword);
+        public string Nombre { get; set; } = string.Empty;
+
+        public string Apellido { get; set; } = string.Empty;
+
+        public UsuarioCuenta ACuenta() => new(Id, Email, DebeCambiarPassword, Nombre, Apellido);
     }
 }

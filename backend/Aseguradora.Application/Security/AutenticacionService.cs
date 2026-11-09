@@ -1,3 +1,4 @@
+using Aseguradora.Application.Comun;
 using Aseguradora.Application.Exceptions;
 using Aseguradora.Application.Security.DTOs;
 
@@ -95,5 +96,32 @@ public sealed class AutenticacionService(IUsuarioStore usuarios, ITokenService t
             ct: ct);
 
         return new UsuarioResponse(creado.Id, creado.Email, solicitud.Rol);
+    }
+
+    /// <summary>The account behind a valid token (PB-04), or <see cref="CredencialesInvalidasException"/> when it no longer exists.</summary>
+    public async Task<YoResponse> ObtenerYoAsync(string usuarioId, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(usuarioId);
+
+        var cuenta = await _usuarios.BuscarPorIdAsync(usuarioId, ct) ?? throw new CredencialesInvalidasException();
+        var roles = await _usuarios.ObtenerRolesAsync(cuenta, ct);
+        var rol = Roles.Asignables.FirstOrDefault(roles.Contains) ?? throw new CredencialesInvalidasException();
+
+        return new YoResponse(cuenta.Id, cuenta.Email, cuenta.Nombre, cuenta.Apellido, rol);
+    }
+
+    /// <summary>Lists employee and administrator accounts, one page at a time (PB-04).</summary>
+    public async Task<PaginaResponse<UsuarioListItemResponse>> ListarUsuariosAsync(
+        UsuarioFiltro filtro, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(filtro);
+
+        var pagina = await _usuarios.ListarAsync(filtro.Pagina, filtro.Tamano, ct);
+        var items = pagina.Items
+            .Select(u => new UsuarioListItemResponse(
+                u.Cuenta.Id, u.Cuenta.Email, u.Cuenta.Nombre, u.Cuenta.Apellido, u.Rol, u.Activo, null))
+            .ToList();
+
+        return new PaginaResponse<UsuarioListItemResponse>(items, pagina.Pagina, pagina.TamanoPagina, pagina.Total);
     }
 }

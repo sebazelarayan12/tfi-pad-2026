@@ -5,4 +5,9 @@ namespace Aseguradora.Application.Security;
 /// only what Application needs (including whether the person still has to change the temporary
 /// password, US-F1-09), so no front exposes or depends on the <c>Usuario</c> entity.
 /// </summary>
-public sealed record UsuarioCuenta(string Id, string Email, bool DebeCambiarPassword = false);
+public sealed record UsuarioCuenta(
+    string Id,
+    string Email,
+    bool DebeCambiarPassword = false,
+    string Nombre = "",
+    string Apellido = "");
