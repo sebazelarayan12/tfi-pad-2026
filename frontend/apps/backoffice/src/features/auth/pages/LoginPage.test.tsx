@@ -153,12 +153,27 @@ describe('LoginPage: formulario', () => {
     );
   });
 
-  it('no renderiza "Foto: sede de atención" ni imágenes del panel', () => {
+  it('la foto del fondo es decorativa y el panel muestra la marca y sus frases', () => {
     const { container } = renderizarLogin();
 
     expect(screen.queryByText('Foto: sede de atención')).not.toBeInTheDocument();
-    expect(container.querySelector('img')).toBeNull();
+    // Una sola imagen, sin texto alternativo: la lee como decoración, no como contenido.
+    const imagenes = container.querySelectorAll('img');
+    expect(imagenes).toHaveLength(1);
+    expect(imagenes[0]).toHaveAttribute('alt', '');
+    expect(screen.getByText('Nexa Seguros')).toBeInTheDocument();
     expect(screen.getByText('Panel interno de Nexa Seguros')).toBeInTheDocument();
+    expect(
+      screen.getByText('Clientes, pólizas, cuotas y cobros en un solo lugar.'),
+    ).toBeInTheDocument();
+  });
+
+  it('el título queda en un solo h1 y los campos conservan su etiqueta', () => {
+    renderizarLogin();
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Contraseña', { exact: true })).toBeInTheDocument();
   });
 
   it('el toggle de contraseña alterna type, aria-pressed y aria-label', async () => {
