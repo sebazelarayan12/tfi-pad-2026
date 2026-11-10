@@ -364,6 +364,7 @@ Ver sección 3.2 para la descripción completa de W3m. Resumen de cambios:
 15. **Pago Fácil y pago online: mismo número de póliza.** El Figma muestra el número en el encabezado. Confirmar que la respuesta del cupón (cuando exista) y el pago online traigan el mismo `numeroPoliza`.
 16. **Redirección al volver de la pasarela.** Si el pago se hace en otra pestaña o la pasarela redirige de vuelta, la pantalla W3 queda sin estado de navegación. Ver W4 y W6. NO DEFINIDO.
 17. **Inset móvil.** En W3m el contenedor tiene padding de 12 px y el Shell ocupa 366 px. `docs/frontend/design-system.md` (§7.4 y línea 1021) asume 16 px y advierte que no se midió W3m. Confirmar 12 o 16 px.
+18. **Marco desktop distinto del resto de la web** (detectado en US-FE-V-07). En W3 (`18:47`) la nav arranca pegada al borde superior del Shell y el `PublicFooter` ocupa todo el ancho del Shell, sin margen. En W1 (`18:201`) y W5 (`18:2081`) la nav tiene 24 px arriba, y en W4 (`18:1019`), W5 y W6 (`18:2308`) el pie va con 24 px de margen. La app usa un solo marco (`PublicLayout`, el de V-06: 24 px arriba y pie con margen). Pregunta a diseño: ¿cuál es el marco correcto? NO DEFINIDO.
 
 ## 14. Referencia Figma
 

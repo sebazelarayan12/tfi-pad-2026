@@ -216,6 +216,8 @@ No hay frame mobile para W5. **Propuesta** a validar con diseño:
 - **D9. Sin botón de volver.** Figma no muestra cómo volver a W4 o a W3. Definir si se agrega un enlace "Volver a medios de pago" (**propuesta**).
 - **D10. Plazo de acreditación.** "La acreditación puede demorar hasta 72 h hábiles." No hay regla de plazo en el back. Confirmar el texto final (ya aparece en W4 con "(dato de ejemplo)", ver W4 D4).
 - **D11. Fecha en el pasado.** Si el cupón se pide después del 2do vencimiento, el back sigue generando el cupón con `fecha1 = hoy`. Figma no muestra ese caso; confirmar el comportamiento visible.
+- **D12. Título con varios cupones** (detectado en US-FE-V-07). El Figma dibuja un solo cupón con el título "Cupón de pago" dentro de la tarjeta, debajo del logo. La app muestra un cupón por cuota (D-04), así que el título va una sola vez, fuera de las tarjetas y centrado (un único `h1`). Pregunta a diseño: ¿cómo se ve el título cuando hay más de un cupón? NO DEFINIDO.
+- **D13. Marco** (detectado en US-FE-V-07). En W5 la nav tiene 24 px arriba, igual que W1 y distinto de W3, W4 y W6 (pegada al borde). La app usa 24 px en todas (ver W3 §13.18).
 
 ## 14. Referencia Figma
 

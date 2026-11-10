@@ -298,6 +298,8 @@ No hay frame mobile para W4 (solo existen `W2m` y `W3m mobile`). **Propuesta** a
 - **D14.** No hay mensajes de error, de carga ni de foco en Figma. Todos los textos de los estados del punto 7 están pendientes. Incluye el texto para "1 cuota" en el encabezado.
 - **D15.** "Tus datos viajan cifrados y no se guardan en este dispositivo." Es una afirmación de confianza. Verificar que el front no guarde el DNI en `localStorage` ni en `sessionStorage` (punto 2). Si se guarda `numeroPago`, la frase sigue siendo válida, pero conviene revisarla.
 - **D16.** El botón dice "Continuar", pero en pasarela la acción sale de la web al checkout externo. Confirmar si el texto debe cambiar en ese caso.
+- **D17. Espaciados fuera de la escala** (detectado en US-FE-V-07). El cuerpo (`18:1033`) usa gap 80 entre columnas y padding superior 56; la escala de espaciado llega a `spacing/64` y no tiene 56 ni 80. La app usa 64 y 48 para no agregar valores sueltos. Pregunta a diseño: ¿se agregan esos tokens o el frame pasa a 64 y 48? NO DEFINIDO.
+- **D18. Nav pegada al borde superior** (detectado en US-FE-V-07). Como en W2 y W3, la nav arranca sin padding arriba; en W1 y W5 tiene 24 px. La app usa 24 px en todas las pantallas (ver W3 §13.18).
 
 ## 14. Referencia Figma
 
