@@ -6,8 +6,8 @@ import { CONTACTO_PUBLICO, COPYRIGHT_PUBLICO } from './contenidoPublico';
 
 // Destinos propuestos en W1 §8 (NO DEFINIDOS en el Figma, T-18 §13.1).
 const LINKS_PUBLICOS = [
-  { label: 'Planes', href: '#planes' },
-  { label: 'Contacto', href: '#contacto' },
+  { label: 'Planes', href: '/#planes' },
+  { label: 'Contacto', href: '/#contacto' },
 ] as const;
 const CTA_LABEL = 'Consultar póliza';
 const CTA_HREF = '/consultar-poliza';

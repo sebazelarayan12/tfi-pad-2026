@@ -57,13 +57,13 @@ export function PublicNav({
   }, [abierto]);
 
   return (
-    <header>
+    <header className="sticky top-0 z-20 bg-surface-panel">
       <div className="flex h-[72px] items-center gap-sp-32 px-sp-24">
         {renderLink({ href: logoHref, className: `rounded-input ${FOCO}`, children: <LogoNexa /> })}
         <div className="flex-1" />
         <nav aria-label="Principal" className="hidden items-center gap-sp-32 md:flex">
           {links.map((link) => (
-            <a key={link.href} href={link.href} className={LINK}>
+            <a key={link.href} href={link.href} className={LINK} onClick={() => setAbierto(false)}>
               {link.label}
             </a>
           ))}
@@ -98,7 +98,7 @@ export function PublicNav({
           className="flex flex-col gap-sp-4 px-sp-24 pb-sp-16 md:hidden"
         >
           {links.map((link) => (
-            <a key={link.href} href={link.href} className={LINK}>
+            <a key={link.href} href={link.href} className={LINK} onClick={() => setAbierto(false)}>
               {link.label}
             </a>
           ))}
