@@ -29,6 +29,9 @@ const filas: ClienteResumenResponse[] = Array.from({ length: 21 }, (_, i) => ({
   email: juan.email,
   telefono: null,
   activo: true,
+  validadoRenaper: true,
+  cantidadVehiculos: 1,
+  cantidadPolizasActivas: 1,
 }));
 function servir(responder?: (params: URLSearchParams) => Response | Promise<Response>) {
   const pedidos: URLSearchParams[] = [];
@@ -97,16 +100,18 @@ describe('ClientesPage', () => {
     ).toBe(true);
     expect(within(tabla).getAllByRole('row')).toHaveLength(11);
   });
-  it('formatea DNI y muestra teléfono/Renaper/conteos como — sin consultar detalles', async () => {
+  it('formatea DNI y muestra Renaper y conteos del listado, y — sin teléfono, sin consultar detalles', async () => {
     const pedidos = servir();
     montar();
     await screen.findByText('21 clientes');
     const fila = screen.getAllByRole('row')[1]!;
     const celdas = within(fila).getAllByRole('cell');
     expect(celdas[1]).toHaveTextContent('30.123.456');
-    for (const i of [3, 4, 5, 6]) expect(celdas[i]).toHaveTextContent('—');
+    expect(celdas[3]).toHaveTextContent('—');
+    expect(celdas[4]).toHaveTextContent('1');
+    expect(celdas[5]).toHaveTextContent('Validado');
+    expect(celdas[6]).toHaveTextContent('1');
     expect(pedidos).toHaveLength(1);
-    expect(screen.queryByText('Validado')).toBeNull();
     expect(screen.queryByLabelText('Estado Renaper')).toBeNull();
     expect(screen.queryByLabelText('Activo')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Acciones de la fila' })).toBeNull();

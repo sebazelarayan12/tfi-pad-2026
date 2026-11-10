@@ -12,7 +12,16 @@ declare const api: ApiClient;
 declare const cuerpo: ClienteModificacionRequest;
 
 expectTypeOf<keyof ClienteResumenResponse>().toEqualTypeOf<
-  'id' | 'dni' | 'nombre' | 'apellido' | 'email' | 'telefono' | 'activo'
+  | 'id'
+  | 'dni'
+  | 'nombre'
+  | 'apellido'
+  | 'email'
+  | 'telefono'
+  | 'activo'
+  | 'validadoRenaper'
+  | 'cantidadVehiculos'
+  | 'cantidadPolizasActivas'
 >();
 expectTypeOf<CuotaCuentaCliente>().toEqualTypeOf<CuotaResponse>();
 

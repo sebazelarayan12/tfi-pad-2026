@@ -10,6 +10,9 @@ namespace Aseguradora.Application.Clientes.DTOs;
 /// <param name="Apellido">Last name.</param>
 /// <param name="Email">Unique email of the client (RN01).</param>
 /// <param name="Telefono">Contact phone, when present.</param>
+/// <param name="ValidadoRenaper">Whether Renaper validated the person (RN02).</param>
+/// <param name="CantidadVehiculos">Number of active vehicles of the client.</param>
+/// <param name="CantidadPolizasActivas">Number of Pendiente, Vigente or Suspendida policies (same set that blocks the client's deletion, RN15).</param>
 /// <param name="Activo">Whether the client is active (RN15).</param>
 public sealed record ClienteResumenResponse(
     Guid Id,
@@ -18,4 +21,7 @@ public sealed record ClienteResumenResponse(
     string Apellido,
     string Email,
     string? Telefono,
-    bool Activo);
+    bool Activo,
+    bool ValidadoRenaper,
+    int CantidadVehiculos,
+    int CantidadPolizasActivas);

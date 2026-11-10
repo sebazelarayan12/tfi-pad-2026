@@ -39,7 +39,7 @@ afterEach(() => servidorMock.resetHandlers());
 afterAll(() => servidorMock.close());
 
 describe('listado', () => {
-  it('solo lista activos, ordenados por apellido, nombre y DNI, con siete campos reales', async () => {
+  it('solo lista activos, ordenados por apellido, nombre y DNI, con Renaper y conteos', async () => {
     const pagina = await listarClientes(api);
     expect(pagina).toMatchObject({ pagina: 1, tamanoPagina: 20, total: 2 });
     expect(pagina.items.map((c) => c.id)).toEqual([CLIENTE_LUCIA_ID, CLIENTE_JUAN_ID]);
@@ -47,11 +47,14 @@ describe('listado', () => {
       expect(Object.keys(item).sort()).toEqual([
         'activo',
         'apellido',
+        'cantidadPolizasActivas',
+        'cantidadVehiculos',
         'dni',
         'email',
         'id',
         'nombre',
         'telefono',
+        'validadoRenaper',
       ]);
   });
 
