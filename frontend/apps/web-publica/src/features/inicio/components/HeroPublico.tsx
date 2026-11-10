@@ -1,4 +1,3 @@
-import { ButtonLink } from '@nexa/ui';
 import { CheckCircleIcon } from '@phosphor-icons/react/dist/csr/CheckCircle';
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 import type { ReactNode } from 'react';
@@ -22,6 +21,12 @@ const PASOS: ReadonlyArray<{ titulo: string; texto: string }> = [
 ];
 
 const TAMANO_ICONO = 22;
+
+// Botones para fondo oscuro: el `Button` del sistema es negro y no se vería sobre el panel.
+const BOTON =
+  'inline-flex h-10 items-center justify-center rounded-pill px-sp-16 text-body focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime motion-safe:transition motion-safe:duration-200 motion-safe:hover:-translate-y-0.5';
+const BOTON_PRINCIPAL = `${BOTON} bg-accent-lime text-text-primary`;
+const BOTON_SECUNDARIO = `${BOTON} border border-action-on-primary text-action-on-primary`;
 
 interface TarjetaFlotanteProps {
   icono: ReactNode;
@@ -55,15 +60,15 @@ function TarjetaFlotante({ icono, titulo, texto, clases }: TarjetaFlotanteProps)
  */
 export function HeroPublico() {
   return (
-    <section className="relative my-sp-16 flex flex-col gap-sp-40 overflow-hidden rounded-card bg-accent-lime-soft p-sp-24 md:p-sp-48">
+    <section className="relative my-sp-16 flex flex-col gap-sp-40 overflow-hidden rounded-card bg-action-primary p-sp-24 md:p-sp-48">
       {/* Manchas de color difuminadas de fondo (decorativas). */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -right-sp-64 -top-sp-64 size-80 rounded-full bg-accent-lime opacity-50 blur-3xl"
+        className="pointer-events-none absolute -right-sp-64 -top-sp-64 size-80 rounded-full bg-accent-lime opacity-30 blur-3xl"
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-sp-64 -left-sp-64 size-72 rounded-full bg-accent-lime opacity-30 blur-3xl"
+        className="pointer-events-none absolute -bottom-sp-64 -left-sp-64 size-72 rounded-full bg-accent-lime opacity-20 blur-3xl"
       />
 
       <div className="relative flex flex-col gap-sp-32 md:flex-row md:items-center md:gap-sp-48">
@@ -74,19 +79,21 @@ export function HeroPublico() {
             </span>
           </Aparecer>
           <Aparecer retardoMs={100}>
-            <h1 className="text-h1 font-bold text-text-primary md:text-display">{TITULO}</h1>
+            <h1 className="text-h1 font-bold text-action-on-primary md:text-display">{TITULO}</h1>
           </Aparecer>
           <Aparecer retardoMs={200}>
-            <p className="text-body text-text-secondary">{BAJADA}</p>
+            <p className="text-body text-surface-subtle">{BAJADA}</p>
           </Aparecer>
           <Aparecer retardoMs={300} className="flex flex-wrap gap-sp-12">
-            <ButtonLink
-              label={CTA_CONSULTAR}
-              href={RUTA_CONSULTAR_POLIZA}
-              renderLink={renderLinkRouter}
-            />
+            {renderLinkRouter({
+              href: RUTA_CONSULTAR_POLIZA,
+              className: BOTON_PRINCIPAL,
+              children: CTA_CONSULTAR,
+            })}
             {/* Ancla de la misma página: `<a href>` nativo para que el navegador baje a la sección. */}
-            <ButtonLink label={CTA_PLANES} href={`#${ANCLA_PLANES}`} variant="secondary" />
+            <a href={`#${ANCLA_PLANES}`} className={BOTON_SECUNDARIO}>
+              {CTA_PLANES}
+            </a>
           </Aparecer>
         </div>
 
