@@ -8,3 +8,24 @@
     scroll-behavior: smooth;
   }
 }
+
+/* Flotación suave de las tarjetas decorativas del hero; sin animación con movimiento reducido. */
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flotar {
+    animation: flotar 5s ease-in-out infinite;
+  }
+
+  .flotar-demora {
+    animation-delay: -2.5s;
+  }
+}

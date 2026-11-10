@@ -57,7 +57,7 @@ export function PublicNav({
   }, [abierto]);
 
   return (
-    <header>
+    <header className="sticky top-0 z-20 bg-surface-panel">
       <div className="flex h-[72px] items-center gap-sp-32 px-sp-24">
         {renderLink({ href: logoHref, className: `rounded-input ${FOCO}`, children: <LogoNexa /> })}
         <div className="flex-1" />

@@ -12,7 +12,6 @@ export function InicioPage() {
   return (
     <div className="flex flex-col">
       <HeroPublico />
-      <hr className={DIVISOR} />
       <Beneficios />
       <hr className={DIVISOR} />
       <CoberturaPorVehiculo />

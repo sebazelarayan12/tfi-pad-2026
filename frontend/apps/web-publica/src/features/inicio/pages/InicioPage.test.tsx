@@ -126,12 +126,12 @@ describe('InicioPage', () => {
     expect(screen.queryByText('Ver ejemplo de cupón')).toBeNull();
   });
 
-  it('las fotos tienen texto alternativo y la tarjeta de ejemplo del hero está oculta', async () => {
+  it('las fotos tienen texto alternativo y las tarjetas flotantes del hero están ocultas', async () => {
     await renderizarCargada();
     const fotos = screen.getAllByRole('img');
     expect(fotos).toHaveLength(3);
     for (const foto of fotos) expect(foto).toHaveAccessibleName();
-    expect(screen.getByText('POL-0000042').closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(screen.getByText('Cobertura activa').closest('[aria-hidden="true"]')).not.toBeNull();
   });
 
   it('muestra beneficios y un plan para cada vehículo', async () => {
