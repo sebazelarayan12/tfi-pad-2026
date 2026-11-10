@@ -122,7 +122,7 @@ export function LoginPage() {
     <LayoutLogin>
       <form noValidate onSubmit={(evento) => void handleSubmit(enviar)(evento)}>
         <div className="flex flex-col gap-sp-24">
-          <div className="flex flex-col gap-sp-12">
+          <div className="flex flex-col gap-sp-12 text-center">
             {/* Tamaño propio del login (no está en la escala tipográfica); en mayúsculas por CSS. */}
             <h1 className="text-[56px] font-extrabold uppercase leading-[60px] text-action-on-primary">
               Ingresar al panel
@@ -175,7 +175,7 @@ export function LoginPage() {
           {alerta === 'generico' ? <AlertaError>{MENSAJE_GENERICO}</AlertaError> : null}
         </div>
       </form>
-      <p className="mt-sp-32 border-t border-white/15 pt-sp-24 text-body-sm text-surface-subtle">
+      <p className="mt-sp-32 border-t text-center border-white/15 pt-sp-24 text-body-sm text-surface-subtle">
         ¿Sos de otro grupo y querés usar la API?{' '}
         <Link
           to={RUTA_INGRESO_GRUPO}

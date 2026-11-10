@@ -36,21 +36,24 @@ export function LayoutLogin({ children }: LayoutLoginProps) {
         className="absolute inset-y-0 left-0 w-[64%] bg-gradient-to-r from-transparent via-transparent via-40% to-action-primary"
       />
 
-      <aside className="relative z-10 flex w-1/2 flex-col gap-sp-12 p-sp-64">
-        <div className="flex items-center gap-sp-20">
-          <span
-            aria-hidden="true"
-            className="flex size-20 items-center justify-center rounded-card bg-accent-lime font-sans text-[44px] font-extrabold leading-none text-text-primary"
-          >
-            N
-          </span>
-          <p className="text-[52px] font-extrabold leading-[56px] text-action-on-primary">
-            {NOMBRE}
-          </p>
-        </div>
-        <div className="flex flex-col gap-sp-4">
-          <h2 className="text-h3 text-action-on-primary">{TITULO_PANEL}</h2>
-          <p className="text-body-sm text-surface-subtle">{BAJADA_PANEL}</p>
+      <aside className="relative z-10 flex w-1/2 flex-col justify-center py-sp-64 pl-[88px] pr-sp-64">
+        {/* El bloque ocupa solo el ancho de la marca para que las frases queden centradas bajo ella. */}
+        <div className="flex w-fit flex-col items-center gap-sp-12">
+          <div className="flex items-center gap-sp-20">
+            <span
+              aria-hidden="true"
+              className="flex size-20 items-center justify-center rounded-card bg-accent-lime font-sans text-[44px] font-extrabold leading-none text-text-primary"
+            >
+              N
+            </span>
+            <p className="text-[52px] font-extrabold leading-[56px] text-action-on-primary">
+              {NOMBRE}
+            </p>
+          </div>
+          <div className="flex flex-col gap-sp-4 text-center">
+            <h2 className="text-h3 text-action-on-primary">{TITULO_PANEL}</h2>
+            <p className="text-body-sm text-surface-subtle">{BAJADA_PANEL}</p>
+          </div>
         </div>
       </aside>
 
