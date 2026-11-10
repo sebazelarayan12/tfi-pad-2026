@@ -1,5 +1,7 @@
 import type { PolizaDetalleResponse } from '@nexa/api';
 import { Button } from '@nexa/ui';
+import { BarcodeIcon } from '@phosphor-icons/react/dist/csr/Barcode';
+import { XCircleIcon } from '@phosphor-icons/react/dist/csr/XCircle';
 import { useRef, useState } from 'react';
 
 import { CobrarVencidasButton } from '../../pagos';
@@ -42,6 +44,7 @@ export function PolizaAcciones({ poliza }: { poliza: PolizaDetalleResponse }) {
           label={TEXTO_CUPON}
           variant="secondary"
           size="m"
+          icon={<BarcodeIcon size={18} />}
           aria-disabled={!reglas.puedeCupon}
           onClick={pedirCupon}
         />
@@ -49,6 +52,7 @@ export function PolizaAcciones({ poliza }: { poliza: PolizaDetalleResponse }) {
           label={TEXTO_CANCELAR_POLIZA}
           variant="ghost"
           size="m"
+          icon={<XCircleIcon size={18} />}
           className="!text-status-cancelada-text"
           aria-disabled={!reglas.puedeCancelar}
           onClick={() => {

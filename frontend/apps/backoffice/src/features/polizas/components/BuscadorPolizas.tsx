@@ -40,7 +40,7 @@ export function BuscadorPolizas({ formatoInvalido, onBuscar }: BuscadorPolizasPr
   }
 
   return (
-    <form role="search" onSubmit={alEnviar} className="max-w-md">
+    <form role="search" onSubmit={alEnviar} className="w-full">
       <Input
         label={ETIQUETA_BUSCADOR}
         placeholder={PLACEHOLDER_BUSCADOR}

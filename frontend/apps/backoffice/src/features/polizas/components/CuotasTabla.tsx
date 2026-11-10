@@ -56,7 +56,10 @@ export function CuotasTabla({ cuotas, vigenciaMeses }: CuotasTablaProps) {
     }));
 
   return (
-    <section aria-labelledby="cuotas-titulo" className="flex flex-col gap-sp-12">
+    <section
+      aria-labelledby="cuotas-titulo"
+      className="flex flex-col gap-sp-12 rounded-card border border-border-hairline bg-surface-panel p-sp-24"
+    >
       <h2 id="cuotas-titulo" className="text-h3 text-text-primary">
         {TITULO_CUOTAS}
       </h2>
