@@ -42,17 +42,19 @@ export function LayoutLogin({ children }: LayoutLoginProps) {
           <div className="flex items-center gap-sp-24">
             <span
               aria-hidden="true"
-              className="flex size-24 items-center justify-center rounded-card bg-accent-lime font-sans text-[56px] font-extrabold leading-none text-text-primary"
+              className="flex size-28 items-center justify-center rounded-card bg-accent-lime font-sans text-[64px] font-extrabold leading-none text-text-primary"
             >
               N
             </span>
-            <p className="whitespace-nowrap text-[64px] font-extrabold leading-[68px] text-action-on-primary">
+            <p className="whitespace-nowrap text-[76px] font-extrabold leading-[80px] text-action-on-primary">
               {NOMBRE}
             </p>
           </div>
           <div className="flex flex-col gap-sp-4 text-center">
-            <h2 className="text-h2 text-action-on-primary">{TITULO_PANEL}</h2>
-            <p className="text-body text-surface-subtle">{BAJADA_PANEL}</p>
+            <h2 className="text-[26px] font-semibold leading-[32px] text-action-on-primary">
+              {TITULO_PANEL}
+            </h2>
+            <p className="text-[18px] leading-[26px] text-surface-subtle">{BAJADA_PANEL}</p>
           </div>
         </div>
       </aside>
