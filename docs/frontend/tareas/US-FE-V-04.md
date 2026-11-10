@@ -101,7 +101,28 @@ La persona responsable abre la app con MSW, recorre cada pantalla del grupo con 
 - **DP-2 Diferencia por contraste.** Default: no se cambia (FB7); ya está en `design-system.md` §9.
 - **DP-3 Error del Figma.** Default: no inventar; avisar al usuario y corregir el documento en un PR `docs/` aparte.
 
-Excepciones aceptadas (completar al hacer la tarea): —
+Excepciones aceptadas (verificadas contra el Figma el 2026-11-10, desktop 1440 px; el Figma no define móvil para estas pantallas):
+
+**B9 Pólizas**
+- Conteos en los chips de estado (`Todas 390`, etc.) y select `Plan`: el back no los ofrece (B9 D3, D4). DP-1.
+- Columnas `Cliente`, `Vehículo` (línea de marca/modelo/año) y `Próx. vencimiento` muestran `No disponible`: la lista no trae esos datos (B9 D1, D5, D6). DP-1.
+- Menú `⋯` por fila: el Figma no define sus opciones (B9 D9), no se agrega.
+- Título `Pólizas` duplicado y buscador/campana en el Topbar: los pinta el layout compartido (`app/layouts`), no esta pantalla. Figma B9 no tiene buscador ni campana en el topbar. Se avisa; corresponde a una tarea del layout.
+- Sidebar: el Figma muestra el bloque `Planes`/`Usuarios` y el usuario `Mariela Quiroga`; el layout oculta lo que el rol no ve y no tiene el nombre. Mismo motivo: layout compartido.
+
+**B10 Detalle de póliza**
+- Rail derecho: el Figma muestra la deuda y los pagos en una columna con borde, con otro contenido. La app suma `Adelantar cuotas` y el total a cobrar (D-B18-01) y lista los pagos distinto (D-B18-07). Son decisiones de B-18, no diferencias visuales.
+- Puntos de colores del ciclo de vida por paso (Pendiente violeta, Vigente verde): la app solo resalta el paso actual (B10 §3).
+- `Emitida por`: `No disponible`, el back no lo devuelve.
+- Aviso de suspensión: no se ve en la captura porque la póliza de MSW es Vigente; no se modificó.
+
+**B11 Pagos y facturas**
+- Pestaña `Facturas` y filtro `Período`: no se construyen (D-B19-01, D-B19-02).
+- Rail de caja sin buscador de póliza: `BUSQUEDA_POLIZA_NUMERO_DISPONIBLE = false` hasta PB-06 (D-B19-08).
+- Encabezado `Importe` alineado a la izquierda y borde del rail que no llega al alto del panel: salen de `Table` (T-06) y del layout compartido.
+- `Cliente`/`Póliza` en dos líneas y la columna `Factura`: dependen del ancho de datos de MSW, no del estilo.
+
+Corregido en esta tarea: B9 (orden chips → búsqueda, búsqueda a ancho completo, ícono `shield-check` en `Emitir póliza`, chip neutro de plan, vigencia en una línea, número sin subrayado, anchos de columna del Figma, rango a la izquierda y botones a la derecha) y B10 (ciclo de vida en tarjeta con línea y pasos centrados, `Datos` en dos columnas con etiqueta arriba y prima en mono grande, `Cuotas` en tarjeta, íconos en `Cupón Pago Fácil` y `Cancelar póliza`). B11 no necesitó cambios de código.
 
 ## 14. Riesgos y errores comunes
 
