@@ -1,11 +1,11 @@
-import type { RolUsuario } from '@nexa/api';
+import type { RolSesion } from '@nexa/api';
 
 import type { Sesion } from '../types/sesion';
 import { estaVigente } from './vigencia';
 
 export const CLAVE_SESION = 'nexa.backoffice.sesion';
 
-const ROLES: ReadonlyArray<RolUsuario> = ['Administrador', 'Empleado'];
+const ROLES: ReadonlyArray<RolSesion> = ['Administrador', 'Empleado', 'Grupo'];
 
 /** Ninguna función de este archivo lanza: `sessionStorage` puede no estar disponible (FC12). */
 export function guardar(sesion: Sesion): void {
@@ -27,7 +27,7 @@ export function borrar(): void {
   }
 }
 
-function esRol(valor: unknown): valor is RolUsuario {
+function esRol(valor: unknown): valor is RolSesion {
   return ROLES.some((rol) => rol === valor);
 }
 

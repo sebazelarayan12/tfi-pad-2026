@@ -1,13 +1,17 @@
 import type { GrupoNav } from '@nexa/ui';
 import { describe, expect, it } from 'vitest';
 
-import { gruposParaRol, NAV_ADMIN, NAV_PRINCIPAL } from './navegacionBackoffice';
+import { gruposParaRol, NAV_ADMIN, NAV_INTEGRACIONES, NAV_PRINCIPAL } from './navegacionBackoffice';
 
 const etiquetas = (grupo: GrupoNav) => grupo.items.map((item) => String(item.label));
 
 describe('gruposParaRol', () => {
   it('sin rol no devuelve grupos', () => {
     expect(gruposParaRol(null)).toEqual([]);
+  });
+
+  it('el Grupo externo solo ve Integraciones', () => {
+    expect(gruposParaRol('Grupo')).toEqual([NAV_INTEGRACIONES]);
   });
 
   it('Empleado solo ve el grupo principal', () => {
@@ -28,7 +32,7 @@ describe('gruposParaRol', () => {
       'Pagos y facturas',
       'Pago Fácil',
     ]);
-    expect(etiquetas(NAV_ADMIN)).toEqual(['Planes', 'Usuarios']);
+    expect(etiquetas(NAV_ADMIN)).toEqual(['Planes', 'Usuarios', 'Grupos externos']);
   });
 
   it('Vehículos no tiene destino todavía y Cotizaciones lleva a su listado', () => {

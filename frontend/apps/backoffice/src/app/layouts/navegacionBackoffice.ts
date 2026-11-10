@@ -1,4 +1,4 @@
-import type { RolUsuario } from '@nexa/api';
+import type { RolSesion } from '@nexa/api';
 import type { GrupoNav } from '@nexa/ui';
 import type { ReactNode } from 'react';
 
@@ -31,11 +31,19 @@ export const NAV_ADMIN: GrupoNav = {
   items: [
     { label: 'Planes', icon: 'list', href: '/planes' },
     { label: 'Usuarios', icon: 'user-circle', href: '/usuarios' },
+    { label: 'Grupos externos', icon: 'users', href: '/grupos' },
   ],
 };
 
+export const NAV_INTEGRACIONES: GrupoNav = {
+  id: 'integraciones',
+  titulo: 'Integraciones',
+  items: [{ label: 'Integraciones', icon: 'list', href: '/integraciones' }],
+};
+
 /** El grupo de administración solo lo ve el Administrador (FB7.10); sin rol no hay navegación. */
-export function gruposParaRol(rol: RolUsuario | null): GrupoNav[] {
+export function gruposParaRol(rol: RolSesion | null): GrupoNav[] {
   if (rol === null) return [];
+  if (rol === 'Grupo') return [NAV_INTEGRACIONES];
   return rol === 'Administrador' ? [NAV_PRINCIPAL, NAV_ADMIN] : [NAV_PRINCIPAL];
 }

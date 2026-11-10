@@ -40,6 +40,29 @@ describe('RequireSesion', () => {
     expect(screen.queryByText('pantalla privada')).toBeNull();
   });
 
+  it('un grupo externo solo puede ver /integraciones', () => {
+    iniciarSesion(
+      { token: 'token', rol: 'Grupo', expiraEn: new Date(AHORA + 60_000).toISOString() },
+      AHORA,
+    );
+    const router = createMemoryRouter(
+      [
+        {
+          element: <RequireSesion />,
+          children: [
+            { path: '/inicio', element: <p>pantalla privada</p> },
+            { path: '/integraciones', element: <p>pantalla de integraciones</p> },
+          ],
+        },
+      ],
+      { initialEntries: ['/inicio'] },
+    );
+    render(<RouterProvider router={router} />);
+    expect(router.state.location.pathname).toBe('/integraciones');
+    expect(screen.getByText('pantalla de integraciones')).toBeInTheDocument();
+    expect(screen.queryByText('pantalla privada')).toBeNull();
+  });
+
   it('con sesión vigente renderiza la ruta hija', () => {
     iniciarSesion(
       { token: 'token', rol: 'Empleado', expiraEn: new Date(AHORA + 60_000).toISOString() },
