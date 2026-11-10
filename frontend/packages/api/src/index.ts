@@ -12,6 +12,8 @@ export * from './dto/usuarios';
 export * from './auth/cambiarPassword';
 export * from './auth/login';
 export * from './endpoints/usuarios';
+export * from './dto/grupos';
+export * from './endpoints/grupos';
 export * from './dto/pagofacil';
 export * from './endpoints/pagofacil';
 export * from './dto/planes';

@@ -4,6 +4,7 @@ import { handlers as auth } from '../../mocks/handlers/auth';
 import { handlers as clientes } from '../../mocks/handlers/clientes';
 import { handlers as cotizaciones } from '../../mocks/handlers/cotizaciones';
 import { handlers as cuotas } from '../../mocks/handlers/cuotas';
+import { handlers as grupos } from '../../mocks/handlers/grupos';
 import { handlers as inicio } from '../../mocks/handlers/inicio';
 import { handlers as pagofacil } from '../../mocks/handlers/pagofacil';
 import { handlers as pagos } from '../../mocks/handlers/pagos';
@@ -18,6 +19,7 @@ const dominios = {
   clientes,
   cotizaciones,
   cuotas,
+  grupos,
   inicio,
   pagofacil,
   pagos,
@@ -28,7 +30,7 @@ const dominios = {
   vehiculos,
 };
 
-it('agrega los handlers de los doce dominios', () => {
+it('agrega los handlers de los trece dominios', () => {
   expect(handlers).toEqual(Object.values(dominios).flat());
 });
 

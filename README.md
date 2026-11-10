@@ -175,4 +175,5 @@ El CI del PR corre `backend`, `frontend`, `concurrencia-sqlserver` y `branch-nam
 - [`docs/frontend/`](docs/frontend/tareas/INDEX.md): decisiones, design system, pantallas, contratos de API y tareas del front.
 - [`docs/despliegue.md`](docs/despliegue.md): API en Azure con Cloudflare Tunnel y fronts en Cloudflare Pages.
 - [`docs/integraciones.md`](docs/integraciones.md): servicios externos y sus mocks.
+- [`docs/api-externa.md`](docs/api-externa.md): guía para que otros grupos usen nuestra API (seguro vigente, deuda, cotización) y cómo obtienen su clave (autoservicio en el backoffice, con aprobación de un administrador).
 - [`docs/pagos-mocks.md`](docs/pagos-mocks.md) y [`docs/aprobacion-pagos.md`](docs/aprobacion-pagos.md): pasarelas mock y aprobación de pagos.

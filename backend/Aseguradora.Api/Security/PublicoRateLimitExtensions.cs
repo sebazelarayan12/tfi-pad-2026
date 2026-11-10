@@ -15,6 +15,9 @@ public static class PublicoRateLimitExtensions
     /// <summary>Path prefix that RN20 protects.</summary>
     public const string PrefijoPublico = "/api/publico";
 
+    /// <summary>Partition key of the routes RN20 does not limit. It can never be a client IP.</summary>
+    private const string ParticionSinLimite = "sin-limite";
+
     public const int PermitLimitPorDefecto = 10;
     public const int VentanaSegundosPorDefecto = 60;
 
@@ -53,7 +56,8 @@ public static class PublicoRateLimitExtensions
             opciones.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(contexto =>
             {
                 if (!contexto.Request.Path.StartsWithSegments(PrefijoPublico, StringComparison.OrdinalIgnoreCase))
-                    return RateLimitPartition.GetNoLimiter(ClientIpResolver.ParticionDesconocida);
+                    // Own key: sharing the "unknown IP" key with the public window would apply that window to every route.
+                    return RateLimitPartition.GetNoLimiter(ParticionSinLimite);
 
                 var ip = resolutor.ObtenerIp(contexto);
                 return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions

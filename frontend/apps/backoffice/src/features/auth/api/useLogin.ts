@@ -9,7 +9,7 @@ export type CampoLogin = 'email' | 'password';
 export type ErrorLogin =
   { tipo: 'credenciales' } | { tipo: 'campos'; campos: CampoLogin[] } | { tipo: 'generico' };
 
-const ROLES_VALIDOS: readonly string[] = ['Administrador', 'Empleado'];
+const ROLES_VALIDOS: readonly string[] = ['Administrador', 'Empleado', 'Grupo'];
 
 /**
  * Traduce el error del back a lo que muestra la pantalla. El 401 de este endpoint son

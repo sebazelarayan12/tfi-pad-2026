@@ -141,7 +141,16 @@ describe('LoginPage: formulario', () => {
     expect(
       screen.getByText('¿Olvidaste tu contraseña? Pedila a un administrador.'),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /olvidaste/i })).not.toBeInTheDocument();
+  });
+
+  it('ofrece el ingreso de grupos externos a Integraciones', () => {
+    renderizarLogin();
+
+    expect(screen.getByRole('link', { name: 'Ingresá a Integraciones' })).toHaveAttribute(
+      'href',
+      '/integraciones/ingreso',
+    );
   });
 
   it('no renderiza "Foto: sede de atención" ni imágenes del panel', () => {

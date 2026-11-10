@@ -1,11 +1,11 @@
-import type { RolUsuario } from '@nexa/api';
+import type { RolSesion } from '@nexa/api';
 import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { useRol } from '../../features/auth';
 
 interface RequireRolProps {
-  roles: ReadonlyArray<RolUsuario>;
+  roles: ReadonlyArray<RolSesion>;
   /** Sin `children` se usa como ruta de layout y renderiza `<Outlet />`. */
   children?: ReactNode;
 }

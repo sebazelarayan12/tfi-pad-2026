@@ -62,13 +62,15 @@ describe('router', () => {
     }
   });
 
-  it('compone las once features', () => {
+  it('compone las trece features', () => {
     expect(Object.keys(rutasPorFeature).sort()).toEqual([
       'auth',
       'clientes',
       'cotizaciones',
       'cuotas',
+      'grupos',
       'inicio',
+      'integraciones',
       'pago-facil',
       'pagos',
       'planes',

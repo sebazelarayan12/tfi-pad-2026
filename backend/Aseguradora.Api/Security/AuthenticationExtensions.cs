@@ -80,6 +80,11 @@ public static class AuthenticationExtensions
                 .RequireAuthenticatedUser()
                 .RequireRole(Roles.Empleado, Roles.Administrador));
 
+            options.AddPolicy(Politicas.Grupo, policy => policy
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .RequireRole(Roles.Grupo));
+
             options.AddPolicy(Politicas.ApiKey, policy => policy
                 .AddAuthenticationSchemes(ApiKeyAuthenticationHandler.Esquema)
                 .RequireAuthenticatedUser()

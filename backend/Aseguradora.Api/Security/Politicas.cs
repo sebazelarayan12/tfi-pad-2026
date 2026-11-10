@@ -18,6 +18,9 @@ public static class Politicas
     /// </summary>
     public const string CambioPassword = "CambioPassword";
 
+    /// <summary>Role Grupo (an external group), validated with a JWT. Only the integration panel endpoints use it.</summary>
+    public const string Grupo = "Grupo";
+
     /// <summary>Valid API key principal, validated with the scheme ApiKey (header X-Api-Key).</summary>
     public const string ApiKey = "ApiKey";
 }
