@@ -8,18 +8,26 @@ Guía para los grupos que necesitan consultar datos de la aseguradora desde su p
 | --- | --- |
 | URL base | `https://api.nexaseguros.me` |
 | Formato | JSON, nombres de campo en `camelCase`, fechas `yyyy-MM-dd` |
-| Autenticación | Header `X-Api-Key` con la clave de tu grupo |
+| Autenticación | Header `X-Api-Key` con la clave de tu grupo (la generás vos en el backoffice, pestaña Integraciones) |
 | Servicios | [Seguro vigente por patente](#1-seguro-vigente-por-patente) · [Deuda por DNI](#2-deuda-de-un-cliente-por-dni) · [Cotización externa](#3-cotización-externa) |
 
 Todos los servicios son de solo consulta, salvo la cotización, que calcula precios y no requiere datos de un cliente.
 
 ## Cómo obtener tu clave
 
-Cada grupo tiene **su propia clave**. Pedila al equipo de Nexa Seguros indicando el nombre del grupo y para qué servicio la vas a usar. Te la pasamos por un canal privado.
+Es autoservicio. Entrás al backoffice de Nexa Seguros, en la pestaña **Integraciones**:
 
+1. **Pedí el alta.** En la pantalla de ingreso, elegí "Ingresá a Integraciones" y luego "Solicitar acceso". Completá el nombre del grupo, un contacto, tu email, para qué vas a usar la API y una contraseña (12 caracteres o más, con mayúscula, minúscula, número y símbolo).
+2. **Esperá la aprobación.** Un administrador de Nexa revisa la solicitud. Mientras tanto podés ingresar y ver el estado; si la rechaza, vas a ver el motivo.
+3. **Generá tu clave.** Con la solicitud aprobada, ingresá a Integraciones y tocá "Generar clave". La clave tiene el formato `nxk_...`.
+
+- **La clave se muestra una sola vez.** Copiala en ese momento: en Nexa guardamos solo una huella (SHA-256), no podemos recuperarla. Después ves únicamente su inicio, para distinguirla.
+- Hay **una clave activa por grupo**. Si generás otra, la anterior deja de funcionar al instante; la pantalla te pide confirmar.
+- Si se filtra, generá una nueva. Si Nexa revoca tu acceso, la clave deja de funcionar y se muestra el motivo.
 - Guardala como variable de entorno o secreto de tu backend. **No la pongas en un front, en el repositorio ni en un chat grupal**: cualquiera con la clave consulta en nombre de tu grupo.
-- Si se filtra, avisanos y la reemplazamos. La clave anterior deja de funcionar apenas la cambiamos.
-- Las claves se llaman `X-Api-Key` en el header, nunca en la URL.
+- La clave va en el header `X-Api-Key`, nunca en la URL.
+
+La misma pestaña Integraciones trae la documentación de los endpoints con ejemplos de pedido y respuesta.
 
 ## Autenticación
 
@@ -164,14 +172,31 @@ const { tieneSeguro, vigenteHasta } = await respuesta.json();
 
 Hacé las llamadas desde tu **backend**, no desde el navegador, para no exponer la clave.
 
-## Para el equipo de Nexa: dar de alta una clave
+## Para el equipo de Nexa: aprobar un grupo
 
-La API acepta cualquier clave configurada como `ApiKeys__<nombre-del-grupo>`; el nombre identifica al grupo.
+Los grupos se gestionan en el backoffice, pestaña **Grupos externos** (solo Administrador).
 
-1. Generar una clave larga y aleatoria, una por grupo (por ejemplo `openssl rand -base64 32`).
-2. Agregar la variable al `.env` de la VM (nunca al repositorio) y al `environment` de la API en `docker-compose.yml` como `ApiKeys__<nombre>: ${APIKEY_<NOMBRE>}`. En `.env.example` va solo un placeholder falso.
-3. Reiniciar la API: `docker compose up -d api`.
-4. Verificar con `curl` que la clave nueva responde 200 y que sin clave responde 401.
-5. Pasarle la clave al grupo por un canal privado.
+| Acción | Cuándo | Efecto |
+| --- | --- | --- |
+| Aprobar | Solicitud pendiente, rechazada o revocada | El grupo puede generar su clave |
+| Rechazar | Solicitud pendiente | Pide un motivo, que el grupo ve en su panel |
+| Revocar | Grupo aprobado | Pide un motivo; borra la clave: deja de funcionar al instante |
 
-Para dar de baja o reemplazar una clave, se borra o cambia la variable y se reinicia la API. Detalle del despliegue en [`docs/despliegue.md`](despliegue.md).
+Los estados viajan como número: `0` Pendiente, `1` Aprobada, `2` Rechazada, `3` Revocada.
+
+Endpoints que usa la pantalla:
+
+| Método y ruta | Quién | Para qué |
+| --- | --- | --- |
+| `POST /api/publico/grupos/registro` | Público (límite RN20) | Pedir el alta |
+| `POST /api/publico/grupos/login` | Público (límite RN20) | Ingresar; devuelve un JWT con rol `Grupo` |
+| `GET /api/grupos/mi-cuenta` | Grupo | Estado de la solicitud y datos de su clave |
+| `POST /api/grupos/mi-cuenta/clave` | Grupo | Generar la clave (única respuesta que la trae completa) |
+| `GET /api/grupos` | Administrador | Listar solicitudes (filtro `estado`) |
+| `POST /api/grupos/{id}/aprobar`, `/rechazar`, `/revocar` | Administrador | Resolver; rechazar y revocar llevan `{ "motivo": "..." }` |
+
+Notas de diseño:
+
+- El grupo es una entidad aparte (`GrupoExterno`), no un usuario de Identity: no entra a las pantallas de empleados. Su sesión (rol `Grupo`) solo ve Integraciones.
+- Las claves de las pasarelas y de ARCA siguen configuradas por variable de entorno (`ApiKeys__<nombre>`); conviven con las de los grupos. Una clave de grupo nunca se confunde con una pasarela (su identidad es `grupo:<id>`).
+- Detalle del despliegue en [`docs/despliegue.md`](despliegue.md).

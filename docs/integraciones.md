@@ -12,6 +12,8 @@ Estado de los servicios de otros grupos y cómo pasar de mock a real (US-T-04). 
 | Pasarela 1 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela1` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 1 | Mock; real pendiente |
 | Pasarela 2 | `IPasarelaService` (vía `IPasarelaResolver`) | `Integraciones:Pasarelas:pasarela2` | `PasarelaMockService` | `PasarelaHttpService` | Grupo de la pasarela 2 | Mock; real pendiente |
 
+Esta tabla cubre lo que nosotros consumimos. Lo que otros grupos consumen de nosotros (seguro vigente, deuda, cotización) y cómo obtienen su clave están en [`docs/api-externa.md`](api-externa.md).
+
 Estado al 02/11/2026. Pago Fácil no está en esta tabla: es un servicio simulado por nosotros, sin cliente HTTP.
 
 ## Configuración de cada servicio
