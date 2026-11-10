@@ -1,12 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertaError, Button, Input, LogoNexa } from '@nexa/ui';
+import { AlertaError, Button, Input } from '@nexa/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
 import { clasificarErrorLogin, useLogin, type CampoLogin } from '../api/useLogin';
 import { CampoContrasena } from '../components/CampoContrasena';
-import { LayoutAcceso } from '../components/LayoutAcceso';
+import { LayoutLogin } from '../components/LayoutLogin';
 import {
   loginSchema,
   MENSAJES_LOGIN,
@@ -25,6 +25,19 @@ const MENSAJE_GENERICO = 'No pudimos iniciar sesión. Probá de nuevo en unos mi
 const MENSAJE_SESION_VENCIDA = 'Tu sesión venció. Volvé a ingresar.';
 // Ruta de la feature integraciones; no se importa de ahí para no crear un ciclo entre features.
 const RUTA_INGRESO_GRUPO = '/integraciones/ingreso';
+
+// Los campos de @nexa/ui son claros: sobre el fondo oscuro del login se ajustan desde el formulario,
+// sin tocar el primitivo ni las otras pantallas de acceso.
+const CAMPOS_OSCUROS = [
+  '[&_label]:text-surface-subtle',
+  '[&_input]:h-12 [&_input]:border-white/15 [&_input]:bg-white/5 [&_input]:text-action-on-primary',
+  '[&_input]:placeholder:text-text-tertiary',
+  '[&_input:focus]:border-accent-lime [&_input:focus]:ring-accent-lime',
+  '[&_input:disabled]:bg-white/5 [&_input:disabled]:text-text-tertiary',
+  '[&_[data-state=error]_input]:border-status-cancelada-bg',
+  '[&_p]:text-surface-subtle [&_[data-state=error]_p]:text-status-cancelada-bg',
+  '[&_button]:size-12 [&_button]:text-surface-subtle [&_button:focus-visible]:outline-accent-lime',
+].join(' ');
 
 const AYUDA_CONTRASENA = '¿Olvidaste tu contraseña? Pedila a un administrador.';
 
@@ -106,20 +119,22 @@ export function LoginPage() {
   const bloqueado = login.isPending;
 
   return (
-    <LayoutAcceso>
+    <LayoutLogin>
       <form noValidate onSubmit={(evento) => void handleSubmit(enviar)(evento)}>
         <div className="flex flex-col gap-sp-24">
-          <LogoNexa />
-          <div className="flex flex-col gap-sp-8">
-            <h1 className="text-h1 text-text-primary">Ingresar al panel</h1>
-            <p className="text-body-sm text-text-secondary">
+          <div className="flex flex-col gap-sp-12 text-center">
+            {/* Tamaño propio del login (no está en la escala tipográfica); en mayúsculas por CSS. */}
+            <h1 className="text-[56px] font-extrabold uppercase leading-[60px] text-action-on-primary">
+              Ingresar al panel
+            </h1>
+            <p className="text-body text-surface-subtle">
               Acceso para empleados y administradores de Nexa Seguros.
             </p>
           </div>
           {estado.motivo === 'sesionVencida' ? (
             <AlertaError>{MENSAJE_SESION_VENCIDA}</AlertaError>
           ) : null}
-          <div className="flex flex-col gap-sp-24">
+          <div className={`flex flex-col gap-sp-24 ${CAMPOS_OSCUROS}`}>
             <Input
               label="Email"
               type="email"
@@ -140,25 +155,35 @@ export function LoginPage() {
               />
             </div>
           </div>
-          <Button
-            type="submit"
-            label="Ingresar"
-            variant="primary"
-            size="m"
-            disabled={bloqueado}
-            aria-busy={bloqueado}
-            className="w-full"
-          />
+          <div className="relative">
+            {/* Brillo lima bajo el botón (decorativo). */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-sp-24 -bottom-sp-8 h-sp-24 rounded-full bg-accent-lime opacity-40 blur-xl"
+            />
+            <Button
+              type="submit"
+              label="Ingresar"
+              variant="primary"
+              size="m"
+              disabled={bloqueado}
+              aria-busy={bloqueado}
+              className="relative w-full !h-12 font-semibold bg-gradient-to-r from-accent-lime to-accent-lime-soft !text-text-primary focus-visible:!outline-accent-lime"
+            />
+          </div>
           {alerta === 'credenciales' ? <AlertaError>{MENSAJE_CREDENCIALES}</AlertaError> : null}
           {alerta === 'generico' ? <AlertaError>{MENSAJE_GENERICO}</AlertaError> : null}
         </div>
       </form>
-      <p className="mt-sp-24 text-body-sm text-text-secondary">
+      <p className="mt-sp-32 border-t text-center border-white/15 pt-sp-24 text-body-sm text-surface-subtle">
         ¿Sos de otro grupo y querés usar la API?{' '}
-        <Link to={RUTA_INGRESO_GRUPO} className="text-text-primary underline">
+        <Link
+          to={RUTA_INGRESO_GRUPO}
+          className="rounded-input text-accent-lime underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime"
+        >
           Ingresá a Integraciones
         </Link>
       </p>
-    </LayoutAcceso>
+    </LayoutLogin>
   );
 }
