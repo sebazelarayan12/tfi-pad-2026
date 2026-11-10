@@ -226,7 +226,12 @@ public sealed class ClienteService(
             .Skip((filtro.Pagina - 1) * filtro.TamanoPagina)
             .Take(filtro.TamanoPagina)
             .Select(c => new ClienteResumenResponse(
-                c.Id, c.Dni, c.Nombre, c.Apellido, c.Email, c.Telefono, c.Activo))
+                c.Id, c.Dni, c.Nombre, c.Apellido, c.Email, c.Telefono, c.Activo,
+                c.ValidadoRenaper,
+                c.Vehiculos.Count(v => v.Activo),
+                c.Polizas.Count(p => p.Estado == EstadoPoliza.Pendiente
+                    || p.Estado == EstadoPoliza.Vigente
+                    || p.Estado == EstadoPoliza.Suspendida)))
             .ToList();
 
         return Task.FromResult(new PaginaResponse<ClienteResumenResponse>(

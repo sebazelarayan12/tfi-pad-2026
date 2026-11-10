@@ -6,6 +6,7 @@ using Aseguradora.Data;
 using Aseguradora.Data.Repositories;
 using Aseguradora.Data.Seed;
 using Aseguradora.Domain.Entities;
+using Aseguradora.Domain.Enums;
 using Aseguradora.Integrations.Renaper;
 using Aseguradora.Tests.Builders;
 using Aseguradora.Tests.Data;
@@ -60,6 +61,48 @@ public sealed class ClienteServiceConsultaTests : IDisposable
         Provincia = "Tucumán",
         CodigoPostal = "4107"
     };
+
+    [Fact]
+    public async Task ListarAsync_incluye_renaper_y_conteos_de_vehiculos_y_polizas_activas()
+    {
+        await using var context = _fixture.CreateContext();
+        var plan = await context.Planes.FindAsync(SeedData.PlanRcId)
+            ?? throw new InvalidOperationException("The seed has no RC plan.");
+
+        var conPolizas = await AgregarClienteAsync(context, "Alvarez", dni: "40111111");
+        conPolizas.ValidadoRenaper = true;
+        var vehiculoDeBaja = new VehiculoBuilder().DeCliente(conPolizas).ConPatente("ZZ999ZZ")
+            .Con(v => v.Activo = false).Construir();
+        context.Vehiculos.Add(vehiculoDeBaja);
+        // RN15: Pendiente, Vigente and Suspendida count as active; Cancelada and Vencida do not.
+        // A vehicle holds one policy at most, so each state gets its own active vehicle.
+        var estados = Enum.GetValues<EstadoPoliza>();
+        for (var i = 0; i < estados.Length; i++)
+        {
+            var estado = estados[i];
+            var vehiculo = new VehiculoBuilder().DeCliente(conPolizas).ConPatente($"AA10{i}BB").Construir();
+            context.Vehiculos.Add(vehiculo);
+            context.Polizas.Add(new PolizaBuilder().Para(conPolizas, vehiculo, plan)
+                .Con(p => p.Estado = estado).Construir());
+        }
+
+        var sinNada = await AgregarClienteAsync(context, "Benitez", dni: "40222222");
+        sinNada.ValidadoRenaper = false;
+        await context.SaveChangesAsync();
+        var service = CrearServicio(context);
+
+        var pagina = await service.ListarAsync(new ClienteFiltro { Dni = "40111111" });
+        var primero = Assert.Single(pagina.Items);
+        Assert.True(primero.ValidadoRenaper);
+        Assert.Equal(estados.Length, primero.CantidadVehiculos);
+        Assert.Equal(3, primero.CantidadPolizasActivas);
+
+        pagina = await service.ListarAsync(new ClienteFiltro { Dni = "40222222" });
+        var segundo = Assert.Single(pagina.Items);
+        Assert.False(segundo.ValidadoRenaper);
+        Assert.Equal(0, segundo.CantidadVehiculos);
+        Assert.Equal(0, segundo.CantidadPolizasActivas);
+    }
 
     [Fact]
     public async Task ListarAsync_filtra_por_dni_exacto()

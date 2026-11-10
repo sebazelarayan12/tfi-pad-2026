@@ -156,9 +156,9 @@ Actualización de alcance 2026-11-04: listado/detalle de US-F1-06 implementados 
 | Lista de clientes | `GET /api/clientes?dni=&apellido=&pagina=&tamanoPagina=` | Implementado | `PaginaResponse<ClienteResumenResponse>`: `items`, `pagina`, `tamanoPagina`, `total`. Solo activos. |
 | Chip y paginación | Mismo endpoint | Implementado | Chip: `total`. Rango: `(pagina - 1) * tamanoPagina + 1` a `min(pagina * tamanoPagina, total)`; mostrar el estado vacío cuando `total = 0`. |
 | Nombre, DNI, Email, Teléfono | Mismo endpoint | Implementado | `nombre` + `apellido`, `dni`, `email`, `telefono`. DNI con puntos usando T-09 de `@nexa/api`; nulos como `—`. |
-| Vehículos | Mismo endpoint | Campo no disponible (PB-03) | `cantidadVehiculos` no existe en el resumen. Mostrar `—`, no cero. |
-| Renaper | Mismo endpoint | Campo no disponible (PB-03) | `validadoRenaper` existe en el detalle, no en el resumen. Mostrar `—`, sin badge Validado/Pendiente. |
-| Pólizas activas | Mismo endpoint | Campo no disponible (PB-03) | `cantidadPolizasActivas` no existe en el resumen. Mostrar `—`, no cero. |
+| Vehículos | Mismo endpoint | Implementado (PB-03) | `cantidadVehiculos`: vehículos activos del cliente. Cero es un valor real. |
+| Renaper | Mismo endpoint | Implementado (PB-03) | `validadoRenaper` del resumen: badge Validado o Pendiente. |
+| Pólizas activas | Mismo endpoint | Implementado (PB-03) | `cantidadPolizasActivas`: pólizas Pendiente, Vigente o Suspendida (la misma regla que bloquea la baja del cliente, RN15). Decisión del usuario, 2026-11-10. |
 | Detalle | `GET /api/clientes/{id}` | Implementado | `ClienteResponse`; aquí sí está `validadoRenaper`. |
 | Validar en Renaper | `POST /api/clientes/{id}/validar-renaper` | Implementado | Acción fuera de B-04; su comportamiento se define en T-25/B-08 dentro de la ficha B5. No inferir su disponibilidad desde un badge de lista que no existe. |
 

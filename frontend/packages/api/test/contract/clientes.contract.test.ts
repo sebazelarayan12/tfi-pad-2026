@@ -26,7 +26,7 @@ beforeEach(() => {
 
 // Guid de .NET admite los valores fijos del seed sin exigir bits de versión o variante RFC UUID.
 const esquemaGuid = z.string().regex(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i);
-const esquemaResumen = z.strictObject({
+const camposBase = {
   id: esquemaGuid,
   dni: z.string().regex(/^\d{8}$/),
   nombre: z.string(),
@@ -34,9 +34,15 @@ const esquemaResumen = z.strictObject({
   email: z.string(),
   telefono: z.string().nullable(),
   activo: z.boolean(),
+};
+const esquemaResumen = z.strictObject({
+  ...camposBase,
+  validadoRenaper: z.boolean(),
+  cantidadVehiculos: z.number().int().nonnegative(),
+  cantidadPolizasActivas: z.number().int().nonnegative(),
 }) satisfies z.ZodType<ClienteResumenResponse>;
 const esquemaCliente = z.looseObject({
-  ...esquemaResumen.shape,
+  ...camposBase,
   cuil: z.string().regex(/^\d{11}$/),
   fechaNacimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   sexo: z.enum(['M', 'F', 'X']),
@@ -127,7 +133,7 @@ function erroresAuth(ruta: string, metodo = 'GET', cuerpo?: unknown): CasoError[
 }
 
 contratoEndpoint({
-  nombre: 'Listado real de siete campos',
+  nombre: 'Listado real con Renaper y conteos',
   metodo: 'GET',
   ruta: '/api/clientes',
   requiereSesion: true,

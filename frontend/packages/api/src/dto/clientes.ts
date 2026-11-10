@@ -25,7 +25,10 @@ export interface ClienteResponse {
   activo: boolean;
 }
 
-/** Resumen de siete campos del backend; los campos adicionales de PB-03 siguen pendientes. */
+/**
+ * Resumen del listado. `cantidadPolizasActivas` cuenta Pendiente, Vigente y Suspendida (la misma regla
+ * que bloquea la baja del cliente, RN15); `cantidadVehiculos` cuenta solo los vehículos activos.
+ */
 export interface ClienteResumenResponse {
   id: string;
   dni: string;
@@ -34,6 +37,9 @@ export interface ClienteResumenResponse {
   email: string;
   telefono: string | null;
   activo: boolean;
+  validadoRenaper: boolean;
+  cantidadVehiculos: number;
+  cantidadPolizasActivas: number;
 }
 
 export interface ClienteFiltro {
