@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertaError, Button, Input, LogoNexa } from '@nexa/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 
 import { clasificarErrorLogin, useLogin, type CampoLogin } from '../api/useLogin';
 import { CampoContrasena } from '../components/CampoContrasena';
@@ -23,6 +23,9 @@ const RUTA_LOGIN = '/login';
 const MENSAJE_CREDENCIALES = 'Email o contraseña incorrectos.';
 const MENSAJE_GENERICO = 'No pudimos iniciar sesión. Probá de nuevo en unos minutos.';
 const MENSAJE_SESION_VENCIDA = 'Tu sesión venció. Volvé a ingresar.';
+// Ruta de la feature integraciones; no se importa de ahí para no crear un ciclo entre features.
+const RUTA_INGRESO_GRUPO = '/integraciones/ingreso';
+
 const AYUDA_CONTRASENA = '¿Olvidaste tu contraseña? Pedila a un administrador.';
 
 const MENSAJE_POR_CAMPO: Record<CampoLogin, string> = {
@@ -150,6 +153,12 @@ export function LoginPage() {
           {alerta === 'generico' ? <AlertaError>{MENSAJE_GENERICO}</AlertaError> : null}
         </div>
       </form>
+      <p className="mt-sp-24 text-body-sm text-text-secondary">
+        ¿Sos de otro grupo y querés usar la API?{' '}
+        <Link to={RUTA_INGRESO_GRUPO} className="text-text-primary underline">
+          Ingresá a Integraciones
+        </Link>
+      </p>
     </LayoutAcceso>
   );
 }

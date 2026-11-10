@@ -18,8 +18,8 @@ interface PolizaDatosProps {
 
 function Fila({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-sp-12">
-      <dt className="text-text-secondary">{etiqueta}</dt>
+    <div className="flex min-w-0 flex-col gap-sp-4">
+      <dt className="text-caption text-text-secondary">{etiqueta}</dt>
       <dd className="break-words text-text-primary">{children}</dd>
     </div>
   );
@@ -35,7 +35,7 @@ export function PolizaDatos({ poliza, cliente, anio }: PolizaDatosProps) {
     ` a ${formatearFechaCalendario(poliza.fechaFin)}`;
   return (
     <CardWidget title={TITULO_DATOS}>
-      <dl className="flex flex-col gap-sp-12 text-body-sm">
+      <dl className="grid grid-cols-1 gap-x-sp-32 gap-y-sp-16 text-body-sm sm:grid-cols-2">
         <Fila etiqueta="Cliente">{nombre || sinDato}</Fila>
         <Fila etiqueta="DNI">
           {cliente ? <span className="font-mono text-mono">{formatearDni(cliente.dni)}</span> : sinDato}
@@ -46,7 +46,7 @@ export function PolizaDatos({ poliza, cliente, anio }: PolizaDatosProps) {
         </Fila>
         <Fila etiqueta="Plan">{`${poliza.nombrePlan} (${poliza.codigoPlan})`}</Fila>
         <Fila etiqueta="Prima">
-          <span className="font-mono text-mono">{formatearImporte(poliza.primaMensual)}</span>
+          <span className="font-mono text-mono-lg">{formatearImporte(poliza.primaMensual)}</span>
         </Fila>
         <Fila etiqueta="Vigencia">{vigencia}</Fila>
         <Fila etiqueta="Emitida por">{sinDato}</Fila>

@@ -1,5 +1,5 @@
 import { formatearDni, type ClienteResumenResponse } from '@nexa/api';
-import { Button, Table, type TableColumn } from '@nexa/ui';
+import { Button, EstadoBadge, Table, type TableColumn } from '@nexa/ui';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { TAMANO_PAGINA } from '../api/useClientes';
@@ -63,9 +63,9 @@ export function TablaClientes({ clientes, cargando, buscando, onLimpiar }: Props
         dni: formatearDni(cliente.dni),
         email: <span className="break-all">{cliente.email}</span>,
         telefono: <span className="break-words">{cliente.telefono || '—'}</span>,
-        vehiculos: '—',
-        renaper: '—',
-        polizas: '—',
+        vehiculos: cliente.cantidadVehiculos,
+        renaper: <EstadoBadge estado={cliente.validadoRenaper ? 'Validado' : 'Pendiente'} />,
+        polizas: cliente.cantidadPolizasActivas,
       }));
   return (
     <div

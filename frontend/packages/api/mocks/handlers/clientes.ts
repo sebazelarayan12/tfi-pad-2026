@@ -230,15 +230,22 @@ export function crearHandlersClientes(
         );
       const items: ClienteResumenResponse[] = coincidencias
         .slice((pagina - 1) * tamanoPagina, pagina * tamanoPagina)
-        .map(({ id, dni, nombre, apellido, email, telefono, activo }) => ({
-          id,
-          dni,
-          nombre,
-          apellido,
-          email,
-          telefono,
-          activo,
-        }));
+        .map(({ id, dni, nombre, apellido, email, telefono, activo, validadoRenaper }) => {
+          const conPoliza = buscar(id)?.tienePolizaActiva === true;
+          return {
+            id,
+            dni,
+            nombre,
+            apellido,
+            email,
+            telefono,
+            activo,
+            validadoRenaper,
+            // El fixture solo distingue si el cliente tiene una póliza activa: un vehículo y una póliza.
+            cantidadVehiculos: conPoliza ? 1 : 0,
+            cantidadPolizasActivas: conPoliza ? 1 : 0,
+          };
+        });
       return HttpResponse.json({ items, pagina, tamanoPagina, total: coincidencias.length });
     }),
     http.get(`${rutaDetalle}/cuenta`, ({ request, params }) => {

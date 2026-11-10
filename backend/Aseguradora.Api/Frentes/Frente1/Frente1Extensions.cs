@@ -1,6 +1,7 @@
 using Aseguradora.Api.Security;
 using Aseguradora.Application.Clientes;
 using Aseguradora.Application.External;
+using Aseguradora.Application.Grupos;
 using Aseguradora.Application.Publico;
 using Aseguradora.Application.Security;
 using Aseguradora.Data.Identity;
@@ -37,6 +38,10 @@ public static class Frente1Extensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<AutenticacionService>();
+
+        // External groups: self-service registration, approval and API keys stored hashed.
+        services.AddSingleton<IHasherPasswordGrupo, HasherPasswordGrupo>();
+        services.AddScoped<GrupoExternoService>();
 
         // CU04: Renaper behind IRenaperService, mock or real chosen by Integraciones:Renaper:UsarMock (C13).
         services.AgregarIntegracion<IRenaperService, RenaperMockService, RenaperHttpService>(config, "Renaper");

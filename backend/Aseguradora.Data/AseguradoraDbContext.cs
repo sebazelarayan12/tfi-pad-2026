@@ -18,6 +18,7 @@ public class AseguradoraDbContext(DbContextOptions<AseguradoraDbContext> options
     public DbSet<PagoCuota> PagoCuotas => Set<PagoCuota>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<RendicionPagoFacil> RendicionesPagoFacil => Set<RendicionPagoFacil>();
+    public DbSet<GrupoExterno> GruposExternos => Set<GrupoExterno>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

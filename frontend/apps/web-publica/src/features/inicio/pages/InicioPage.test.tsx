@@ -3,6 +3,7 @@ import { servidorMock } from '@nexa/api/mocks/server';
 import { expectSinViolacionesA11y } from '@nexa/ui/testing';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -56,14 +57,17 @@ describe('InicioPage', () => {
   it('CTA Consultar póliza enlaza a /consultar-poliza', async () => {
     await renderizarCargada();
     const enlaces = screen.getAllByRole('link', { name: 'Consultar póliza' });
-    // El del hero y el de la tarjeta "Pago online".
-    expect(enlaces).toHaveLength(2);
+    // El del hero y los de las tarjetas "Pago online" y "Efectivo con Pago Fácil".
+    expect(enlaces).toHaveLength(3);
     for (const enlace of enlaces) expect(enlace).toHaveAttribute('href', '/consultar-poliza');
   });
 
   it('CTA Ver planes enlaza al ancla #planes', async () => {
     const { container } = await renderizarCargada();
-    expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute('href', '#planes');
+    // El del hero y uno por tarjeta de vehículo: todos bajan a la tabla de planes.
+    const enlaces = screen.getAllByRole('link', { name: 'Ver planes' });
+    expect(enlaces).toHaveLength(3);
+    for (const enlace of enlaces) expect(enlace).toHaveAttribute('href', '#planes');
     expect(container.querySelector('#planes')).toBe(seccion('Planes'));
   });
 
@@ -109,19 +113,55 @@ describe('InicioPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('la tarjeta B no tiene enlace ni botón', async () => {
+  it('la tarjeta B lleva a consultar la póliza y no tiene botón', async () => {
     await renderizarCargada();
     const tarjetaB = screen
       .getByRole('heading', { name: 'Efectivo con Pago Fácil' })
       .closest('section') as HTMLElement;
-    expect(within(tarjetaB).queryByRole('link')).toBeNull();
+    expect(within(tarjetaB).getByRole('link', { name: 'Consultar póliza' })).toHaveAttribute(
+      'href',
+      '/consultar-poliza',
+    );
     expect(within(tarjetaB).queryByRole('button')).toBeNull();
     expect(screen.queryByText('Ver ejemplo de cupón')).toBeNull();
   });
 
-  it('el marcador de imagen está oculto para lectores de pantalla', async () => {
+  it('las fotos tienen texto alternativo y las tarjetas flotantes del hero están ocultas', async () => {
     await renderizarCargada();
-    expect(screen.getByText('Foto: auto y moto').closest('[aria-hidden="true"]')).not.toBeNull();
+    const fotos = screen.getAllByRole('img');
+    expect(fotos).toHaveLength(3);
+    for (const foto of fotos) expect(foto).toHaveAccessibleName();
+    expect(screen.getByText('Cobertura activa').closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('muestra beneficios y un plan para cada vehículo', async () => {
+    await renderizarCargada();
+    expect(
+      within(seccion('Por qué elegir Nexa'))
+        .getAllByRole('heading', { level: 3 })
+        .map((titulo) => titulo.textContent),
+    ).toEqual([
+      'Consultá en un minuto',
+      'Pagá como prefieras',
+      'Cuentas claras',
+      'Tu factura, siempre',
+    ]);
+    expect(
+      within(seccion('Un plan para cada vehículo'))
+        .getAllByRole('heading', { level: 3 })
+        .map((titulo) => titulo.textContent),
+    ).toEqual(['Autos y camionetas', 'Motos']);
+  });
+
+  it('las preguntas frecuentes empiezan cerradas y se abren con su resumen', async () => {
+    await renderizarCargada();
+    const preguntas = within(seccion('Preguntas frecuentes'));
+    const resumen = preguntas.getByText('¿Cuándo vencen las cuotas?');
+    const detalle = resumen.closest('details') as HTMLDetailsElement;
+    expect(preguntas.getAllByText(/^¿/)).toHaveLength(4);
+    expect(detalle.open).toBe(false);
+    await userEvent.click(resumen);
+    expect(detalle.open).toBe(true);
   });
 
   it('no hay campos de formulario', async () => {

@@ -4,7 +4,7 @@ import {
   formatearFechaCalendario,
   type PolizaListItemResponse,
 } from '@nexa/api';
-import { EstadoBadge, Table, type TableColumn } from '@nexa/ui';
+import { Chip, EstadoBadge, Table, type TableColumn } from '@nexa/ui';
 import { Link } from 'react-router-dom';
 
 import { TEXTO_NO_DISPONIBLE } from '../textos';
@@ -28,32 +28,43 @@ function celdaEstado(fila: FilaPoliza) {
 const COLUMNAS: ReadonlyArray<TableColumn<FilaPoliza>> = [
   {
     key: 'numero',
+    width: 124,
     header: 'Número',
     mono: true,
     render: (fila) => (
       <Link
         to={`/polizas/${fila.id}`}
-        className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary"
+        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary"
       >
         {fila.numero}
       </Link>
     ),
   },
-  { key: 'cliente', header: 'Cliente', render: noDisponible },
+  { key: 'cliente', header: 'Cliente', width: 176, render: noDisponible },
   {
     key: 'vehiculo',
+    width: 210,
     header: 'Vehículo',
     render: (fila) => <PolizaVehiculoCelda patente={fila.patente} />,
   },
-  { key: 'codigoPlan', header: 'Plan' },
+  {
+    key: 'codigoPlan',
+    width: 76,
+    header: 'Plan',
+    render: (fila) => <Chip tipo="neutro" label={fila.codigoPlan} />,
+  },
   {
     key: 'fechaInicio',
+    width: 212,
     header: 'Vigencia',
-    render: (fila) =>
-      `${formatearFechaCalendario(fila.fechaInicio)} a ${formatearFechaCalendario(fila.fechaFin)}`,
+    render: (fila) => (
+      <span className="whitespace-nowrap">
+        {`${formatearFechaCalendario(fila.fechaInicio)} a ${formatearFechaCalendario(fila.fechaFin)}`}
+      </span>
+    ),
   },
-  { key: 'estado', header: 'Estado', render: celdaEstado },
-  { key: 'proximoVencimiento', header: 'Próx. vencimiento', render: noDisponible },
+  { key: 'estado', header: 'Estado', width: 124, render: celdaEstado },
+  { key: 'proximoVencimiento', header: 'Próx. vencimiento', width: 132, render: noDisponible },
 ];
 
 interface PolizasTablaProps {

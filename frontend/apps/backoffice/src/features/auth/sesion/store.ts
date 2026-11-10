@@ -1,7 +1,7 @@
 import type { LoginResponse } from '@nexa/api';
 import { useSyncExternalStore } from 'react';
 
-import type { RolUsuario } from '@nexa/api';
+import type { RolSesion } from '@nexa/api';
 
 import type { Sesion } from '../types/sesion';
 import { borrar, guardar, leer } from './almacenamiento';
@@ -106,7 +106,7 @@ export function useSesion(): Sesion | null {
   return useSyncExternalStore(suscribir, sesionActual);
 }
 
-export function useRol(): RolUsuario | null {
+export function useRol(): RolSesion | null {
   return useSesion()?.rol ?? null;
 }
 

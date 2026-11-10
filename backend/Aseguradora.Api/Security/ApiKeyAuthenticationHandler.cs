@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
+using Aseguradora.Application.Grupos;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +17,8 @@ public sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IOptions<ApiKeyOpciones> apiKeyOptions)
+    IOptions<ApiKeyOpciones> apiKeyOptions,
+    GrupoExternoService grupos)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     /// <summary>Name of the authentication scheme, shared with the ApiKey policy.</summary>
@@ -25,27 +27,51 @@ public sealed class ApiKeyAuthenticationHandler(
     /// <summary>Header that carries the API key.</summary>
     public const string Header = "X-Api-Key";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue(Header, out var values))
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return AuthenticateResult.NoResult();
 
         var claveRecibida = values.ToString();
         if (string.IsNullOrWhiteSpace(claveRecibida))
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return AuthenticateResult.NoResult();
 
+        var claims = new List<Claim>();
         var proveedor = BuscarProveedor(claveRecibida);
-        if (proveedor is null)
-            return Task.FromResult(AuthenticateResult.NoResult());
-
-        var claims = new[]
+        if (proveedor is not null)
         {
-            new Claim(ClaimsAseguradora.Proveedor, proveedor),
-            new Claim(ClaimTypes.Name, proveedor)
-        };
+            claims.Add(new Claim(ClaimsAseguradora.Proveedor, proveedor));
+            claims.Add(new Claim(ClaimTypes.Name, proveedor));
+        }
+        else
+        {
+            var grupo = await BuscarGrupoAsync(claveRecibida);
+            if (grupo is null)
+                return AuthenticateResult.NoResult();
+
+            // "grupo:<id>" can never equal a configured provider name (no ':' there), so a group
+            // cannot pass for a payment provider whose name matches a webhook route.
+            claims.Add(new Claim(ClaimsAseguradora.Proveedor, $"grupo:{grupo.Id}"));
+            claims.Add(new Claim(ClaimsAseguradora.GrupoId, grupo.Id.ToString()));
+            claims.Add(new Claim(ClaimTypes.Name, grupo.Nombre));
+        }
 
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme.Name));
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
+        return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
+    }
+
+    private async Task<GrupoAutenticado?> BuscarGrupoAsync(string claveRecibida)
+    {
+        try
+        {
+            return await grupos.ValidarClaveAsync(claveRecibida, Context.RequestAborted);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A database failure must not turn into a 500 on every request that carries a key: it ends as 401.
+            Logger.LogError(ex, "No se pudo validar la API key de un grupo.");
+            return null;
+        }
     }
 
     private string? BuscarProveedor(string claveRecibida)

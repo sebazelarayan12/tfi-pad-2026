@@ -1,4 +1,6 @@
 export type { Sesion } from './types/sesion';
+export { CampoContrasena } from './components/CampoContrasena';
+export { LayoutAcceso } from './components/LayoutAcceso';
 export {
   alCerrarSesion,
   cerrarSesion,

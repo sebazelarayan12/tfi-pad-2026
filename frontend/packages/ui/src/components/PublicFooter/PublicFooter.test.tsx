@@ -31,6 +31,24 @@ describe('PublicFooter', () => {
     expect(screen.getByText(copyright)).toBeInTheDocument();
   });
 
+  it('el valor es un enlace solo cuando el dato trae href', () => {
+    render(
+      <PublicFooter
+        contacto={[
+          { label: 'Email', value: 'hola@ejemplo.test', href: 'mailto:hola@ejemplo.test' },
+          { label: 'Horarios', value: 'Lunes a viernes' },
+        ]}
+        copyright={copyright}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'hola@ejemplo.test' })).toHaveAttribute(
+      'href',
+      'mailto:hola@ejemplo.test',
+    );
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByText('Lunes a viernes')).toBeInTheDocument();
+  });
+
   it('usa un footer con el id recibido', () => {
     render(<PublicFooter id="contacto" contacto={contacto} copyright={copyright} />);
     expect(screen.getByRole('contentinfo')).toHaveAttribute('id', 'contacto');

@@ -26,28 +26,30 @@ export function PaginacionPolizas({
   const siguienteDeshabilitado = cargando || pagina * tamano >= total;
 
   return (
-    <nav aria-label="Paginación" className="flex items-center justify-end gap-sp-16">
+    <nav aria-label="Paginación" className="flex items-center justify-between gap-sp-16">
       <p className="text-body-sm text-text-secondary">{`${desde}-${hasta} de ${total}`}</p>
-      <Button
-        label="Anterior"
-        variant="secondary"
-        size="s"
-        aria-disabled={anteriorDeshabilitado}
-        className={CLASE_DESHABILITADO}
-        onClick={() => {
-          if (!anteriorDeshabilitado) onCambiar(pagina - 1);
-        }}
-      />
-      <Button
-        label="Siguiente"
-        variant="secondary"
-        size="s"
-        aria-disabled={siguienteDeshabilitado}
-        className={CLASE_DESHABILITADO}
-        onClick={() => {
-          if (!siguienteDeshabilitado) onCambiar(pagina + 1);
-        }}
-      />
+      <div className="flex items-center gap-sp-8">
+        <Button
+          label="Anterior"
+          variant="secondary"
+          size="s"
+          aria-disabled={anteriorDeshabilitado}
+          className={CLASE_DESHABILITADO}
+          onClick={() => {
+            if (!anteriorDeshabilitado) onCambiar(pagina - 1);
+          }}
+        />
+        <Button
+          label="Siguiente"
+          variant="secondary"
+          size="s"
+          aria-disabled={siguienteDeshabilitado}
+          className={CLASE_DESHABILITADO}
+          onClick={() => {
+            if (!siguienteDeshabilitado) onCambiar(pagina + 1);
+          }}
+        />
+      </div>
     </nav>
   );
 }

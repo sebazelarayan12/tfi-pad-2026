@@ -92,6 +92,16 @@ describe('PublicNav', () => {
     expect(screen.getByRole('link', { name: 'Planes' })).not.toHaveAttribute('data-router');
   });
 
+  it('un link de ancla del menú mobile cierra el menú al tocarlo', async () => {
+    renderNav();
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    const menu = screen.getByRole('navigation', { name: 'Principal (móvil)' });
+    const ancla = menu.querySelector('a[href="#planes"]') as HTMLElement;
+    ancla.addEventListener('click', (evento) => evento.preventDefault());
+    await userEvent.click(ancla);
+    expect(screen.queryByRole('navigation', { name: 'Principal (móvil)' })).toBeNull();
+  });
+
   it('el CTA del menú mobile cierra el menú al tocarlo', async () => {
     renderNav();
     await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }));

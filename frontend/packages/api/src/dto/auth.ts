@@ -10,6 +10,12 @@
 /** Roles asignables en el back (`Roles.cs`), en ese orden de privilegio. */
 export type RolUsuario = 'Administrador' | 'Empleado';
 
+/**
+ * Rol de una sesión: los de empleados y administradores más `Grupo`, el de un grupo externo
+ * que solo entra a su panel de integraciones.
+ */
+export type RolSesion = RolUsuario | 'Grupo';
+
 /** `POST /api/auth/login` (implementado). */
 export interface LoginRequest {
   email: string;
@@ -20,7 +26,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   /** JWT. */
   token: string;
-  rol: RolUsuario;
+  rol: RolSesion;
   /** ISO 8601 con offset `+00:00`. No convertir a `Date` en el tipo. */
   expiraEn: string;
   /** PB-31 / US-F1-09: `true` mientras la cuenta usa la contraseña temporal. Ausente = `false`. */

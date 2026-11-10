@@ -9,6 +9,9 @@ public static class ClaimsAseguradora
 {
     public const string Proveedor = "proveedor";
 
+    /// <summary>Id of the external group behind an API key issued by the self-service portal.</summary>
+    public const string GrupoId = "grupo_id";
+
     /// <summary>
     /// Role claim of the JWT issued by CU01. The JWT handler maps it to
     /// <see cref="System.Security.Claims.ClaimTypes.Role"/>, so the policies of C10 read it.

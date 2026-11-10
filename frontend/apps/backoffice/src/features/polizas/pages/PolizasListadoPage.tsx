@@ -1,5 +1,6 @@
 import { isApiError } from '@nexa/api';
 import { AlertaError, Button } from '@nexa/ui';
+import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -41,28 +42,33 @@ export function PolizasListadoPage() {
     <section className="flex flex-col gap-sp-24">
       <header className="flex items-center justify-between gap-sp-16">
         <h1 className="text-h1 text-text-primary">Pólizas</h1>
-        <Button label="Emitir póliza" onClick={() => void navigate(RUTA_CLIENTES)} />
+        <Button
+          label="Emitir póliza"
+          icon={<ShieldCheckIcon size={18} />}
+          onClick={() => void navigate(RUTA_CLIENTES)}
+        />
       </header>
 
-      <BuscadorPolizas
-        formatoInvalido={formatoInvalido}
-        onBuscar={(texto) => {
-          setBusqueda(texto);
-          cambiarFiltros({ ...filtros, pagina: 1 });
-        }}
-      />
-      {noDisponible ? (
-        <p role="status" className="text-body-sm text-text-secondary">
-          {TEXTO_BUSQUEDA_NO_DISPONIBLE}
-        </p>
-      ) : null}
-
-      <PolizasFiltros
-        estado={filtros.estado}
-        onCambiar={(estado) =>
-          cambiarFiltros(estado === undefined ? { pagina: 1 } : { estado, pagina: 1 })
-        }
-      />
+      <div className="flex flex-col gap-sp-12">
+        <PolizasFiltros
+          estado={filtros.estado}
+          onCambiar={(estado) =>
+            cambiarFiltros(estado === undefined ? { pagina: 1 } : { estado, pagina: 1 })
+          }
+        />
+        <BuscadorPolizas
+          formatoInvalido={formatoInvalido}
+          onBuscar={(texto) => {
+            setBusqueda(texto);
+            cambiarFiltros({ ...filtros, pagina: 1 });
+          }}
+        />
+        {noDisponible ? (
+          <p role="status" className="text-body-sm text-text-secondary">
+            {TEXTO_BUSQUEDA_NO_DISPONIBLE}
+          </p>
+        ) : null}
+      </div>
 
       {errorCliente === undefined ? null : <AlertaError>{detalleDe(errorCliente)}</AlertaError>}
       {vista.hayError ? <AlertaError>{detalleDe(vista.error)}</AlertaError> : null}

@@ -6,6 +6,7 @@ import type {
   PaginaRequest,
   PaginaResponse,
   ProblemDetails,
+  RolSesion,
   RolUsuario,
   ValidationProblemDetails,
 } from '../../src/index';
@@ -78,7 +79,7 @@ describe('DTO de auth', () => {
     >();
     expectTypeOf<LoginResponse['debeCambiarPassword']>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<LoginResponse['token']>().toEqualTypeOf<string>();
-    expectTypeOf<LoginResponse['rol']>().toEqualTypeOf<RolUsuario>();
+    expectTypeOf<LoginResponse['rol']>().toEqualTypeOf<RolSesion>();
     expectTypeOf<LoginResponse['expiraEn']>().toEqualTypeOf<string>();
     expectTypeOf<LoginResponse['expiraEn']>().not.toEqualTypeOf<Date>();
   });
