@@ -129,7 +129,8 @@ function MedioDePago({ estado }: { estado: EstadoPagoPublico }) {
           </p>
         </header>
 
-        <div className="flex flex-col gap-sp-12">
+        {/* Columna del Figma (nodo 18:1049): etiqueta, opciones, botón y privacidad separados por 24 px. */}
+        <div className="flex flex-col gap-sp-24">
           {/* h2 con estilo H3: la etiqueta del grupo también ordena los títulos (h1 → h2 → h3). */}
           <h2 id={ID_ETIQUETA_GRUPO} className="text-h3 text-text-primary">
             Medio de pago
@@ -161,7 +162,7 @@ function MedioDePago({ estado }: { estado: EstadoPagoPublico }) {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-sp-12">
+        <div className="flex flex-col gap-sp-24">
           <Button
             label="Continuar"
             disabled={medio === null || enviando}

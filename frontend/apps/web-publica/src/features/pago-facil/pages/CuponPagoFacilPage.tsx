@@ -62,6 +62,7 @@ function CuponesPagoFacil({ estado }: { estado: EstadoPagoPublico }) {
 
       <Button
         label="Imprimir"
+        variant="secondary"
         icon={<PrinterIcon size={16} weight="regular" />}
         disabled={algunoCargando}
         onClick={imprimir}

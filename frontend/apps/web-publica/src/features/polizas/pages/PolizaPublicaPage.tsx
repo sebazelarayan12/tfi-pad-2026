@@ -1,4 +1,5 @@
 import { Button } from '@nexa/ui';
+import { BarcodeIcon } from '@phosphor-icons/react/dist/csr/Barcode';
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { BarraPagoMobile } from '../components/BarraPagoMobile';
@@ -27,13 +28,17 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
   const irA = useNavegarAPago(estado, seleccion);
 
   return (
+    // Escritorio: el contenido del Figma (nodo 18:60) tiene 40 px de padding y 32 de gap; el marco ya pone 24 a los lados.
     <div
-      className={`flex flex-col gap-sp-24 pt-sp-24 ${esEscritorio || consulta.cuotas.length === 0 ? 'pb-sp-24' : 'pb-28'}`}
+      className={`flex flex-col gap-sp-24 pt-sp-24 md:gap-sp-32 md:px-sp-16 md:pt-sp-40 ${esEscritorio || consulta.cuotas.length === 0 ? 'pb-sp-24 md:pb-sp-40' : 'pb-28'}`}
     >
-      <header className="flex flex-wrap items-center gap-sp-12">
+      {/* Título en su línea y debajo número y estado (nodos 18:61 y 18:63). */}
+      <header className="flex flex-col gap-sp-8">
         <h1 className="text-h1 text-text-primary">Mi póliza</h1>
-        <span className="font-mono text-mono text-text-secondary">{consulta.numeroPoliza}</span>
-        <BadgeEstadoPoliza estado={consulta.estado} />
+        <div className="flex flex-wrap items-center gap-sp-12">
+          <span className="font-mono text-mono text-text-secondary">{consulta.numeroPoliza}</span>
+          <BadgeEstadoPoliza estado={consulta.estado} />
+        </div>
       </header>
       {/* El Figma pasa de H1 a H3 (Card/Widget es H3, D-T07-3): el H2 oculto evita saltar un nivel. */}
       <h2 className="sr-only">Detalle de la póliza</h2>
@@ -54,8 +59,9 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
               </h3>
               <Button
                 label="Seleccionar impagas"
-                variant="secondary"
+                variant="ghost"
                 size="s"
+                className="-mr-sp-12"
                 onClick={seleccion.seleccionarImpagas}
               />
             </div>
@@ -70,6 +76,7 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
           <Button
             label={TEXTO_CUPON}
             variant="secondary"
+            icon={<BarcodeIcon size={16} weight="regular" />}
             disabled={seleccion.cantidadSeleccionadas === 0}
             className="h-10 w-full"
             onClick={() => irA(RUTA_PAGO_FACIL)}
@@ -78,7 +85,7 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
           <BarraPagoMobile seleccion={seleccion} onPagar={() => irA(RUTA_MEDIO_DE_PAGO)} />
         </>
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-sp-24">
+        <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-sp-32">
           <div className="flex flex-col gap-sp-24">
             <DatosPoliza consulta={consulta} />
             <section aria-labelledby="titulo-cuotas" className="flex flex-col gap-sp-12">
@@ -88,8 +95,9 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
                 </h3>
                 <Button
                   label="Seleccionar impagas"
-                  variant="secondary"
+                  variant="ghost"
                   size="s"
+                  className="-mr-sp-12"
                   onClick={seleccion.seleccionarImpagas}
                 />
               </div>
@@ -101,9 +109,12 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
               ) : null}
               <TablaCuotas cuotas={consulta.cuotas} seleccion={seleccion} />
             </section>
+          </div>
+          {/* Columna lateral del Figma (nodo 18:69): resumen y ciclo, gap 24. */}
+          <div className="flex flex-col gap-sp-24">
+            <ResumenPago estado={estado} seleccion={seleccion} />
             <CicloPoliza />
           </div>
-          <ResumenPago estado={estado} seleccion={seleccion} />
         </div>
       )}
     </div>

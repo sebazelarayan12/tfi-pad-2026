@@ -3,6 +3,7 @@ import { EstadoBadge } from '@nexa/ui';
 
 import { esCuotaElegible, type SeleccionCuotas } from '../hooks/useSeleccionCuotas';
 import { BADGE_POR_ESTADO, textoVencimiento } from './cuotaVista';
+import { CasillaCuota } from './TablaCuotas';
 
 interface ListaCuotasMobileProps {
   cuotas: ReadonlyArray<CuotaPublica>;
@@ -23,20 +24,11 @@ export function ListaCuotasMobile({ cuotas, seleccion }: ListaCuotasMobileProps)
           {/* Zona de toque de 44 × 44 px (design-system §8.5), también en las filas sin casilla. */}
           <span className="flex size-11 shrink-0 items-center justify-center">
             {esCuotaElegible(cuota) ? (
-              <label className="flex size-11 cursor-pointer items-center justify-center">
-                <input
-                  type="checkbox"
-                  aria-label={`Seleccionar cuota ${cuota.numero} de ${total}`}
-                  checked={seleccion.estaSeleccionada(cuota.idCuota)}
-                  disabled={seleccion.estaBloqueada(cuota)}
-                  onChange={() => seleccion.alternar(cuota)}
-                  className="size-5 accent-action-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary disabled:cursor-not-allowed"
-                />
-              </label>
+              <CasillaCuota cuota={cuota} total={total} seleccion={seleccion} className="size-11" />
             ) : null}
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-sp-4">
-            <span className="text-body-sm text-text-primary">{`Cuota ${cuota.numero} de ${total}`}</span>
+            <span className="text-body text-text-primary">{`Cuota ${cuota.numero} de ${total}`}</span>
             <span className="text-caption text-text-secondary">{textoVencimiento(cuota)}</span>
           </div>
           <div className="flex flex-col items-end gap-sp-4">

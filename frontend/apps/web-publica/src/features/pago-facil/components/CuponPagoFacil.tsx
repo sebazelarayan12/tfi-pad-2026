@@ -52,11 +52,22 @@ interface CuponPagoFacilProps {
   onReintentar: () => void;
 }
 
-function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+/** Fila etiqueta/valor; póliza y DNI van en Mono como en el Figma (nodo 18:2102). */
+function Fila({
+  etiqueta,
+  valor,
+  mono = false,
+}: {
+  etiqueta: string;
+  valor: string;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-sp-12 text-body-sm">
       <dt className="text-text-secondary">{etiqueta}</dt>
-      <dd className="text-right text-text-primary">{valor}</dd>
+      <dd className={`text-right text-text-primary ${mono ? 'font-mono text-mono' : ''}`}>
+        {valor}
+      </dd>
     </div>
   );
 }
@@ -101,9 +112,9 @@ export function CuponPagoFacil({
     <article aria-label={titulo} aria-busy={cargando} className={TARJETA}>
       <LogoNexa />
       <dl className="flex flex-col gap-sp-12">
-        <Fila etiqueta="Póliza" valor={numeroPoliza} />
+        <Fila etiqueta="Póliza" valor={numeroPoliza} mono />
         <Fila etiqueta="Cuota" valor={etiquetaCuota} />
-        <Fila etiqueta="DNI" valor={formatearDni(dni)} />
+        <Fila etiqueta="DNI" valor={formatearDni(dni)} mono />
       </dl>
       <hr className="border-border-hairline" />
 
