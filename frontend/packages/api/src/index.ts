@@ -37,7 +37,7 @@ export type {
   CuponPublicoRequest,
   CuponPublicoRespuestaMock,
   EstadoCuotaPublica,
-  EstadoPagoPublicoMock,
+  EstadoPagoPublico,
   EstadoPolizaPublico,
   FacturaPublica,
   MedioPagoPublicoMock,

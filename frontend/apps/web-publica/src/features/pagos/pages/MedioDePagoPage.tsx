@@ -9,7 +9,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { formatearListaCuotas } from '../../../shared/formato/listaCuotas';
 import type { EstadoPagoPublico } from '../../polizas';
-import { usePagarOnline } from '../api/usePagarOnline';
+import { usePagarOnline, type SalidaPago } from '../api/usePagarOnline';
 import { OpcionMedioPago } from '../components/OpcionMedioPago';
 import { ResumenPagoOnline } from '../components/ResumenPagoOnline';
 import { leerEstadoMedioDePago } from '../schemas/estadoNavegacion';
@@ -29,12 +29,15 @@ interface OpcionMedio {
 
 const DESCRIPCION_ONLINE = 'Pago online con tarjeta o dinero en cuenta.';
 
-/** Nombres y orden fijos hasta PB-22 (D-09); la descripción de Pago Fácil sigue DN-W6-5. */
+/**
+ * Nombres y orden fijos hasta PB-22 (D-09); la descripción de Pago Fácil sigue DN-W6-5.
+ * "Pasarela A" es PADI (decisión de Martin): sigue siendo `pasarela1` y se paga en otra pestaña.
+ */
 const OPCIONES: ReadonlyArray<OpcionMedio> = [
   {
     valor: 'pasarela-a',
-    titulo: 'Pasarela A',
-    descripcion: DESCRIPCION_ONLINE,
+    titulo: 'PADI',
+    descripcion: 'Billetera virtual PADI. Pagás en una pestaña nueva.',
     icono: <CreditCardIcon size={24} weight="regular" />,
   },
   {
@@ -55,6 +58,12 @@ const OPCIONES: ReadonlyArray<OpcionMedio> = [
 const PROVEEDOR: Record<Exclude<MedioPago, 'pago-facil'>, PagoPublicoRequest['proveedor']> = {
   'pasarela-a': 'pasarela1',
   'pasarela-b': 'pasarela2',
+};
+
+/** PADI no acepta URLs de retorno: el cliente paga en otra pestaña y verifica acá (W6). */
+const SALIDA: Record<Exclude<MedioPago, 'pago-facil'>, SalidaPago> = {
+  'pasarela-a': 'pestana-nueva',
+  'pasarela-b': 'redirigir',
 };
 
 // Textos de W-06 §8: el 429 es el literal de W2; el 502 y el de red, propuestas aprobadas (DN-W6-7).
@@ -113,7 +122,7 @@ function MedioDePago({ estado }: { estado: EstadoPagoPublico }) {
       void navigate(RUTA_PAGO_FACIL, { state: estado });
       return;
     }
-    pagar({ dni, numeroPoliza, cuotaIds, proveedor: PROVEEDOR[medio] });
+    pagar({ dni, numeroPoliza, cuotaIds, proveedor: PROVEEDOR[medio] }, SALIDA[medio]);
   }
 
   return (

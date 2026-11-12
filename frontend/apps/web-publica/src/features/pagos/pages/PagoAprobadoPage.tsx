@@ -1,19 +1,28 @@
-import { isApiError, type EstadoPagoPublicoMock } from '@nexa/api';
-import { Button, ButtonLink } from '@nexa/ui';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { isApiError, type EstadoPagoPublico } from '@nexa/api';
+import { Button, ButtonLink, Input } from '@nexa/ui';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { CheckCircleIcon } from '@phosphor-icons/react/dist/csr/CheckCircle';
 import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
 import { HourglassIcon } from '@phosphor-icons/react/dist/csr/Hourglass';
 import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import { XCircleIcon } from '@phosphor-icons/react/dist/csr/XCircle';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { useForm, type FieldErrors } from 'react-hook-form';
+import { useLocation } from 'react-router-dom';
 
+import { renderLinkPestanaNueva } from '../../../shared/enlace/renderLinkPestanaNueva';
 import { renderLinkRouter } from '../../../shared/enlace/renderLinkRouter';
 import { leerNumeroPagoEnCurso } from '../api/almacenamientoPago';
 import { useFacturaPublica } from '../api/useFacturaPublica';
 import { usePagoEnCurso } from '../api/usePagoEnCurso';
 import { DetallePago } from '../components/DetallePago';
 import { NotaFacturaEnProceso } from '../components/NotaFacturaEnProceso';
+import {
+  dniVerificacionSchema,
+  leerEstadoVerificacion,
+  type DniVerificacionValues,
+} from '../schemas/estadoVerificacion';
 
 // "Volver a mi póliza" lleva a W2: W3 necesita DNI y número de póliza, que la web no guarda (DN-W8-4).
 const RUTA_CONSULTA = '/consultar-poliza';
@@ -35,6 +44,17 @@ const TEXTOS = {
   errorGenerico: 'Intentá de nuevo en unos minutos.',
   error429: 'Hiciste muchos intentos. Esperá un minuto y volvé a probar.',
   cargando: 'Consultando el estado del pago…',
+  // PADI (pestaña nueva) y pedido del DNI: propuestas pendientes de aprobación de Martin.
+  esperaTitulo: 'Completá el pago en PADI',
+  esperaSubtitulo:
+    'Abrí PADI en una pestaña nueva y pagá. Cuando termines, volvé a esta pestaña y verificá el pago.',
+  abrirPadi: 'Abrir PADI para pagar',
+  yaPague: 'Ya pagué, verificar',
+  dniTitulo: 'Verificá tu pago',
+  dniSubtitulo: 'Ingresá el DNI del titular para consultar el estado del pago.',
+  dniAyuda: 'Sin puntos ni espacios.',
+  verificarPago: 'Verificar pago',
+  otroDni: 'Ingresar otro DNI',
 } as const;
 
 type Tono = 'exito' | 'neutro' | 'error' | 'aviso';
@@ -113,38 +133,145 @@ function BotonConsultarPoliza() {
   );
 }
 
-function NoIdentificado() {
+/** Abre el checkout de PADI en otra pestaña por gesto del usuario (no `window.open` tras un `await`). */
+function AbrirPadi({ urlPago }: { urlPago: string }) {
+  return (
+    <ButtonLink
+      label={TEXTOS.abrirPadi}
+      href={urlPago}
+      variant="secondary"
+      renderLink={renderLinkPestanaNueva}
+    />
+  );
+}
+
+function NoIdentificado({ onOtroDni }: { onOtroDni?: () => void }) {
   return (
     <ResultadoPago
       tono="neutro"
       icono={<WarningCircleIcon {...ICONO} />}
       titulo={TEXTOS.noIdentificadoTitulo}
-      acciones={<BotonConsultarPoliza />}
+      acciones={
+        <>
+          {onOtroDni ? (
+            <Button label={TEXTOS.otroDni} variant="secondary" onClick={onOtroDni} />
+          ) : null}
+          <BotonConsultarPoliza />
+        </>
+      }
     />
+  );
+}
+
+/** DNI del titular cuando no viene en `location.state` (recarga o vuelta desde otra pasarela). */
+function PedirDni({ onDni }: { onDni: (dni: string) => void }) {
+  const {
+    register,
+    handleSubmit,
+    setFocus,
+    formState: { errors },
+  } = useForm<DniVerificacionValues>({
+    resolver: zodResolver(dniVerificacionSchema),
+    defaultValues: { dni: '' },
+  });
+
+  const invalido = (errores: FieldErrors<DniVerificacionValues>) => {
+    if (errores.dni) setFocus('dni');
+  };
+
+  return (
+    <form
+      noValidate
+      autoComplete="off"
+      aria-labelledby="titulo-verificar-dni"
+      onSubmit={(evento) => void handleSubmit(({ dni }) => onDni(dni), invalido)(evento)}
+      className={TARJETA}
+    >
+      <div className="flex w-full flex-col gap-sp-8 text-center">
+        <h1
+          id="titulo-verificar-dni"
+          ref={enfocar}
+          tabIndex={-1}
+          className="text-h1 text-text-primary focus:outline-none"
+        >
+          {TEXTOS.dniTitulo}
+        </h1>
+        <p className="text-body text-text-secondary">{TEXTOS.dniSubtitulo}</p>
+      </div>
+      <div className="w-full">
+        <Input
+          label="DNI"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={8}
+          className="font-mono text-mono"
+          helper={errors.dni?.message ?? TEXTOS.dniAyuda}
+          error={errors.dni !== undefined}
+          {...register('dni')}
+        />
+      </div>
+      <div className={ACCIONES}>
+        <Button type="submit" label={TEXTOS.verificarPago} />
+      </div>
+    </form>
+  );
+}
+
+interface EsperaPadiProps {
+  numeroPago: string;
+  urlPago: string | null;
+  onVerificar: () => void;
+}
+
+/** Espera de PADI: el cliente paga en otra pestaña y verifica acá por clic (sin polling, FC13). */
+function EsperaPadi({ numeroPago, urlPago, onVerificar }: EsperaPadiProps) {
+  return (
+    <ResultadoPago
+      tono="neutro"
+      icono={<HourglassIcon {...ICONO} />}
+      titulo={TEXTOS.esperaTitulo}
+      subtitulo={TEXTOS.esperaSubtitulo}
+      acciones={
+        <>
+          {urlPago ? <AbrirPadi urlPago={urlPago} /> : null}
+          <Button label={TEXTOS.yaPague} onClick={onVerificar} />
+        </>
+      }
+    >
+      <DetallePago numeroPago={numeroPago} fechaAcreditacion={null} />
+    </ResultadoPago>
   );
 }
 
 type Vista =
   | { tipo: 'no-identificado' }
+  | { tipo: 'pedir-dni' }
+  | { tipo: 'espera-padi'; numeroPago: string }
   | { tipo: 'cargando' }
   | { tipo: 'error'; es429: boolean }
-  | { tipo: 'aprobado'; pago: EstadoPagoPublicoMock }
-  | { tipo: 'pendiente'; pago: EstadoPagoPublicoMock }
+  | { tipo: 'aprobado'; pago: EstadoPagoPublico; dni: string }
+  | { tipo: 'pendiente'; pago: EstadoPagoPublico }
   | { tipo: 'rechazado' };
 
-/** Qué mostrar según el `numeroPago` guardado y la respuesta de `pagos/estado` (W-08 §9). */
-function resolverVista(
-  numeroPago: string | null,
-  error: unknown,
-  pago: EstadoPagoPublicoMock | undefined,
-): Vista {
+interface EntradaVista {
+  numeroPago: string | null;
+  dni: string | null;
+  solicitada: boolean;
+  error: unknown;
+  pago: EstadoPagoPublico | undefined;
+}
+
+/** Qué mostrar según el número de pago, el DNI, si ya se pidió el estado y la respuesta (W-08 §9). */
+function resolverVista({ numeroPago, dni, solicitada, error, pago }: EntradaVista): Vista {
   if (numeroPago === null) return { tipo: 'no-identificado' };
+  if (dni === null) return { tipo: 'pedir-dni' };
+  if (!solicitada) return { tipo: 'espera-padi', numeroPago };
   if (error) {
     if (isApiError(error) && error.status === 404) return { tipo: 'no-identificado' };
     return { tipo: 'error', es429: isApiError(error) && error.status === 429 };
   }
   if (pago === undefined) return { tipo: 'cargando' };
-  if (pago.estado === 'APROBADO') return { tipo: 'aprobado', pago };
+  if (pago.estado === 'APROBADO') return { tipo: 'aprobado', pago, dni };
   if (pago.estado === 'PENDIENTE') return { tipo: 'pendiente', pago };
   return { tipo: 'rechazado' };
 }
@@ -152,16 +279,18 @@ function resolverVista(
 interface VolverAConsultarProps {
   consultando: boolean;
   onConsultar: () => void;
+  /** Con PADI el botón dice "Ya pagué, verificar". */
+  etiqueta: string;
 }
 
 /** Reconsulta manual: sin polling ni reintento automático (RN20, FC13). */
-function VolverAConsultar({ consultando, onConsultar }: VolverAConsultarProps) {
-  return <Button label={TEXTOS.volverAConsultar} disabled={consultando} onClick={onConsultar} />;
+function VolverAConsultar({ consultando, onConsultar, etiqueta }: VolverAConsultarProps) {
+  return <Button label={etiqueta} disabled={consultando} onClick={onConsultar} />;
 }
 
-function Aprobado({ pago }: { pago: EstadoPagoPublicoMock }) {
+function Aprobado({ pago, dni }: { pago: EstadoPagoPublico; dni: string }) {
   // La factura se pide solo con el pago aprobado; un 404 deja la nota oculta (DN-W8-5).
-  const factura = useFacturaPublica(pago.numeroPago);
+  const factura = useFacturaPublica(pago.numeroPago, dni);
 
   return (
     <ResultadoPago
@@ -186,15 +315,21 @@ function Aprobado({ pago }: { pago: EstadoPagoPublicoMock }) {
 
 function Pendiente({
   pago,
+  urlPadi,
   ...reconsulta
-}: { pago: EstadoPagoPublicoMock } & VolverAConsultarProps) {
+}: { pago: EstadoPagoPublico; urlPadi: string | null } & VolverAConsultarProps) {
   return (
     <ResultadoPago
       tono="neutro"
       icono={<HourglassIcon {...ICONO} />}
       titulo={TEXTOS.verificandoTitulo}
       subtitulo={TEXTOS.verificandoSubtitulo}
-      acciones={<VolverAConsultar {...reconsulta} />}
+      acciones={
+        <>
+          {urlPadi ? <AbrirPadi urlPago={urlPadi} /> : null}
+          <VolverAConsultar {...reconsulta} />
+        </>
+      }
     >
       <DetallePago numeroPago={pago.numeroPago} fechaAcreditacion={null} />
     </ResultadoPago>
@@ -224,28 +359,106 @@ function Rechazado() {
   );
 }
 
+interface VerificacionPago {
+  vista: Vista;
+  urlPadi: string | null;
+  reconsulta: VolverAConsultarProps;
+  verificar: () => void;
+  cargarDni: (dni: string) => void;
+  otroDni: (() => void) | undefined;
+}
+
 /**
- * Pantalla W6 `/pago/exito` (retorno de la pasarela). Identifica el pago solo por el `numeroPago`
- * que guardó W4 (DB-W8-1 opción A, RV-D17); nunca lee ni escribe el DNI (FC12).
+ * Estado de W6: número de pago (de W4 o de `sessionStorage`), DNI (de W4 o cargado en pantalla) y la
+ * consulta de `pagos/estado`, que corre solo cuando el usuario la pide (FC11, FC13).
+ */
+function useVerificacionPago(): VerificacionPago {
+  const { state } = useLocation();
+  const desdeW4 = useMemo(() => leerEstadoVerificacion(state), [state]);
+  // Se lee una vez: la pantalla no escribe en el storage (FC12).
+  const [numeroGuardado] = useState(leerNumeroPagoEnCurso);
+  const [dniIngresado, setDniIngresado] = useState<string | null>(null);
+  const [solicitada, setSolicitada] = useState(false);
+
+  const numeroPago = desdeW4?.numeroPago ?? numeroGuardado;
+  const dni = desdeW4?.dni ?? dniIngresado;
+  const estado = usePagoEnCurso(numeroPago, dni, solicitada);
+  const vista = resolverVista({
+    numeroPago,
+    dni,
+    solicitada,
+    error: estado.error,
+    pago: estado.data,
+  });
+
+  const verificar = () => {
+    if (solicitada) void estado.refetch();
+    else setSolicitada(true);
+  };
+  const cargarDni = (valor: string) => {
+    setDniIngresado(valor);
+    setSolicitada(true);
+  };
+  const limpiarDni = () => {
+    setDniIngresado(null);
+    setSolicitada(false);
+  };
+
+  return {
+    vista,
+    urlPadi: desdeW4 ? (estado.data?.urlPago ?? desdeW4.urlPago) : null,
+    reconsulta: {
+      consultando: estado.isFetching,
+      onConsultar: verificar,
+      etiqueta: desdeW4 ? TEXTOS.yaPague : TEXTOS.volverAConsultar,
+    },
+    verificar,
+    cargarDni,
+    otroDni: desdeW4 === null && dniIngresado !== null ? limpiarDni : undefined,
+  };
+}
+
+/** Elige la tarjeta de W6 según la vista resuelta. */
+function ContenidoPago({
+  vista,
+  urlPadi,
+  reconsulta,
+  verificar,
+  cargarDni,
+  otroDni,
+}: VerificacionPago) {
+  switch (vista.tipo) {
+    case 'no-identificado':
+      return <NoIdentificado onOtroDni={otroDni} />;
+    case 'pedir-dni':
+      return <PedirDni onDni={cargarDni} />;
+    case 'espera-padi':
+      return <EsperaPadi numeroPago={vista.numeroPago} urlPago={urlPadi} onVerificar={verificar} />;
+    case 'cargando':
+      return <EsqueletoResultado />;
+    case 'error':
+      return <ErrorConsulta es429={vista.es429} {...reconsulta} />;
+    case 'aprobado':
+      return <Aprobado pago={vista.pago} dni={vista.dni} />;
+    case 'pendiente':
+      return <Pendiente pago={vista.pago} urlPadi={urlPadi} {...reconsulta} />;
+    case 'rechazado':
+      return <Rechazado />;
+  }
+}
+
+/**
+ * Pantalla W6 `/pago/exito`: espera y verificación del pago. Con PADI llega desde W4 con número de
+ * pago, DNI y link en `location.state`; al volver de otra pasarela usa el `numeroPago` que guardó W4
+ * y pide el DNI (RV-D17, decisión de Martin: número de pago + DNI). El DNI nunca va a storage (FC12).
+ * El estado se pide solo por acción del usuario: "Ya pagué, verificar" o el DNI cargado (FC11, FC13).
  */
 export function PagoAprobadoPage() {
-  // Se lee una vez: la pantalla no escribe en el storage (FC12).
-  const [numeroPago] = useState(leerNumeroPagoEnCurso);
-  const estado = usePagoEnCurso(numeroPago);
-  const vista = resolverVista(numeroPago, estado.error, estado.data);
-  const reconsulta: VolverAConsultarProps = {
-    consultando: estado.isFetching,
-    onConsultar: () => void estado.refetch(),
-  };
+  const verificacion = useVerificacionPago();
 
   return (
     <div className="flex flex-1 items-start justify-center py-sp-24 md:py-sp-40">
-      {vista.tipo === 'no-identificado' ? <NoIdentificado /> : null}
-      {vista.tipo === 'cargando' ? <EsqueletoResultado /> : null}
-      {vista.tipo === 'error' ? <ErrorConsulta es429={vista.es429} {...reconsulta} /> : null}
-      {vista.tipo === 'aprobado' ? <Aprobado pago={vista.pago} /> : null}
-      {vista.tipo === 'pendiente' ? <Pendiente pago={vista.pago} {...reconsulta} /> : null}
-      {vista.tipo === 'rechazado' ? <Rechazado /> : null}
+      <ContenidoPago {...verificacion} />
     </div>
   );
 }
