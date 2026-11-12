@@ -19,7 +19,7 @@ namespace Aseguradora.Tests.Pagos;
 public sealed class PadiWebhooksControllerTests : IDisposable
 {
     private const string Ruta = "/api/webhooks/padi";
-    private const string Secreto = "secreto-de-prueba-de-al-menos-32-caracteres";
+    private const string Secreto = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     private const string IdLink = "3f1a7c2e-9b4d-4e1a-8c5f-2d6b7a9e0c11";
 
     private readonly SqliteDbFixture sqlite = new();

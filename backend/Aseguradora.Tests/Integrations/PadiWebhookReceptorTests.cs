@@ -6,7 +6,7 @@ namespace Aseguradora.Tests.Integrations;
 
 public class PadiWebhookReceptorTests
 {
-    private const string Secreto = "secreto-de-prueba-de-al-menos-32-caracteres";
+    private const string Secreto = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     private const string IdLink = "3f1a7c2e-9b4d-4e1a-8c5f-2d6b7a9e0c11";
 
     internal static string Aviso(string evento = "payment.succeeded", string link = IdLink, string importe = "1500.00") => $$"""

@@ -53,7 +53,7 @@ public class PagosIntegrationsDiTests
         Assert.IsType<PasarelaMockService>(provider.GetRequiredService<IPasarelaResolver>().Obtener("pasarela1"));
     }
 
-    private const string SecretoPadi = "secreto-de-prueba-de-al-menos-32-caracteres";
+    private const string SecretoPadi = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
     private static Dictionary<string, string?> ConfigPadi(string proveedor = "pasarela1") => new()
     {

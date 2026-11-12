@@ -19,7 +19,7 @@ public class PadiPasarelaServiceTests
     private const string Proveedor = "pasarela1";
     private const string IdLink = "3f1a7c2e-9b4d-4e1a-8c5f-2d6b7a9e0c11";
     private const string OtroLink = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-    private const string Secreto = "secreto-de-prueba-de-al-menos-32-caracteres";
+    private const string Secreto = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
     private static string Link(string estado = "Active") => $$"""
         {
