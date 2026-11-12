@@ -151,12 +151,17 @@ describe('GET /api/polizas', () => {
       id: POLIZA_UNO_ID,
       numero: 'POL-0000001',
       clienteId: 'c1000000-0000-0000-0000-000000000001',
+      clienteNombre: 'Juan Carlos Pérez',
       patente: 'AB123CD',
+      vehiculoMarca: 'Toyota',
+      vehiculoModelo: 'Corolla XEi',
+      vehiculoAnio: 2021,
       codigoPlan: 'RC',
       primaMensual: 12000,
       fechaInicio: '2026-11-01',
       fechaFin: '2027-05-01',
       estado: 1,
+      proximoVencimiento: '2027-01-10',
     };
 
     servidorMock.use(

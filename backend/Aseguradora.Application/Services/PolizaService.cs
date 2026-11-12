@@ -106,8 +106,14 @@ public sealed class PolizaService(
             .Skip((filtro.Pagina - 1) * filtro.Tamano)
             .Take(filtro.Tamano)
             .Select(p => new PolizaListItemResponse(
-                p.Id, p.Numero, p.ClienteId, p.Vehiculo.Patente, p.Plan.Codigo,
-                p.PrimaMensual, p.FechaInicio, p.FechaFin, p.Estado))
+                p.Id, p.Numero, p.ClienteId, p.Cliente.Nombre + " " + p.Cliente.Apellido,
+                p.Vehiculo.Patente, p.Vehiculo.Marca, p.Vehiculo.Modelo, p.Vehiculo.Anio, p.Plan.Codigo,
+                p.PrimaMensual, p.FechaInicio, p.FechaFin, p.Estado,
+                // First pending installment by number; its due date is the next one to pay.
+                p.Cuotas.Where(c => c.Estado == EstadoCuota.Pendiente)
+                    .OrderBy(c => c.Numero)
+                    .Select(c => (DateOnly?)c.FechaVencimiento)
+                    .FirstOrDefault()))
             .ToList();
 
         return Task.FromResult(new PaginaResponse<PolizaListItemResponse>(items, filtro.Pagina, filtro.Tamano, total));

@@ -343,14 +343,21 @@ export interface PolizaListItemResponse {
   id: string;
   numero: string;          // "POL-0000001"
   clienteId: string;
+  clienteNombre: string;   // "Nombre Apellido" del titular
   patente: string;
+  vehiculoMarca: string;
+  vehiculoModelo: string;
+  vehiculoAnio: number;
   codigoPlan: string;      // p. ej. "RC", "TC", "TR"
   primaMensual: number;
   fechaInicio: string;     // yyyy-MM-dd
   fechaFin: string;        // yyyy-MM-dd
   estado: EstadoPoliza;    // número, §2
+  proximoVencimiento: string | null; // yyyy-MM-dd: vencimiento de la primera cuota Pendiente (menor número); null si no hay
 }
 ```
+
+`clienteNombre`, los tres datos del vehículo y `proximoVencimiento` los resuelve el back en la misma consulta de la página, sin llamadas extra. Una póliza cancelada (sus cuotas quedan anuladas), vencida (sus cuotas quedan vencidas) o con todo pago no tiene cuota `Pendiente` y devuelve `null`.
 
 ### 5.3 `GET /api/polizas/{id}`: detalle
 

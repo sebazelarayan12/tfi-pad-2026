@@ -12,18 +12,26 @@ import { PolizasListadoPage } from './PolizasListadoPage';
 
 const URL_POLIZAS = '*/api/polizas';
 
-function poliza(indice: number, parcial: Partial<PolizaListItemResponse> = {}): PolizaListItemResponse {
+function poliza(
+  indice: number,
+  parcial: Partial<PolizaListItemResponse> = {},
+): PolizaListItemResponse {
   const numero = String(indice).padStart(7, '0');
   return {
     id: `d1000000-0000-0000-0000-${String(indice).padStart(12, '0')}`,
     numero: `POL-${numero}`,
     clienteId: 'c1000000-0000-0000-0000-000000000001',
+    clienteNombre: 'Juan Carlos Pérez',
     patente: 'AB123CD',
+    vehiculoMarca: 'Toyota',
+    vehiculoModelo: 'Corolla XEi',
+    vehiculoAnio: 2021,
     codigoPlan: 'RC',
     primaMensual: 12000,
     fechaInicio: '2026-11-01',
     fechaFin: '2027-05-01',
     estado: 1,
+    proximoVencimiento: null,
     ...parcial,
   };
 }
@@ -249,7 +257,11 @@ describe('PolizasListadoPage', () => {
   it('tabla: estado muestra la etiqueta de T-10 como texto', async () => {
     servirPolizas(() =>
       HttpResponse.json(
-        pagina([poliza(1, { estado: 0 }), poliza(2, { estado: 3 }), poliza(3, { estado: 4 })], 1, 3),
+        pagina(
+          [poliza(1, { estado: 0 }), poliza(2, { estado: 3 }), poliza(3, { estado: 4 })],
+          1,
+          3,
+        ),
       ),
     );
     renderizar();
@@ -260,12 +272,28 @@ describe('PolizasListadoPage', () => {
     expect(within(tabla).getByText('Vencida')).toBeInTheDocument();
   });
 
-  it('tabla: cliente, vehículo y próximo vencimiento dicen No disponible', async () => {
-    servirPolizas(() => HttpResponse.json(pagina([poliza(1)], 1, 1)));
+  it('tabla: muestra el cliente, el vehículo y el próximo vencimiento', async () => {
+    servirPolizas(() =>
+      HttpResponse.json(pagina([poliza(1, { proximoVencimiento: '2027-01-10' })], 1, 1)),
+    );
     renderizar();
 
-    await screen.findByText('POL-0000001');
-    expect(screen.getAllByText('No disponible')).toHaveLength(3);
+    const tabla = await screen.findByRole('table', { name: 'Pólizas' });
+    expect(within(tabla).getByText('Juan Carlos Pérez')).toBeInTheDocument();
+    expect(within(tabla).getByText('Toyota Corolla XEi 2021')).toBeInTheDocument();
+    expect(within(tabla).getByText('10/01/2027')).toBeInTheDocument();
+    expect(within(tabla).queryByText('No disponible')).not.toBeInTheDocument();
+  });
+
+  it('tabla: sin cuotas pendientes el próximo vencimiento es un guion', async () => {
+    servirPolizas(() =>
+      HttpResponse.json(pagina([poliza(1, { estado: 3, proximoVencimiento: null })], 1, 1)),
+    );
+    renderizar();
+
+    const tabla = await screen.findByRole('table', { name: 'Pólizas' });
+    const fila = within(tabla).getByText('POL-0000001').closest('tr')!;
+    expect(within(fila).getByText('-')).toBeInTheDocument();
   });
 
   it('tabla: vehículo muestra la patente en mono', async () => {
