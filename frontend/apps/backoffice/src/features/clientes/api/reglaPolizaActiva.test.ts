@@ -20,12 +20,17 @@ const poliza = (
   id: numero,
   numero,
   clienteId: 'c1',
+  clienteNombre: 'Juan Carlos Pérez',
   patente,
+  vehiculoMarca: 'Toyota',
+  vehiculoModelo: 'Corolla XEi',
+  vehiculoAnio: 2021,
   codigoPlan: 'RC',
   primaMensual: 1000,
   fechaInicio: '2026-11-01',
   fechaFin: '2027-05-01',
   estado,
+  proximoVencimiento: null,
 });
 
 describe('esPolizaActiva (RN04)', () => {

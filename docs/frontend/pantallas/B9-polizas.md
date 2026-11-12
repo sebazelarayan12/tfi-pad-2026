@@ -184,13 +184,13 @@ Mapeo columna por columna (DTO `PolizaListItemResponse`: `Id`, `Numero`, `Client
 | Columna | Campo | Origen | Estado |
 |---|---|---|---|
 | Número | `Numero` | Lista | Implementado |
-| Cliente | Nombre de `ClienteId` | Clientes | Especificado (D1) |
-| Vehículo (línea 1) | Marca, modelo y año | Vehículos | `PolizaListItemResponse` no trae marca, modelo ni año (D6) |
+| Cliente | `ClienteNombre` | Lista | Implementado (D1 resuelta) |
+| Vehículo (línea 1) | `VehiculoMarca VehiculoModelo VehiculoAnio` | Lista | Implementado (D6 resuelta) |
 | Vehículo (línea 2) | `Patente` | Lista | Implementado |
 | Plan | `CodigoPlan` | Lista | Implementado |
 | Vigencia | `FechaInicio` a `FechaFin` (formato `dd/MM/yyyy a dd/MM/yyyy`) | Lista | Implementado |
 | Estado | `Estado` (badge) | Lista | Implementado (D7 sobre el formato del enum) |
-| Próx. vencimiento | Fecha de la próxima cuota impaga | No hay campo | `NO DEFINIDO` (D5) |
+| Próx. vencimiento | `ProximoVencimiento` (primera cuota `Pendiente`); `-` si es `null` | Lista | Implementado (D5 resuelta) |
 | Menú | — | — | `NO DEFINIDO` |
 
 Chips de estado con conteo: `NO DEFINIDO` (D4).
@@ -230,7 +230,7 @@ Solo desktop. Sin frame mobile en el Figma. Propuesta:
 
 ## 13. Dudas e inconsistencias Figma ↔ back
 
-**D1. Nombre del cliente (crítica).** La lista trae `ClienteId`, no el nombre. El Figma muestra nombres en la columna `Cliente`. Opciones: (a) enriquecer `PolizaListItemResponse` con `NombreCliente`, (b) llamar `GET /api/clientes/{id}` por fila (N+1 sobre 10 filas), (c) un endpoint de lote. Decidir antes de cerrar la tabla. Hoy el endpoint de cliente está `Especificado` (US-F1-06).
+**D1. Nombre del cliente (crítica). RESUELTA: la lista trae `ClienteNombre`.** La lista trae `ClienteId`, no el nombre. El Figma muestra nombres en la columna `Cliente`. Opciones: (a) enriquecer `PolizaListItemResponse` con `NombreCliente`, (b) llamar `GET /api/clientes/{id}` por fila (N+1 sobre 10 filas), (c) un endpoint de lote. Decidir antes de cerrar la tabla. Hoy el endpoint de cliente está `Especificado` (US-F1-06).
 
 **D2. Búsqueda por número y DNI (crítica).** El Figma busca por `número, DNI o patente`. `PolizaFiltro` solo tiene `Patente` (y `ClienteId`). No hay filtro por número de póliza. El DNI requiere resolver primero un `clienteId` con `GET /api/clientes?dni=` (Especificado). Decidir: ampliar el filtro en el back o acotar el texto del campo a lo que existe.
 
@@ -238,9 +238,9 @@ Solo desktop. Sin frame mobile en el Figma. Propuesta:
 
 **D4. Conteos de los chips (media).** Los números (`390`, `27`, `312`, `9`, `15`, `27`) no tienen endpoint. `PaginaResponse.Total` solo da el total del filtro activo. Se requieren seis consultas (una por estado) o un endpoint de conteos. Sin definir.
 
-**D5. Próximo vencimiento (media).** Columna sin campo en `PolizaListItemResponse`. Requiere la cuota impaga más cercana por póliza. Opciones: campo nuevo en la lista, o consulta por fila a `GET /api/polizas/{id}/cuotas`. Además, la regla para "No aplica" no está escrita: el Figma lo muestra en `Vencida` y `Cancelada`; ¿y en `Suspendida`? (en el Figma, `Suspendida` muestra `10/09/2026`).
+**D5. Próximo vencimiento (media). RESUELTA: la lista trae `ProximoVencimiento`, con `-` cuando es `null` (canceladas, vencidas o todo pago).** Columna sin campo en `PolizaListItemResponse`. Requiere la cuota impaga más cercana por póliza. Opciones: campo nuevo en la lista, o consulta por fila a `GET /api/polizas/{id}/cuotas`. Además, la regla para "No aplica" no está escrita: el Figma lo muestra en `Vencida` y `Cancelada`; ¿y en `Suspendida`? (en el Figma, `Suspendida` muestra `10/09/2026`).
 
-**D6. Marca, modelo y año en la lista (media).** `PolizaListItemResponse` no trae marca, modelo ni año. El Figma muestra `Ford Ranger 2017`. Opciones: agregar campos a la lista o consultar `GET /api/vehiculos/{id}` por fila (la lista no trae `VehiculoId`, así que hoy ni siquiera se puede consultar). Hay que agregar `VehiculoId` o los campos.
+**D6. Marca, modelo y año en la lista (media). RESUELTA: la lista trae `VehiculoMarca`, `VehiculoModelo` y `VehiculoAnio`.** `PolizaListItemResponse` no trae marca, modelo ni año. El Figma muestra `Ford Ranger 2017`. Opciones: agregar campos a la lista o consultar `GET /api/vehiculos/{id}` por fila (la lista no trae `VehiculoId`, así que hoy ni siquiera se puede consultar). Hay que agregar `VehiculoId` o los campos.
 
 **D7. Formato del enum en query y en JSON (media).** Ver B8 D12. Afecta a `estado` en el filtro y al badge.
 

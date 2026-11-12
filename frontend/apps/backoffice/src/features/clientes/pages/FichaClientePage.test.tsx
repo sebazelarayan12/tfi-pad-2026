@@ -28,12 +28,17 @@ const POLIZA: PolizaListItemResponse = {
   id: 'd1000000-0000-0000-0000-000000000001',
   numero: 'POL-0000001',
   clienteId: CLIENTE_JUAN_ID,
+  clienteNombre: 'Juan Carlos Pérez',
   patente: 'AB123CD',
+  vehiculoMarca: 'Toyota',
+  vehiculoModelo: 'Corolla XEi',
+  vehiculoAnio: 2021,
   codigoPlan: 'RC',
   primaMensual: 12000,
   fechaInicio: '2026-11-01',
   fechaFin: '2027-05-01',
   estado: ESTADO_POLIZA_NUMERO.Vigente,
+  proximoVencimiento: null,
 };
 
 function montar(ruta = `/clientes/${CLIENTE_JUAN_ID}`) {

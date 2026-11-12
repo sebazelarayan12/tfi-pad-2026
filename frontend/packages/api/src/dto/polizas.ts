@@ -67,7 +67,12 @@ export interface PolizaListItemResponse {
   /** "POL-0000001". */
   numero: string;
   clienteId: string;
+  /** "Nombre Apellido" del titular. */
+  clienteNombre: string;
   patente: string;
+  vehiculoMarca: string;
+  vehiculoModelo: string;
+  vehiculoAnio: number;
   codigoPlan: string;
   primaMensual: number;
   /** "yyyy-MM-dd". */
@@ -75,6 +80,8 @@ export interface PolizaListItemResponse {
   /** "yyyy-MM-dd". */
   fechaFin: string;
   estado: EstadoPolizaNumero;
+  /** "yyyy-MM-dd": vencimiento de la primera cuota `Pendiente`; `null` si no tiene. */
+  proximoVencimiento: string | null;
 }
 
 /** Cuota de una póliza (contrato §5.5). */
