@@ -19,6 +19,18 @@ public sealed class PublicoPagosController(IPagoService pagos) : PublicoControll
     public async Task<ActionResult<FacturaResponse>> ObtenerFactura(PublicoFacturaRequest request, CancellationToken ct) =>
         Ok(await pagos.ObtenerFacturaPublicaAsync(request, ct));
 
+    /// <summary>
+    /// Estado de un pago con el DNI del titular y el número de pago (PB-01, RN20). Si es de pasarela y sigue
+    /// pendiente, consulta a la pasarela antes de responder (botón "Ya pagué"). 404 genérico si no coinciden.
+    /// </summary>
+    [HttpPost("pagos/estado")]
+    [ProducesResponseType(typeof(EstadoPagoPublicoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<EstadoPagoPublicoResponse>> ConsultarEstado(PublicoEstadoPagoRequest request, CancellationToken ct) =>
+        Ok(await pagos.ConsultarEstadoPublicoAsync(request, ct));
+
     /// <summary>Inicia un pago online con la pasarela elegida y devuelve el link de pago.</summary>
     [HttpPost("pagos")]
     [ProducesResponseType(typeof(PagoPublicoResponse), StatusCodes.Status201Created)]

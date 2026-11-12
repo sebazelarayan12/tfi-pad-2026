@@ -5,7 +5,7 @@ import type {
   ConsultaPublicaResponse,
   CuponPublicoRequest,
   CuponPublicoRespuestaMock,
-  EstadoPagoPublicoMock,
+  EstadoPagoPublico,
   FacturaPublica,
   MedioPagoPublicoMock,
   PagoPublicoRequest,
@@ -63,14 +63,14 @@ export function cuponPublicoMock(
 }
 
 /**
- * MOCK (PB-01): `POST /api/publico/pagos/estado` no existe en el back.
- * Solo lo implementa el handler MSW. W-08 lo usa con `VITE_USE_MOCKS` y body `{ numeroPago }`.
+ * `POST /api/publico/pagos/estado` (PB-01). Anónimo, con número de pago + DNI; no reintentar
+ * (RN20, FC13). Si el pago de pasarela sigue pendiente, el back consulta a la pasarela antes de responder.
  */
-export function estadoPagoPublicoMock(
+export function consultarEstadoPagoPublico(
   api: ApiClient,
   body: ConsultaEstadoPagoRequest,
-): Promise<EstadoPagoPublicoMock> {
-  return api.post<EstadoPagoPublicoMock>('/api/publico/pagos/estado', body);
+): Promise<EstadoPagoPublico> {
+  return api.post<EstadoPagoPublico>('/api/publico/pagos/estado', body);
 }
 
 /**

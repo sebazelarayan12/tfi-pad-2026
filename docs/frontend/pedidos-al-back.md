@@ -14,7 +14,7 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 
 | ID | Título | Tipo | Severidad | Pantallas afectadas | Estado |
 |----|--------|------|-----------|---------------------|--------|
-| PB-01 | Estado público del pago y recuperación por número de pago | Falta endpoint | Bloquea | W4, W6 | Falta endpoint |
+| PB-01 | Estado público del pago y recuperación por número de pago | Falta endpoint | Bloquea | W4, W6 | Resuelto: `POST /api/publico/pagos/estado` con `numeroPago` + `dni` (decisión de Martin, 2026-11-12) |
 | PB-02 | Cupón público de Pago Fácil `POST /api/publico/cupon` | Falta endpoint | Bloquea | W3, W4, W5 | Falta endpoint |
 | PB-03 | Resumen de clientes: faltan Renaper y conteos | Inconsistencia de contrato | Degrada | B3 (B-04) | Resuelto: el resumen trae `validadoRenaper`, `cantidadVehiculos` y `cantidadPolizasActivas` |
 | PB-04 | Usuarios: listado, edición, activar/desactivar, último ingreso, nombre | Falta endpoint | Bloquea | B14, B1, B2 | Falta endpoint |
@@ -51,6 +51,9 @@ Convención de workaround: MSW (`frontend/packages/api/mocks`, `VITE_USE_MOCKS=t
 ## Fichas
 
 ### PB-01. Estado público del pago y recuperación por número de pago
+
+- **Resuelto (2026-11-12).** `POST /api/publico/pagos/estado` existe en el back (`PublicoPagosController`, RN20). **Decisión de seguridad tomada por Martin el 2026-11-12: pide `numeroPago` + `dni`** (no solo el número), así que la opción "sin DNI" de abajo queda descartada. Body `{ dni: string /* ^\d{8}$ */, numeroPago: string }`; respuesta 200 `{ numeroPago, estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO', fechaAcreditacion: string | null /* UTC con Z */, urlPago: string | null, factura: FacturaResponse | null }`; 400 si falta o es inválido el DNI; 404 genérico (mismo mensaje que el resto de `/api/publico`) si DNI y número no coinciden; 429 por RN20. Si el pago es de pasarela y sigue pendiente, el back consulta a la pasarela antes de responder (decisión de Martin: "webhook + consulta"); si la pasarela no contesta devuelve el estado guardado. `urlPago` solo viene con el pago pendiente y dentro de `Pagos:ReservaMinutos`. Como la web no guarda el DNI (FC12), viaja en `location.state` y, si no está, la pantalla lo pide. `POST /api/publico/factura` sigue exigiendo `dni`.
+- **Texto original del pedido (histórico):**
 
 - **Qué pasa hoy.** `Controllers/PublicoPagosController.cs` solo expone `POST /api/publico/factura` (línea 14) y `POST /api/publico/pagos` (línea 23). No hay ningún endpoint público que devuelva `PENDIENTE` / `APROBADO` / `RECHAZADO`. `GET /api/pagos/{id}` (`PagosController.cs:38`) requiere `Politicas.Empleado`. `POST /api/publico/factura` devuelve 404 tanto si el pago está pendiente como si fue rechazado (`contratos-api/pagos-facturas.md` §5 paso 6). La URL de retorno (`Pagos:UrlRetornoExito`, `PagoOnlineOpciones.cs:19`) es fija y no lleva `numeroPago`. Tampoco hay forma de recuperar el `urlPago` de un pago ya creado (si se pierde el 201 de `POST /api/publico/pagos`, las cuotas quedan reservadas `ReservaMinutos`).
 - **Qué necesita el front y por qué.** W6 ("Pago aprobado") debe mostrar el estado real del pago sin depender del webhook asíncrono. W4 necesita poder recuperar un pago en curso. Sin esto, un pago rechazado y uno pendiente se ven igual.
