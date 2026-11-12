@@ -3,6 +3,8 @@ using Aseguradora.Integrations.Arca;
 using Aseguradora.Integrations.Configuration;
 using Aseguradora.Integrations.Pasarela;
 using Aseguradora.Integrations.Options;
+using Aseguradora.Integrations.Padi;
+using Aseguradora.Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +17,11 @@ public static class DependencyInjection
 {
     private const string Pasarela1 = "pasarela1";
     private const string Pasarela2 = "pasarela2";
+    /// <summary>El link de PADI vence estos minutos antes que la reserva de las cuotas (Pagos:ReservaMinutos).</summary>
+    public const int MargenLinkPadiMinutos = 10;
+    private const int ReservaMinutosPorDefecto = 60;
+    private const int LargoMinimoSecretoPadi = 32;
+    private const int LargoMaximoSecretoPadi = 256;
 
     /// <summary>Registra los servicios del frente de pagos según configuración.</summary>
     public static IServiceCollection AddPagosIntegrations(this IServiceCollection services, IConfiguration configuration)
@@ -24,6 +31,8 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         var proveedores = new[] { Pasarela1, Pasarela2 };
         var pasarelasReales = new HashSet<string>();
+        int? ttlPadi = null;
+        string? secretoPadi = null;
         foreach (var proveedor in proveedores)
         {
             var key = $"Integraciones:Pasarelas:{proveedor}";
@@ -33,6 +42,11 @@ public static class DependencyInjection
             if (options.UsarMock) continue;
 
             pasarelasReales.Add(proveedor);
+            if (options.Tipo == TiposPasarela.Padi)
+            {
+                ttlPadi = ValidarPadi(proveedor, options, configuration);
+                secretoPadi = options.WebhookSecret;
+            }
             services.AgregarClienteResiliente<IntegracionOptions>(configuration, SeccionPasarela(proveedor));
         }
         var arca = configuration.GetSection("Integraciones:Arca").Get<ArcaOptions>() ?? new();
@@ -40,20 +54,43 @@ public static class DependencyInjection
         services.Configure<ArcaOptions>(configuration.GetSection("Integraciones:Arca"));
         services.AddSingleton<IPasarelaResolver>(provider => new PasarelaResolver(
             proveedores.ToDictionary(nombre => nombre,
-                nombre => CrearPasarela(provider, nombre, pasarelasReales.Contains(nombre)))));
+                nombre => CrearPasarela(provider, nombre, pasarelasReales.Contains(nombre), nombre == Pasarela1 ? ttlPadi : null))));
+        services.AddSingleton(new PadiWebhookReceptor(ttlPadi is not null, secretoPadi));
         // The mock keeps its payments in memory, so it stays a singleton; AgregarIntegracion would make it scoped.
         if (arca.UsarMock) services.AddSingleton<IArcaService, ArcaMockService>();
         else services.AgregarIntegracion<IArcaService, ArcaMockService, ArcaHttpService>(configuration, "Arca");
         return services;
     }
 
-    private static IPasarelaService CrearPasarela(IServiceProvider provider, string proveedor, bool real)
+    private static IPasarelaService CrearPasarela(IServiceProvider provider, string proveedor, bool real, int? ttlPadi)
     {
         if (!real)
             return new PasarelaMockService(proveedor, provider.GetRequiredService<TimeProvider>());
 
         var cliente = provider.GetRequiredService<IHttpClientFactory>().CreateClient(SeccionPasarela(proveedor));
+        if (ttlPadi is { } ttl)
+            return new PadiPasarelaService(proveedor, ttl, cliente, provider.GetRequiredService<ILoggerFactory>().CreateLogger<PadiPasarelaService>());
         return new PasarelaHttpService(proveedor, cliente, provider.GetRequiredService<ILoggerFactory>().CreateLogger<PasarelaHttpService>());
+    }
+
+    // PADI reemplaza solo a pasarela1, necesita el secreto del webhook y un link que venza antes que la reserva.
+    private static int ValidarPadi(string proveedor, PasarelaOptions options, IConfiguration configuration)
+    {
+        var seccion = $"Integraciones:Pasarelas:{proveedor}";
+        if (proveedor != Pasarela1)
+            throw new InvalidOperationException($"{seccion}:Tipo Padi solo se admite en {Pasarela1}.");
+        if (options.WebhookSecret is not { Length: >= LargoMinimoSecretoPadi and <= LargoMaximoSecretoPadi }
+            || string.IsNullOrWhiteSpace(options.WebhookSecret))
+            throw new InvalidOperationException(
+                $"{seccion}:WebhookSecret es obligatorio con Tipo Padi y debe tener entre {LargoMinimoSecretoPadi} y {LargoMaximoSecretoPadi} caracteres.");
+
+        var reserva = configuration.GetValue<int?>($"{PagoOnlineOpciones.Seccion}:{nameof(PagoOnlineOpciones.ReservaMinutos)}")
+            ?? ReservaMinutosPorDefecto;
+        var ttl = options.TtlMinutos ?? reserva - MargenLinkPadiMinutos;
+        if (ttl < 1 || ttl >= reserva)
+            throw new InvalidOperationException(
+                $"{seccion}:TtlMinutos ({ttl}) debe ser al menos 1 y menor que Pagos:ReservaMinutos ({reserva}).");
+        return ttl;
     }
 
     private static string SeccionPasarela(string proveedor) => $"Pasarelas:{proveedor}";

@@ -35,6 +35,11 @@ services:
       Integraciones__Arca__BaseUrl: ${INTEGRACIONES_ARCA_BASEURL:-https://facturar-api-utn-frt-gncabkgzghh2gbf2.brazilsouth-01.azurewebsites.net}
       Integraciones__Arca__ApiKey: ${INTEGRACIONES_ARCA_APIKEY}
       Integraciones__Pasarelas__pasarela1__ApiKey: ${INTEGRACIONES_PASARELA1_APIKEY}
+      # pasarela1 can be PADI (Tipo=Padi) instead of the contract 9.3 client; see docs/integraciones.md.
+      Integraciones__Pasarelas__pasarela1__UsarMock: ${INTEGRACIONES_PASARELA1_USAR_MOCK:-true}
+      Integraciones__Pasarelas__pasarela1__Tipo: ${INTEGRACIONES_PASARELA1_TIPO:-Contrato93}
+      Integraciones__Pasarelas__pasarela1__BaseUrl: ${INTEGRACIONES_PASARELA1_BASEURL:-https://padi.runasp.net}
+      Integraciones__Pasarelas__pasarela1__WebhookSecret: ${INTEGRACIONES_PASARELA1_WEBHOOK_SECRET:-}
       Integraciones__Pasarelas__pasarela2__ApiKey: ${INTEGRACIONES_PASARELA2_APIKEY}
       PagoFacil__CodigoEmpresa: ${PAGOFACIL_CODIGO_EMPRESA}
       # Online payment (CU15). The gateway calls back at Pagos__UrlBaseApi; production must set the public API URL.
