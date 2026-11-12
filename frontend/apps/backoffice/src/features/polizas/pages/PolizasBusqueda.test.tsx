@@ -24,12 +24,17 @@ function poliza(indice: number): PolizaListItemResponse {
     id: `d1000000-0000-0000-0000-${String(indice).padStart(12, '0')}`,
     numero: `POL-${String(indice).padStart(7, '0')}`,
     clienteId: CLIENTE_ID,
+    clienteNombre: 'Juan Carlos Pérez',
     patente: 'AB123CD',
+    vehiculoMarca: 'Toyota',
+    vehiculoModelo: 'Corolla XEi',
+    vehiculoAnio: 2021,
     codigoPlan: 'RC',
     primaMensual: 12000,
     fechaInicio: '2026-11-01',
     fechaFin: '2027-05-01',
     estado: 1,
+    proximoVencimiento: null,
   };
 }
 

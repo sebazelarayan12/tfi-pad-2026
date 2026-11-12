@@ -51,12 +51,17 @@ export const POLIZA_57: PolizaListItemResponse = {
   id: POLIZA_ID,
   numero: 'POL-0000057',
   clienteId: 'cliente-1',
+  clienteNombre: 'Juan Carlos Pérez',
   patente: 'AB123CD',
+  vehiculoMarca: 'Toyota',
+  vehiculoModelo: 'Corolla XEi',
+  vehiculoAnio: 2021,
   codigoPlan: 'TC',
   primaMensual: 25000,
   fechaInicio: '2026-03-01',
   fechaFin: '2027-03-01',
   estado: 1,
+  proximoVencimiento: null,
 };
 
 export function cuotaDePoliza(numero: number, estado: CuotaResponse['estado']): CuotaResponse {

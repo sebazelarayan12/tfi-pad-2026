@@ -86,6 +86,35 @@ public sealed class PolizaServiceConsultaTests : IDisposable
         Assert.Equal(SeedData.PolizaId, Assert.Single(pagina.Items).Id);
     }
 
+    [Fact]
+    public async Task Listar_IncluyeClienteVehiculoYProximoVencimiento()
+    {
+        await using var context = _fixture.CreateContext();
+
+        var pagina = await PolizasDePrueba.CrearServicio(context).ListarAsync(new PolizaFiltro());
+
+        var item = Assert.Single(pagina.Items);
+        Assert.Equal("Juan Carlos Pérez", item.ClienteNombre);
+        Assert.Equal("Toyota", item.VehiculoMarca);
+        Assert.Equal("Corolla XEi", item.VehiculoModelo);
+        Assert.Equal(2021, item.VehiculoAnio);
+        // The seeded installment 1 is paid, so the next due date is installment 2's.
+        Assert.Equal(new DateOnly(2026, 12, 10), item.ProximoVencimiento);
+    }
+
+    [Fact]
+    public async Task Listar_ProximoVencimientoEsNuloSinCuotasPendientes()
+    {
+        await using var context = _fixture.CreateContext();
+        foreach (var cuota in context.Cuotas.Where(c => c.Estado == EstadoCuota.Pendiente))
+            cuota.Estado = EstadoCuota.Pagada;
+        await context.SaveChangesAsync();
+
+        var pagina = await PolizasDePrueba.CrearServicio(context).ListarAsync(new PolizaFiltro());
+
+        Assert.Null(Assert.Single(pagina.Items).ProximoVencimiento);
+    }
+
     [Theory]
     [InlineData("AB123CD")]
     [InlineData(" ab123cd ")]

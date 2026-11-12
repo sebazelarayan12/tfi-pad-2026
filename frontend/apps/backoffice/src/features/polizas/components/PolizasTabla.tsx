@@ -7,25 +7,18 @@ import {
 import { Chip, EstadoBadge, Table, type TableColumn } from '@nexa/ui';
 import { Link } from 'react-router-dom';
 
-import { TEXTO_NO_DISPONIBLE } from '../textos';
 import { PolizaVehiculoCelda } from './PolizaVehiculoCelda';
 
-/** La lista no trae cliente, vehículo ni próximo vencimiento (D1, D5, D6 de B9; DP-B13-01). */
-type FilaPoliza = PolizaListItemResponse & {
-  cliente: null;
-  vehiculo: null;
-  proximoVencimiento: null;
-};
+/** Sin cuotas pendientes (póliza vencida o cancelada, o con todo pago) no hay próximo vencimiento. */
+const SIN_VENCIMIENTO = '-';
 
-const noDisponible = () => <span className="text-text-secondary">{TEXTO_NO_DISPONIBLE}</span>;
-
-function celdaEstado(fila: FilaPoliza) {
+function celdaEstado(fila: PolizaListItemResponse) {
   const badge = badgeEnum('EstadoPoliza', fila.estado);
   const etiqueta = etiquetaEnum('EstadoPoliza', fila.estado);
   return badge === null ? etiqueta : <EstadoBadge estado={badge} texto={etiqueta} />;
 }
 
-const COLUMNAS: ReadonlyArray<TableColumn<FilaPoliza>> = [
+const COLUMNAS: ReadonlyArray<TableColumn<PolizaListItemResponse>> = [
   {
     key: 'numero',
     width: 124,
@@ -40,12 +33,19 @@ const COLUMNAS: ReadonlyArray<TableColumn<FilaPoliza>> = [
       </Link>
     ),
   },
-  { key: 'cliente', header: 'Cliente', width: 176, render: noDisponible },
+  { key: 'clienteNombre', header: 'Cliente', width: 176, render: (fila) => fila.clienteNombre },
   {
-    key: 'vehiculo',
+    key: 'vehiculoMarca',
     width: 210,
     header: 'Vehículo',
-    render: (fila) => <PolizaVehiculoCelda patente={fila.patente} />,
+    render: (fila) => (
+      <PolizaVehiculoCelda
+        marca={fila.vehiculoMarca}
+        modelo={fila.vehiculoModelo}
+        anio={fila.vehiculoAnio}
+        patente={fila.patente}
+      />
+    ),
   },
   {
     key: 'codigoPlan',
@@ -64,7 +64,15 @@ const COLUMNAS: ReadonlyArray<TableColumn<FilaPoliza>> = [
     ),
   },
   { key: 'estado', header: 'Estado', width: 124, render: celdaEstado },
-  { key: 'proximoVencimiento', header: 'Próx. vencimiento', width: 132, render: noDisponible },
+  {
+    key: 'proximoVencimiento',
+    header: 'Próx. vencimiento',
+    width: 132,
+    render: (fila) =>
+      fila.proximoVencimiento === null
+        ? SIN_VENCIMIENTO
+        : formatearFechaCalendario(fila.proximoVencimiento),
+  },
 ];
 
 interface PolizasTablaProps {
@@ -72,12 +80,7 @@ interface PolizasTablaProps {
 }
 
 export function PolizasTabla({ polizas }: PolizasTablaProps) {
-  const filas: FilaPoliza[] = polizas.map((poliza) => ({
-    ...poliza,
-    cliente: null,
-    vehiculo: null,
-    proximoVencimiento: null,
-  }));
-
-  return <Table caption="Pólizas" columns={COLUMNAS} rows={filas} getRowKey={(fila) => fila.id} />;
+  return (
+    <Table caption="Pólizas" columns={COLUMNAS} rows={polizas} getRowKey={(fila) => fila.id} />
+  );
 }
