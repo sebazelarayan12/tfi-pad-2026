@@ -478,7 +478,7 @@ describe('PagoAprobadoPage sin DNI en memoria', () => {
 });
 
 describe('PagoAprobadoPage con PADI (pestaña nueva)', () => {
-  it('muestra la espera con el link a PADI y no consulta hasta el clic', async () => {
+  it('muestra la espera con el link a PADI y no consulta hasta abrir PADI o verificar', async () => {
     sessionStorage.clear();
     const espia = espiarPedidos();
     renderizar(estadoPadi());
@@ -553,6 +553,70 @@ describe('PagoAprobadoPage con PADI (pestaña nueva)', () => {
     expect(
       await screen.findByText('Hiciste muchos intentos. Esperá un minuto y volvé a probar.'),
     ).toBeVisible();
+  });
+
+  it('al abrir PADI consulta sola cada 10 s y pasa a Pago aprobado sin tocar nada', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    servidorMock.use(variantesPublico.estadoPendiente);
+    const espia = espiarPedidos();
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderizar(estadoPadi());
+
+    await usuario.click(await screen.findByRole('link', { name: /Abrir PADI para pagar/ }));
+    await waitFor(() => expect(espia.deRuta('/pagos/estado')).toHaveLength(1));
+    expect(espia.deRuta('/pagos/estado')[0]?.body).toEqual({ numeroPago: NUMERO_PAGO, dni: DNI });
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Completá el pago en PADI' }),
+    ).toBeVisible();
+
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    await waitFor(() => expect(espia.deRuta('/pagos/estado')).toHaveLength(2));
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Completá el pago en PADI' }),
+    ).toBeVisible();
+
+    usarEstado(estadoAprobado());
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Pago aprobado' })).toBeVisible();
+
+    const pedidos = espia.deRuta('/pagos/estado').length;
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    expect(espia.deRuta('/pagos/estado')).toHaveLength(pedidos);
+    espia.soltar();
+  });
+
+  it('el sondeo se corta ante un 429 y no reintenta', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    servidorMock.use(variantesPublico.estado429);
+    const espia = espiarPedidos();
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderizar(estadoPadi());
+
+    await usuario.click(await screen.findByRole('link', { name: /Abrir PADI para pagar/ }));
+    expect(
+      await screen.findByText('Hiciste muchos intentos. Esperá un minuto y volvé a probar.'),
+    ).toBeVisible();
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    expect(espia.deRuta('/pagos/estado')).toHaveLength(1);
+    espia.soltar();
+  });
+
+  it('el sondeo se corta a los 50 minutos', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    servidorMock.use(variantesPublico.estadoPendiente);
+    const espia = espiarPedidos();
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderizar(estadoPadi());
+
+    await usuario.click(await screen.findByRole('link', { name: /Abrir PADI para pagar/ }));
+    await act(() => vi.advanceTimersByTimeAsync(50 * 60_000));
+    const pedidos = espia.deRuta('/pagos/estado').length;
+    expect(pedidos).toBeGreaterThan(1);
+
+    await act(() => vi.advanceTimersByTimeAsync(5 * 60_000));
+    expect(espia.deRuta('/pagos/estado')).toHaveLength(pedidos);
+    espia.soltar();
   });
 
   it('no tiene violaciones de accesibilidad (espera)', async () => {

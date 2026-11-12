@@ -133,14 +133,17 @@ function BotonConsultarPoliza() {
   );
 }
 
-/** Abre el checkout de PADI en otra pestaña por gesto del usuario (no `window.open` tras un `await`). */
-function AbrirPadi({ urlPago }: { urlPago: string }) {
+/**
+ * Abre el checkout de PADI en otra pestaña por gesto del usuario (no `window.open` tras un `await`).
+ * Al abrirlo empieza el sondeo del estado, así el cliente no tiene que volver a verificar a mano.
+ */
+function AbrirPadi({ urlPago, onAbrir }: { urlPago: string; onAbrir: () => void }) {
   return (
     <ButtonLink
       label={TEXTOS.abrirPadi}
       href={urlPago}
       variant="secondary"
-      renderLink={renderLinkPestanaNueva}
+      renderLink={(propiedades) => renderLinkPestanaNueva({ ...propiedades, onClick: onAbrir })}
     />
   );
 }
@@ -220,11 +223,15 @@ function PedirDni({ onDni }: { onDni: (dni: string) => void }) {
 interface EsperaPadiProps {
   numeroPago: string;
   urlPago: string | null;
+  onAbrir: () => void;
   onVerificar: () => void;
 }
 
-/** Espera de PADI: el cliente paga en otra pestaña y verifica acá por clic (sin polling, FC13). */
-function EsperaPadi({ numeroPago, urlPago, onVerificar }: EsperaPadiProps) {
+/**
+ * Espera de PADI: el cliente paga en otra pestaña. Desde que la abre la pantalla consulta sola cada
+ * pocos segundos y el botón "Ya pagué, verificar" queda como respaldo.
+ */
+function EsperaPadi({ numeroPago, urlPago, onAbrir, onVerificar }: EsperaPadiProps) {
   return (
     <ResultadoPago
       tono="neutro"
@@ -233,7 +240,7 @@ function EsperaPadi({ numeroPago, urlPago, onVerificar }: EsperaPadiProps) {
       subtitulo={TEXTOS.esperaSubtitulo}
       acciones={
         <>
-          {urlPago ? <AbrirPadi urlPago={urlPago} /> : null}
+          {urlPago ? <AbrirPadi urlPago={urlPago} onAbrir={onAbrir} /> : null}
           <Button label={TEXTOS.yaPague} onClick={onVerificar} />
         </>
       }
@@ -257,15 +264,27 @@ interface EntradaVista {
   numeroPago: string | null;
   dni: string | null;
   solicitada: boolean;
+  /** El cliente abrió PADI y la pantalla consulta sola. */
+  sondeando: boolean;
   error: unknown;
   pago: EstadoPagoPublico | undefined;
 }
 
 /** Qué mostrar según el número de pago, el DNI, si ya se pidió el estado y la respuesta (W-08 §9). */
-function resolverVista({ numeroPago, dni, solicitada, error, pago }: EntradaVista): Vista {
+function resolverVista({
+  numeroPago,
+  dni,
+  solicitada,
+  sondeando,
+  error,
+  pago,
+}: EntradaVista): Vista {
   if (numeroPago === null) return { tipo: 'no-identificado' };
   if (dni === null) return { tipo: 'pedir-dni' };
-  if (!solicitada) return { tipo: 'espera-padi', numeroPago };
+  if (!solicitada && !sondeando) return { tipo: 'espera-padi', numeroPago };
+  // Sondeo sin clic del cliente: sigue en la espera mientras no haya error ni cambio de estado.
+  if (!solicitada && !error && (pago === undefined || pago.estado === 'PENDIENTE'))
+    return { tipo: 'espera-padi', numeroPago };
   if (error) {
     if (isApiError(error) && error.status === 404) return { tipo: 'no-identificado' };
     return { tipo: 'error', es429: isApiError(error) && error.status === 429 };
@@ -316,8 +335,13 @@ function Aprobado({ pago, dni }: { pago: EstadoPagoPublico; dni: string }) {
 function Pendiente({
   pago,
   urlPadi,
+  onAbrir,
   ...reconsulta
-}: { pago: EstadoPagoPublico; urlPadi: string | null } & VolverAConsultarProps) {
+}: {
+  pago: EstadoPagoPublico;
+  urlPadi: string | null;
+  onAbrir: () => void;
+} & VolverAConsultarProps) {
   return (
     <ResultadoPago
       tono="neutro"
@@ -326,7 +350,7 @@ function Pendiente({
       subtitulo={TEXTOS.verificandoSubtitulo}
       acciones={
         <>
-          {urlPadi ? <AbrirPadi urlPago={urlPadi} /> : null}
+          {urlPadi ? <AbrirPadi urlPago={urlPadi} onAbrir={onAbrir} /> : null}
           <VolverAConsultar {...reconsulta} />
         </>
       }
@@ -363,6 +387,7 @@ interface VerificacionPago {
   vista: Vista;
   urlPadi: string | null;
   reconsulta: VolverAConsultarProps;
+  abrirPadi: () => void;
   verificar: () => void;
   cargarDni: (dni: string) => void;
   otroDni: (() => void) | undefined;
@@ -379,21 +404,31 @@ function useVerificacionPago(): VerificacionPago {
   const [numeroGuardado] = useState(leerNumeroPagoEnCurso);
   const [dniIngresado, setDniIngresado] = useState<string | null>(null);
   const [solicitada, setSolicitada] = useState(false);
+  // Instante en que el cliente abrió PADI; `null` mientras no lo abrió.
+  const [sondeoDesde, setSondeoDesde] = useState<number | null>(null);
 
   const numeroPago = desdeW4?.numeroPago ?? numeroGuardado;
   const dni = desdeW4?.dni ?? dniIngresado;
-  const estado = usePagoEnCurso(numeroPago, dni, solicitada);
+  const sondeando = sondeoDesde !== null;
+  const estado = usePagoEnCurso(
+    numeroPago,
+    dni,
+    solicitada || sondeando,
+    sondeoDesde === null ? null : { desde: sondeoDesde },
+  );
   const vista = resolverVista({
     numeroPago,
     dni,
     solicitada,
+    sondeando,
     error: estado.error,
     pago: estado.data,
   });
 
+  const abrirPadi = () => setSondeoDesde((desde) => desde ?? Date.now());
   const verificar = () => {
-    if (solicitada) void estado.refetch();
-    else setSolicitada(true);
+    if (solicitada || sondeando) void estado.refetch();
+    setSolicitada(true);
   };
   const cargarDni = (valor: string) => {
     setDniIngresado(valor);
@@ -412,6 +447,7 @@ function useVerificacionPago(): VerificacionPago {
       onConsultar: verificar,
       etiqueta: desdeW4 ? TEXTOS.yaPague : TEXTOS.volverAConsultar,
     },
+    abrirPadi,
     verificar,
     cargarDni,
     otroDni: desdeW4 === null && dniIngresado !== null ? limpiarDni : undefined,
@@ -423,6 +459,7 @@ function ContenidoPago({
   vista,
   urlPadi,
   reconsulta,
+  abrirPadi,
   verificar,
   cargarDni,
   otroDni,
@@ -433,7 +470,14 @@ function ContenidoPago({
     case 'pedir-dni':
       return <PedirDni onDni={cargarDni} />;
     case 'espera-padi':
-      return <EsperaPadi numeroPago={vista.numeroPago} urlPago={urlPadi} onVerificar={verificar} />;
+      return (
+        <EsperaPadi
+          numeroPago={vista.numeroPago}
+          urlPago={urlPadi}
+          onAbrir={abrirPadi}
+          onVerificar={verificar}
+        />
+      );
     case 'cargando':
       return <EsqueletoResultado />;
     case 'error':
@@ -441,7 +485,7 @@ function ContenidoPago({
     case 'aprobado':
       return <Aprobado pago={vista.pago} dni={vista.dni} />;
     case 'pendiente':
-      return <Pendiente pago={vista.pago} urlPadi={urlPadi} {...reconsulta} />;
+      return <Pendiente pago={vista.pago} urlPadi={urlPadi} onAbrir={abrirPadi} {...reconsulta} />;
     case 'rechazado':
       return <Rechazado />;
   }
@@ -451,7 +495,8 @@ function ContenidoPago({
  * Pantalla W6 `/pago/exito`: espera y verificación del pago. Con PADI llega desde W4 con número de
  * pago, DNI y link en `location.state`; al volver de otra pasarela usa el `numeroPago` que guardó W4
  * y pide el DNI (RV-D17, decisión de Martin: número de pago + DNI). El DNI nunca va a storage (FC12).
- * El estado se pide solo por acción del usuario: "Ya pagué, verificar" o el DNI cargado (FC11, FC13).
+ * El estado se pide por acción del usuario ("Ya pagué, verificar", el DNI cargado o abrir PADI, que además
+ * activa el sondeo cada 10 s; FC11, FC13).
  */
 export function PagoAprobadoPage() {
   const verificacion = useVerificacionPago();
