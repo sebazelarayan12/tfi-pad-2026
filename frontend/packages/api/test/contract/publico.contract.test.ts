@@ -6,7 +6,7 @@ import {
   crearPagoPublico,
   createApiClient,
   cuponPublicoMock,
-  estadoPagoPublicoMock,
+  consultarEstadoPagoPublico,
   listarMediosPagoMock,
   obtenerFacturaPublica,
   publicoKeys,
@@ -368,7 +368,7 @@ it('Mock cupón (PB-02) devuelve 404 genérico (MOCK)', async () => {
   expect(error.detail).toBe(mensajeNoEncontrado);
 });
 
-it('Mock estado de pago (PB-01) usa DNI en el cuerpo y nunca en la URL', async () => {
+it('POST pagos/estado (PB-01) manda el DNI en el cuerpo y nunca en la URL', async () => {
   let dniEnCuerpo: string | undefined;
   let urlSinDni = false;
   servidorMock.use(
@@ -386,7 +386,7 @@ it('Mock estado de pago (PB-01) usa DNI en el cuerpo y nunca en la URL', async (
     }),
   );
 
-  const estado = await estadoPagoPublicoMock(anonimo, estadoBody);
+  const estado = await consultarEstadoPagoPublico(anonimo, estadoBody);
 
   expect(dniEnCuerpo).toBe('30123456');
   expect(urlSinDni).toBe(true);
@@ -396,10 +396,41 @@ it('Mock estado de pago (PB-01) usa DNI en el cuerpo y nunca en la URL', async (
 it.each([
   ['pendiente', variantes.estadoPendiente, 'PENDIENTE'],
   ['rechazado', variantes.estadoRechazado, 'RECHAZADO'],
-] as const)('Mock estado de pago (PB-01) devuelve %s (MOCK)', async (_caso, handler, estado) => {
+] as const)('POST pagos/estado (PB-01) devuelve %s', async (_caso, handler, estado) => {
   servidorMock.use(handler);
 
-  await expect(estadoPagoPublicoMock(anonimo, estadoBody)).resolves.toMatchObject({ estado });
+  await expect(consultarEstadoPagoPublico(anonimo, estadoBody)).resolves.toMatchObject({ estado });
+});
+
+it('POST pagos/estado (PB-01) devuelve APROBADO con factura por defecto', async () => {
+  const estado = await consultarEstadoPagoPublico(anonimo, estadoBody);
+
+  expect(estado).toMatchObject({ numeroPago: 'PAG-6f1c2a', estado: 'APROBADO', urlPago: null });
+  expect(estado.factura?.estado).toBe('AUTORIZADA');
+});
+
+it('POST pagos/estado (PB-01) devuelve 400 con errors.Dni', async () => {
+  const error = await capturar(consultarEstadoPagoPublico(anonimo, { ...estadoBody, dni: '123' }));
+
+  expect(error.status).toBe(400);
+  expect(error.errors?.Dni).toEqual(['El DNI debe tener 8 dígitos.']);
+});
+
+it('POST pagos/estado (PB-01) devuelve 404 genérico', async () => {
+  servidorMock.use(variantes.estadoNoEncontrado);
+
+  const error = await capturar(consultarEstadoPagoPublico(anonimo, estadoBody));
+
+  expect(error.status).toBe(404);
+  expect(error.detail).toBe(mensajeNoEncontrado);
+});
+
+it('POST pagos/estado (PB-01) devuelve 429 sin reintentar', async () => {
+  servidorMock.use(variantes.estado429);
+
+  const error = await capturar(consultarEstadoPagoPublico(anonimo, estadoBody));
+
+  expect(error.status).toBe(429);
 });
 
 it('Mock medios de pago (PB-22) devuelve nombres provisionales y no los fija en el código', async () => {

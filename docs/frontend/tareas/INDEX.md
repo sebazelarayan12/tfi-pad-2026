@@ -341,7 +341,7 @@ Cada default es la propuesta que sale de los documentos. El equipo confirma en l
 | D-42 | Contract tests de API cards (FC5) | Cada API card agrega `<dominio>.contract.test.ts` al rebasar sobre T-23; sin dependencia declarada (sin cascada). | RV-D31; FB8 |
 | D-43 | Texto de error de login y 404 de W-03 | Texto del Figma ("Email o contraseña incorrectos."; 404 de W2) en vez de `detail`. Solo errores de negocio sin texto propio usan `detail`. **[CONFIRMAR]** con diseño. | RV-D01; FB8 |
 | D-44 | Cobro desde el widget de B10 (`CobrarVencidasButton`) | Cobra todas las vencidas con un clic y resumen visible (p. ej. `Cuotas 6 y 7`); la selección por cuota queda en B11 (B-19). **[CONFIRMAR]** con producto antes de B-18. | RV-D11; FB8 |
-| D-45 | Número de pago en el retorno de la pasarela (W-06, W-08) | El back acepta `numeroPago` sin DNI (PB-01). Prohibido guardar el DNI en storage o en la URL. MSW hasta que el back lo publique. **[CONFIRMAR]** seguridad antes de W-06. | RV-D17; FB8 |
+| D-45 | Número de pago en el retorno de la pasarela (W-06, W-08) | Decidido por Martin (2026-11-12): el back pide `numeroPago` + `dni` (PB-01 resuelto, `POST /api/publico/pagos/estado`). El DNI viaja en `location.state` o se pide en pantalla; prohibido guardarlo en storage o en la URL. | RV-D17; FB8 |
 | D-46 | Hosting de producción del front | Sin decidir; las imágenes sirven en cualquier host. **[CONFIRMAR]** infraestructura. | RV-D19; FB8 |
 
 ---

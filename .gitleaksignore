@@ -7,3 +7,9 @@ afc71eb5c8ca4b07c68ad802d96f4444f0306004:docs/frontend/tareas/US-FE-T-13.md:gene
 
 # Falso positivo: clave ficticia de una prueba de ArcaHttpService (ya reemplazada por un valor sin forma de clave).
 b2cd99e4cf0e9f647c814ff2562b35764596b4ce:backend/Aseguradora.Tests/Integrations/ArcaHttpServiceTests.cs:generic-api-key:20
+
+# Falso positivo: secreto ficticio de webhook en las pruebas de PADI (ya reemplazado por un valor sin forma de clave).
+4919150ba61669f24f9548568bf86aa30af6b114:backend/Aseguradora.Tests/Pagos/PadiWebhooksControllerTests.cs:generic-api-key:22
+4919150ba61669f24f9548568bf86aa30af6b114:backend/Aseguradora.Tests/Integrations/PadiWebhookReceptorTests.cs:generic-api-key:9
+4919150ba61669f24f9548568bf86aa30af6b114:backend/Aseguradora.Tests/Pagos/PagosIntegrationsDiTests.cs:generic-api-key:56
+4919150ba61669f24f9548568bf86aa30af6b114:backend/Aseguradora.Tests/Integrations/PadiPasarelaServiceTests.cs:generic-api-key:22

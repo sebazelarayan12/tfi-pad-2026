@@ -23,7 +23,7 @@ const BENEFICIOS: ReadonlyArray<Beneficio> = [
   },
   {
     titulo: 'Pagá como prefieras',
-    texto: 'Online con Pasarela A o B, o en efectivo con el cupón de Pago Fácil.',
+    texto: 'Online con PADI o Pasarela B, o en efectivo con el cupón de Pago Fácil.',
     icono: <WalletIcon size={TAMANO_ICONO} weight="regular" />,
   },
   {

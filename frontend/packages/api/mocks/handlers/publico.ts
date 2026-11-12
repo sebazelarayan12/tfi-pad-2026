@@ -1,14 +1,16 @@
 import { http, HttpResponse } from 'msw';
 import type { ProblemDetails } from '../../src/dto/comunes';
 import type {
+  ConsultaEstadoPagoRequest,
   ConsultaPublicaRequest,
   ConsultaPublicaResponse,
   CuponPublicoRespuestaMock,
-  EstadoPagoPublicoMock,
+  EstadoPagoPublico,
   FacturaResponse,
   MedioPagoPublicoMock,
   PagoPublicoRequest,
   PagoPublicoResponse,
+  PublicoFacturaRequest,
 } from '../../src/dto/publico';
 import {
   problemaErrorInesperado,
@@ -112,8 +114,8 @@ const cuponMock: CuponPublicoRespuestaMock = {
   totalCuotas: null,
 };
 
-/** MOCK (PB-01): pago aprobado con factura. */
-const estadoAprobado: EstadoPagoPublicoMock = {
+/** Pago aprobado con factura (PB-01). */
+const estadoAprobado: EstadoPagoPublico = {
   numeroPago: 'PAG-6f1c2a',
   estado: 'APROBADO',
   fechaAcreditacion: '2026-10-30T20:55:00Z',
@@ -121,7 +123,7 @@ const estadoAprobado: EstadoPagoPublicoMock = {
   factura: facturaAutorizada,
 };
 
-const estadoPendiente: EstadoPagoPublicoMock = {
+const estadoPendiente: EstadoPagoPublico = {
   numeroPago: 'PAG-6f1c2a',
   estado: 'PENDIENTE',
   fechaAcreditacion: null,
@@ -129,7 +131,7 @@ const estadoPendiente: EstadoPagoPublicoMock = {
   factura: null,
 };
 
-const estadoRechazado: EstadoPagoPublicoMock = {
+const estadoRechazado: EstadoPagoPublico = {
   numeroPago: 'PAG-6f1c2a',
   estado: 'RECHAZADO',
   fechaAcreditacion: null,
@@ -209,10 +211,21 @@ export const handlers = [
     }
     return HttpResponse.json(pagoCreado, { status: 201 });
   }),
-  // DB-W8-1 opción A (RV-D17): W-08 manda solo `numeroPago` a estas dos rutas (sin DNI).
-  // Desviación del contrato vigente de factura y del propuesto en PB-01: el mock no valida el DNI.
-  http.post(estadoPago, () => HttpResponse.json(estadoAprobado)),
-  http.post(factura, () => HttpResponse.json(facturaAutorizada)),
+  // RV-D17 (decisión de Martin): estado y factura piden número de pago + DNI, como el back.
+  http.post(estadoPago, async ({ request }) => {
+    const body = await leerCuerpo<ConsultaEstadoPagoRequest>(request);
+    if (!body || !regexDni.test(body.dni)) {
+      return error(request, problemaValidacion({ Dni: ['El DNI debe tener 8 dígitos.'] }));
+    }
+    return HttpResponse.json(estadoAprobado);
+  }),
+  http.post(factura, async ({ request }) => {
+    const body = await leerCuerpo<PublicoFacturaRequest>(request);
+    if (!body || !regexDni.test(body.dni)) {
+      return error(request, problemaValidacion({ Dni: ['El DNI debe tener 8 dígitos.'] }));
+    }
+    return HttpResponse.json(facturaAutorizada);
+  }),
   http.post(cupon, () => HttpResponse.json(cuponMock)),
   http.get(mediosPago, () => HttpResponse.json(medios)),
 ];

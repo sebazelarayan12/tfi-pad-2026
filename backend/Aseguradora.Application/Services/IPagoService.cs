@@ -17,6 +17,13 @@ public interface IPagoService
     Task<FacturaResponse> ObtenerFacturaPublicaAsync(PublicoFacturaRequest request, CancellationToken ct = default);
 
     /// <summary>
+    /// Estado público de un pago verificando DNI y número de pago (PB-01, RN20). Un pago de pasarela pendiente
+    /// se concilia antes de responder; si la pasarela no contesta se devuelve el estado guardado.
+    /// </summary>
+    /// <exception cref="Exceptions.NotFoundException">DNI y número de pago no coinciden (mensaje genérico).</exception>
+    Task<EstadoPagoPublicoResponse> ConsultarEstadoPublicoAsync(PublicoEstadoPagoRequest request, CancellationToken ct = default);
+
+    /// <summary>
     /// Crea un <c>Pago</c> pendiente para las cuotas indicadas, lo registra en la pasarela elegida y
     /// devuelve el link de pago (CU15). La aprobación llega después por el webhook o la conciliación.
     /// </summary>

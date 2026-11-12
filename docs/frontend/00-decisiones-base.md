@@ -122,7 +122,7 @@ Se aplican los defaults recomendados de `REVISION.md` salvo lo marcado. Las fila
 | RV-D14 | No se suma en el front: se muestra el importe del back (`PagoResponse.importe`). |
 | RV-D15 | Badge "Pendiente CAE"; texto de celda "Pendiente de CAE", hasta que diseño confirme. |
 | RV-D16 | La request de `GET /api/inicio/resumen` vive en `features/inicio/` como excepción documentada a FC2, hasta que PB-08 se publique. |
-| RV-D17 | **[CONFIRMAR seguridad antes de W-06]** El back debe aceptar `numeroPago` sin DNI (PB-01); MSW hasta entonces. Prohibido guardar el DNI en storage o ponerlo en la URL. FC12 se mantiene. |
+| RV-D17 | **Decidido por Martin (2026-11-12): `numeroPago` + `dni`.** `POST /api/publico/pagos/estado` (PB-01, resuelto) y `POST /api/publico/factura` piden los dos. El DNI viaja en `location.state` y, si no está (recarga o vuelta desde la pasarela), la pantalla lo pide. Prohibido guardar el DNI en storage o ponerlo en la URL. FC12 se mantiene. |
 | RV-D18 | **Decidido por el usuario (2026-11-06).** El front genera la contraseña temporal del alta de usuario (botón `Generar`, `crypto.getRandomValues`, 16 caracteres con mayúscula, minúscula, dígito y símbolo). Es temporal: el empleado debe cambiarla en su primer ingreso (US-F1-09 en el back y US-FE-B-26 en el front, PB-31). Hasta que existan, la temporal no vence. Queda pendiente la confirmación del equipo (seguridad). |
 | RV-D19 | **[CONFIRMAR infraestructura]** Hosting de producción sin decidir; las imágenes sirven en cualquier host. |
 | RV-D20 | El alta bloquea por edad mínima en el front (el back aplica la misma regla). |

@@ -236,12 +236,15 @@ describe('MedioDePagoPage: encabezado y opciones', () => {
     const radios = within(grupo).getAllByRole('radio');
     expect(radios).toHaveLength(3);
     for (const radio of radios) expect(radio).not.toBeChecked();
-    expect(within(grupo).getByRole('radio', { name: 'Pasarela A' })).toBeInTheDocument();
+    expect(within(grupo).getByRole('radio', { name: 'PADI' })).toBeInTheDocument();
     expect(within(grupo).getByRole('radio', { name: 'Pasarela B' })).toBeInTheDocument();
     expect(within(grupo).getByRole('radio', { name: 'Pago Fácil' })).toHaveAccessibleDescription(
       'Efectivo con cupón de código de barras. Acreditación hasta 72 h hábiles.',
     );
-    expect(within(grupo).getByRole('radio', { name: 'Pasarela A' })).toHaveAccessibleDescription(
+    expect(within(grupo).getByRole('radio', { name: 'PADI' })).toHaveAccessibleDescription(
+      'Billetera virtual PADI. Pagás en una pestaña nueva.',
+    );
+    expect(within(grupo).getByRole('radio', { name: 'Pasarela B' })).toHaveAccessibleDescription(
       'Pago online con tarjeta o dinero en cuenta.',
     );
   });
@@ -277,11 +280,11 @@ describe('MedioDePagoPage: envío', () => {
     pagos.soltar();
   });
 
-  it('Pasarela A envía proveedor pasarela1 con el body de contrato', async () => {
+  it('PADI envía proveedor pasarela1 con el body de contrato', async () => {
     const pagos = espiarPagos();
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('PADI');
 
     await waitFor(() => expect(pagos.cantidad()).toBe(1));
     expect(pagos.cuerpos[0]).toEqual({
@@ -308,7 +311,7 @@ describe('MedioDePagoPage: envío', () => {
     servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     await waitFor(() => expect(redirigirA).toHaveBeenCalledWith(PAGO_CREADO.urlPago));
     expect(sessionStorage.length).toBe(1);
@@ -319,7 +322,7 @@ describe('MedioDePagoPage: envío', () => {
     const invalidar = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     await waitFor(() => expect(redirigirA).toHaveBeenCalled());
     expect(invalidar).toHaveBeenCalledWith({ queryKey: publicoKeys.all });
@@ -331,7 +334,7 @@ describe('MedioDePagoPage: envío', () => {
   it('el DNI no se guarda en storage', async () => {
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     await waitFor(() => expect(redirigirA).toHaveBeenCalled());
     for (const almacen of [sessionStorage, localStorage]) {
@@ -351,7 +354,7 @@ describe('MedioDePagoPage: envío', () => {
     });
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     await waitFor(() => expect(redirigirA).toHaveBeenCalledWith(PAGO_CREADO.urlPago));
   });
@@ -367,7 +370,7 @@ describe('MedioDePagoPage: envío', () => {
     renderizar();
     const usuario = userEvent.setup();
 
-    await usuario.click(screen.getByRole('radio', { name: 'Pasarela A' }));
+    await usuario.click(screen.getByRole('radio', { name: 'Pasarela B' }));
     await usuario.dblClick(botonContinuar());
 
     await waitFor(() => expect(redirigirA).toHaveBeenCalled());
@@ -378,7 +381,7 @@ describe('MedioDePagoPage: envío', () => {
   it('al volver desde la pasarela con la página restaurada del caché, se puede elegir de nuevo', async () => {
     servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
     renderizar();
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
     await waitFor(() => expect(botonContinuar()).toBeDisabled());
 
     act(() => {
@@ -392,7 +395,7 @@ describe('MedioDePagoPage: envío', () => {
   it('un pageshow sin restaurar del caché no cambia el estado de envío', async () => {
     servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
     renderizar();
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
     await waitFor(() => expect(botonContinuar()).toBeDisabled());
 
     act(() => {
@@ -411,7 +414,7 @@ describe('MedioDePagoPage: envío', () => {
     );
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     await waitFor(() => expect(botonContinuar()).toBeDisabled());
     expect(botonContinuar()).toHaveAttribute('aria-busy', 'true');
@@ -424,14 +427,14 @@ describe('MedioDePagoPage: errores', () => {
     servidorMock.use(variantesPublico.pagoEnCurso);
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     const alerta = await screen.findByRole('alert');
     expect(alerta).toHaveTextContent(
       'Alguna de las cuotas ya tiene un pago en curso. Intente de nuevo más tarde.',
     );
     expect(alerta.parentElement).toHaveFocus();
-    expect(screen.getByRole('radio', { name: 'Pasarela A' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Pasarela B' })).toBeChecked();
     expect(botonContinuar()).toBeEnabled();
     expect(redirigirA).not.toHaveBeenCalled();
   });
@@ -440,7 +443,7 @@ describe('MedioDePagoPage: errores', () => {
     servidorMock.use(variantesPublico.pagoNoEncontrado);
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se encontró un registro con los datos indicados.',
@@ -452,7 +455,7 @@ describe('MedioDePagoPage: errores', () => {
     const pagos = espiarPagos();
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Hiciste muchos intentos. Esperá un minuto y volvé a probar.',
@@ -465,7 +468,7 @@ describe('MedioDePagoPage: errores', () => {
     servidorMock.use(variantesPublico.pagoPasarelaCaida);
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     expect(await screen.findByRole('alert')).toHaveTextContent('La pasarela no está disponible.');
   });
@@ -474,7 +477,7 @@ describe('MedioDePagoPage: errores', () => {
     servidorMock.use(http.post(URL_PAGOS, () => new HttpResponse(null, { status: 502 })));
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No pudimos conectar con la pasarela. Intentá de nuevo en unos minutos.',
@@ -486,7 +489,7 @@ describe('MedioDePagoPage: errores', () => {
     const pagos = espiarPagos();
     renderizar();
 
-    await elegirYContinuar('Pasarela A');
+    await elegirYContinuar('Pasarela B');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No pudimos iniciar el pago. Revisá tu conexión e intentá de nuevo.',
@@ -545,5 +548,48 @@ describe('MedioDePagoPage: resumen', () => {
   it('no tiene violaciones de accesibilidad', async () => {
     const { container } = renderizar();
     await expectSinViolacionesA11y(container);
+  });
+});
+
+describe('MedioDePagoPage: PADI en pestaña nueva', () => {
+  it('201 no redirige: navega a la espera con número de pago, DNI y link en el estado', async () => {
+    servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
+    renderizar();
+
+    await elegirYContinuar('PADI');
+
+    await waitFor(() => expect(screen.getByTestId('ruta')).toHaveTextContent('/pago/exito'));
+    expect(redirigirA).not.toHaveBeenCalled();
+    expect(estadoNavegado()).toEqual({
+      numeroPago: PAGO_CREADO.numeroPago,
+      dni: DNI,
+      urlPago: PAGO_CREADO.urlPago,
+      medio: 'padi',
+    });
+    expect(sessionStorage.getItem(CLAVE_NUMERO_PAGO)).toBe(PAGO_CREADO.numeroPago);
+  });
+
+  it('el DNI no se guarda en storage', async () => {
+    renderizar();
+
+    await elegirYContinuar('PADI');
+
+    await waitFor(() => expect(screen.getByTestId('ruta')).toHaveTextContent('/pago/exito'));
+    for (const almacen of [sessionStorage, localStorage]) {
+      for (let i = 0; i < almacen.length; i += 1) {
+        const clave = almacen.key(i) ?? '';
+        expect(almacen.getItem(clave)).not.toContain(DNI);
+      }
+    }
+  });
+
+  it('Pasarela B sigue redirigiendo en la misma pestaña', async () => {
+    servidorMock.use(http.post(URL_PAGOS, () => HttpResponse.json(PAGO_CREADO, { status: 201 })));
+    renderizar();
+
+    await elegirYContinuar('Pasarela B');
+
+    await waitFor(() => expect(redirigirA).toHaveBeenCalledWith(PAGO_CREADO.urlPago));
+    expect(screen.queryByTestId('ruta')).not.toBeInTheDocument();
   });
 });

@@ -9,7 +9,7 @@ import { RUTA_CONSULTAR_POLIZA } from '../destinos';
 // Textos literales de W1 §5 (ficha W-01 §8).
 const TITULO = 'Cómo pagar';
 const ONLINE_TITULO = 'Pago online';
-const ONLINE_TEXTO = 'Elegí Pasarela A o Pasarela B y pagá con tarjeta o dinero en cuenta.';
+const ONLINE_TEXTO = 'Elegí PADI o Pasarela B y pagá con tarjeta o dinero en cuenta.';
 const ONLINE_ACCION = 'Consultar póliza';
 const EFECTIVO_TITULO = 'Efectivo con Pago Fácil';
 const EFECTIVO_TEXTO =

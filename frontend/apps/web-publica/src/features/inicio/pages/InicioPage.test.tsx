@@ -103,7 +103,7 @@ describe('InicioPage', () => {
     ).toEqual(['Pago online', 'Efectivo con Pago Fácil']);
     expect(
       within(comoPagar).getByText(
-        'Elegí Pasarela A o Pasarela B y pagá con tarjeta o dinero en cuenta.',
+        'Elegí PADI o Pasarela B y pagá con tarjeta o dinero en cuenta.',
       ),
     ).toBeInTheDocument();
     expect(
