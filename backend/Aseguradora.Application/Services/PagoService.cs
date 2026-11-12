@@ -5,6 +5,7 @@ using Aseguradora.Application.Publico;
 using Aseguradora.Domain.Entities;
 using Aseguradora.Domain.Enums;
 using Aseguradora.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Aseguradora.Application.Services;
 
@@ -21,7 +22,8 @@ public sealed class PagoService(
     IRepository<Poliza> polizas,
     IRepository<Factura> facturas,
     IAprobacionPagoService aprobacion,
-    WebhookPagoService webhook) : IPagoService
+    WebhookPagoService webhook,
+    ILogger<PagoService>? logger = null) : IPagoService
 {
     /// <summary>Pasarelas habilitadas para el pago online.</summary>
     public static readonly IReadOnlyList<string> ProveedoresValidos = ["pasarela1", "pasarela2"];
@@ -39,7 +41,45 @@ public sealed class PagoService(
         if (string.IsNullOrWhiteSpace(pago.IdExterno) || string.IsNullOrWhiteSpace(pago.Proveedor))
             throw new BusinessRuleException("El pago aún no tiene un identificador externo y proveedor para conciliar.");
 
-        var respuesta = await pasarelas.Obtener(pago.Proveedor).ConsultarPagoAsync(pago.IdExterno, ct);
+        await ConciliarConPasarelaAsync(pago, ct);
+        return await ObtenerPagoAsync(pagoId, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<EstadoPagoPublicoResponse> ConsultarEstadoPublicoAsync(PublicoEstadoPagoRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var pago = await verificador.VerificarPagoAsync(request.Dni, request.NumeroPago, ct);
+
+        if (pago.Medio == MedioPago.Pasarela && pago.Estado == EstadoPago.Pendiente
+            && !string.IsNullOrWhiteSpace(pago.IdExterno) && !string.IsNullOrWhiteSpace(pago.Proveedor))
+        {
+            try
+            {
+                await ConciliarConPasarelaAsync(pago, ct);
+            }
+            catch (Exception ex) when (ex is ExternalServiceException or ServicioNoDisponibleException or NotFoundException)
+            {
+                // The customer still gets the stored state; the webhook or a later check resolves it.
+                logger?.LogWarning(ex, "PAGO_ESTADO_PUBLICO_SIN_CONCILIAR Numero={Numero} Proveedor={Proveedor}",
+                    pago.Numero, pago.Proveedor);
+            }
+        }
+
+        var actual = await pagos.GetByIdAsync(pago.Id, ct) ?? throw new NotFoundException(VerificadorPublico.MensajeNoEncontrado);
+        var factura = (await facturas.FindAsync(f => f.PagoId == actual.Id, ct)).SingleOrDefault();
+        var respuesta = MapearPago(actual, factura);
+        var vigente = ComoUtc(actual.FechaCreacion).AddMinutes(opciones.ReservaMinutos) > reloj.GetUtcNow().UtcDateTime;
+        var urlPago = actual.Estado == EstadoPago.Pendiente && vigente && !string.IsNullOrWhiteSpace(actual.LinkPago)
+            ? actual.LinkPago
+            : null;
+        return new EstadoPagoPublicoResponse(actual.Numero, respuesta.Estado, respuesta.FechaAcreditacion, urlPago, respuesta.Factura);
+    }
+
+    // Shared by the employee reconciliation and the public status check: same checks, same result.
+    private async Task ConciliarConPasarelaAsync(Pago pago, CancellationToken ct)
+    {
+        var respuesta = await pasarelas.Obtener(pago.Proveedor!).ConsultarPagoAsync(pago.IdExterno!, ct);
         if (respuesta.Estado is not ("PENDIENTE" or "APROBADO" or "RECHAZADO" or "CANCELADO") || respuesta.Importe <= 0)
             throw new ExternalServiceException("La pasarela devolvió un estado o importe inválido.");
         if (respuesta.IdPago != pago.IdExterno
@@ -49,7 +89,6 @@ public sealed class PagoService(
             ? DateTime.SpecifyKind(respuesta.Fecha, DateTimeKind.Utc)
             : respuesta.Fecha.ToUniversalTime();
         await webhook.AplicarResultadoAsync(pago, respuesta.Estado, respuesta.Importe, ct, new DateTimeOffset(fecha));
-        return await ObtenerPagoAsync(pagoId, ct);
     }
 
     /// <summary>Cobra cuotas de un mismo cliente usando el circuito común de aprobación y facturación.</summary>

@@ -145,4 +145,37 @@ public sealed class PagosControllerTests : IDisposable
         Assert.Equal((await dni.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail,
             (await numero.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail);
     }
+
+    [Fact]
+    public async Task EstadoPublico_DniYNumeroCorrectos_200ConEstadoYFactura()
+    {
+        using var cliente = _factory.CreateClient();
+        var respuesta = await cliente.PostAsJsonAsync("/api/publico/pagos/estado", new { dni = "30123456", numeroPago = "PAG-000001" });
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        var estado = (await respuesta.Content.ReadFromJsonAsync<EstadoPagoPublicoResponse>())!;
+        Assert.Equal("PAG-000001", estado.NumeroPago);
+        Assert.Equal("APROBADO", estado.Estado);
+        Assert.Null(estado.UrlPago);
+        Assert.Equal(SeedData.PagoId, estado.Factura!.PagoId);
+    }
+
+    [Fact]
+    public async Task EstadoPublico_DniONumeroIncorrectos_404Identico()
+    {
+        using var cliente = _factory.CreateClient();
+        var dni = await cliente.PostAsJsonAsync("/api/publico/pagos/estado", new { dni = "99999999", numeroPago = "PAG-000001" });
+        var numero = await cliente.PostAsJsonAsync("/api/publico/pagos/estado", new { dni = "30123456", numeroPago = "PAG-ffffff" });
+        Assert.Equal(HttpStatusCode.NotFound, dni.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, numero.StatusCode);
+        Assert.Equal((await dni.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail,
+            (await numero.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail);
+    }
+
+    [Fact]
+    public async Task EstadoPublico_SinDni_400()
+    {
+        using var cliente = _factory.CreateClient();
+        var respuesta = await cliente.PostAsJsonAsync("/api/publico/pagos/estado", new { numeroPago = "PAG-000001" });
+        Assert.Equal(HttpStatusCode.BadRequest, respuesta.StatusCode);
+    }
 }
