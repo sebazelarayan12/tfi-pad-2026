@@ -17,7 +17,7 @@ const CODIGO_DESTACADO = 'TC';
 const FILAS_SKELETON = 3;
 
 const TABLA = 'w-full table-fixed border-separate border-spacing-0';
-const MARCO = 'overflow-hidden rounded-card border border-border-hairline bg-white';
+const MARCO = 'overflow-hidden rounded-card border border-border-hairline bg-tema-elevado';
 
 // El plan destacado va en el marino de la marca, con texto blanco; el resto, blanco con borde fino.
 function esDestacado(plan: PlanResponse) {
@@ -25,11 +25,11 @@ function esDestacado(plan: PlanResponse) {
 }
 
 function fondo(plan: PlanResponse) {
-  return esDestacado(plan) ? 'bg-marca-marino' : '';
+  return esDestacado(plan) ? 'bg-tema-destacado' : '';
 }
 
 function textoFuerte(plan: PlanResponse) {
-  return esDestacado(plan) ? 'text-white' : 'text-marca-marino';
+  return esDestacado(plan) ? 'text-white' : 'text-tema-titulo';
 }
 
 function textoSuave(plan: PlanResponse) {
@@ -57,7 +57,7 @@ export function TablaPlanes() {
                   {Array.from({ length: FILAS_SKELETON }, (_, indice) => (
                     <span
                       key={indice}
-                      className="h-[160px] flex-1 animate-pulse rounded-input bg-marca-niebla"
+                      className="h-[160px] flex-1 animate-pulse rounded-input bg-tema-fondo-alt"
                     />
                   ))}
                 </span>
@@ -112,7 +112,7 @@ export function TablaPlanes() {
                 key={plan.id}
                 data-label={`${plan.codigo} · ${plan.nombre}`}
                 data-destacado={plan.codigo === CODIGO_DESTACADO ? 'true' : undefined}
-                className={`px-sp-32 pb-sp-32 pt-sp-16 align-top md:border-l md:border-border-hairline md:first:border-l-0 max-md:border-b max-md:border-border-hairline max-md:last:border-b-0 max-md:px-sp-24 max-md:pt-sp-24 max-md:before:mb-sp-8 max-md:before:block max-md:before:font-display max-md:before:text-titulo-md max-md:before:content-[attr(data-label)] ${esDestacado(plan) ? 'max-md:before:text-white' : 'max-md:before:text-marca-marino'} ${fondo(plan)}`.trimEnd()}
+                className={`px-sp-32 pb-sp-32 pt-sp-16 align-top md:border-l md:border-border-hairline md:first:border-l-0 max-md:border-b max-md:border-border-hairline max-md:last:border-b-0 max-md:px-sp-24 max-md:pt-sp-24 max-md:before:mb-sp-8 max-md:before:block max-md:before:font-display max-md:before:text-titulo-md max-md:before:content-[attr(data-label)] ${esDestacado(plan) ? 'max-md:before:text-white' : 'max-md:before:text-tema-titulo'} ${fondo(plan)}`.trimEnd()}
               >
                 <span className={`block text-label ${textoSuave(plan)}`}>{TEXTO_DESDE}</span>
                 <span className={`block font-display text-titulo-lg ${textoFuerte(plan)}`}>

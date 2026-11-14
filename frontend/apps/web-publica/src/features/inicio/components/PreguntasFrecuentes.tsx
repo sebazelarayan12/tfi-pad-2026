@@ -43,13 +43,13 @@ export function PreguntasFrecuentes() {
             <Aparecer key={pregunta} retardoMs={indice * 120}>
               <details className="group border-b border-border-hairline py-sp-24">
                 <summary
-                  className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-sp-16 rounded-input font-display text-titulo-md text-marca-marino ${FOCO} [&::-webkit-details-marker]:hidden`}
+                  className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-sp-16 rounded-input font-display text-titulo-md text-tema-titulo ${FOCO} [&::-webkit-details-marker]:hidden`}
                 >
                   {pregunta}
                   <CaretDownIcon
                     aria-hidden="true"
                     size={20}
-                    className="shrink-0 text-marca-azul transition duration-300 group-open:rotate-180 motion-reduce:transition-none"
+                    className="shrink-0 text-tema-acento transition duration-300 group-open:rotate-180 motion-reduce:transition-none"
                   />
                 </summary>
                 <p className="max-w-2xl pt-sp-12 text-body-lg text-text-secondary">{respuesta}</p>

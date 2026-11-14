@@ -63,10 +63,10 @@ export function CoberturaPorVehiculo() {
                     height={1067}
                     className={`absolute inset-0 size-full object-cover ${vehiculo.posicion} [mask-image:radial-gradient(ellipse_60%_58%_at_50%_45%,black_45%,transparent_100%)]`}
                   />
-                  {/* Velo marino desde abajo para que el texto blanco se lea sobre cualquier foto. */}
+                  {/* Velo del color de la banda desde abajo para que el texto blanco se lea sobre cualquier foto. */}
                   <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-t from-marca-marino via-marca-marino/10 to-transparent"
+                    className="absolute inset-0 bg-gradient-to-t from-tema-banda via-tema-banda/10 to-transparent"
                   />
                   <div className="relative flex flex-col items-start gap-sp-12 pb-sp-8">
                     <h3 className="text-titulo-lg text-white">{vehiculo.titulo}</h3>

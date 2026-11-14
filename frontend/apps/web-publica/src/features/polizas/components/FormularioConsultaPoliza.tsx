@@ -38,7 +38,7 @@ export function FormularioConsultaPoliza({
       autoComplete="off"
       aria-busy={enviando}
       onSubmit={onSubmit}
-      className="flex w-full flex-col gap-sp-16 md:max-w-[560px] md:gap-sp-20 md:rounded-card md:border md:border-border-hairline md:bg-white md:p-sp-48 lg:max-w-none"
+      className="flex w-full flex-col gap-sp-16 md:max-w-[560px] md:gap-sp-20 md:rounded-card md:border md:border-border-hairline md:bg-tema-elevado md:p-sp-48 lg:max-w-none"
     >
       <h1 className="text-titulo-lg md:text-titulo-xl">Consultá tu póliza</h1>
       <p className="text-body-lg text-text-secondary">

@@ -20,7 +20,7 @@ const CTA_HREF = '/consultar-poliza';
  */
 export function PublicLayout() {
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-clip bg-white">
+    <div className="flex min-h-dvh flex-col overflow-x-clip bg-tema-fondo">
       <NavPublica links={LINKS_PUBLICOS} ctaLabel={CTA_LABEL} ctaHref={CTA_HREF} />
       <main id="contenido" className={`${CONTENEDOR} flex flex-1 flex-col`}>
         <Outlet />

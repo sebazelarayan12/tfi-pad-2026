@@ -56,7 +56,7 @@ export function Beneficios() {
                 <div className="flex h-full flex-col gap-sp-16 border-t border-border-hairline pt-sp-24">
                   <span
                     aria-hidden="true"
-                    className="inline-flex size-12 items-center justify-center rounded-input bg-marca-celeste-suave text-marca-azul"
+                    className="inline-flex size-12 items-center justify-center rounded-input bg-marca-celeste-suave text-tema-acento"
                   >
                     {beneficio.icono}
                   </span>

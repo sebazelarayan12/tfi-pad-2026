@@ -38,13 +38,13 @@ function TarjetaFlotante({ icono, titulo, texto, clases = '' }: TarjetaFlotanteP
   return (
     <div
       aria-hidden="true"
-      className={`flex items-center gap-sp-12 rounded-input border border-border-hairline bg-white py-sp-12 pl-sp-12 pr-sp-20 flotar ${clases}`}
+      className={`flex items-center gap-sp-12 rounded-input border border-border-hairline bg-tema-elevado py-sp-12 pl-sp-12 pr-sp-20 flotar ${clases}`}
     >
-      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-celeste-suave text-marca-azul">
+      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-celeste-suave text-tema-acento">
         {icono}
       </span>
       <span className="flex flex-col">
-        <span className="text-body font-semibold text-marca-marino">{titulo}</span>
+        <span className="text-body font-semibold text-tema-titulo">{titulo}</span>
         <span className="text-label font-normal text-text-secondary">{texto}</span>
       </span>
     </div>
@@ -64,7 +64,7 @@ export function HeroPublico() {
       <section
         ref={bloqueRef}
         aria-labelledby="titulo-hero"
-        className={`${ANCHO_COMPLETO} flex flex-col overflow-hidden bg-white md:min-h-[min(88vh,820px)] md:justify-center`}
+        className={`${ANCHO_COMPLETO} flex flex-col overflow-hidden bg-tema-fondo md:min-h-[min(88vh,820px)] md:justify-center`}
       >
         <div className="relative h-[300px] sm:h-[420px] md:absolute md:inset-0 md:h-auto">
           {/* Decorativo: el poster es el último cuadro, así sin reproducir ya se ve el logo. */}
@@ -93,7 +93,7 @@ export function HeroPublico() {
         </div>
         <div className={`${CONTENEDOR} relative pb-sp-24 md:py-sp-112`}>
           <Aparecer className="flex max-w-xl flex-col items-start gap-sp-24 lg:max-w-[600px]">
-            <span className="text-body font-medium text-marca-azul">{ETIQUETA}</span>
+            <span className="text-body font-medium text-tema-acento">{ETIQUETA}</span>
             <h1 id="titulo-hero" className="text-balance text-hero-sm md:text-hero">
               {TITULO}
             </h1>
@@ -137,12 +137,12 @@ export function HeroPublico() {
               <Aparecer retardoMs={indice * 150} className="flex gap-sp-16">
                 <span
                   aria-hidden="true"
-                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-marino font-display text-body font-semibold text-white"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-tema-boton-fuerte font-display text-body font-semibold text-tema-sobre-fuerte"
                 >
                   {indice + 1}
                 </span>
                 <span className="flex flex-col gap-sp-4">
-                  <span className="font-display text-titulo-md text-marca-marino">
+                  <span className="font-display text-titulo-md text-tema-titulo">
                     {paso.titulo}
                   </span>
                   <span className="text-body text-text-secondary">{paso.texto}</span>
