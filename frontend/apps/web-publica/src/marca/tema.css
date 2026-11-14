@@ -1,0 +1,43 @@
+/*
+ * Identidad Nexa Seguros de la web pública (rebranding). Pisa los tokens de `@nexa/ui/tokens.css`
+ * solo en esta app, así el backoffice (login y administración) queda igual.
+ * Paleta: marino del logo como color principal, azul como única acción principal y celeste
+ * para detalles y foco. El degradado del escudo vive solo en el logo.
+ */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/montserrat/600.css';
+@import '@fontsource/montserrat/700.css';
+
+:root {
+  --marca-marino: #0b1f4b;
+  --marca-marino-hover: #142c63;
+  --marca-azul: #0066e6;
+  --marca-azul-hover: #0057c4;
+  --marca-celeste: #00b4ff;
+  --marca-celeste-suave: #e5f6ff;
+  --marca-niebla: #f2f4f8;
+
+  --nexa-surface-panel: #ffffff;
+  --nexa-surface-sidebar: var(--marca-niebla);
+  --nexa-surface-subtle: var(--marca-niebla);
+
+  --nexa-border-hairline: #e3e7ee;
+  --nexa-border-strong: #c9d0dc;
+
+  --nexa-text-primary: #0e1526;
+  --nexa-text-secondary: #5b6478;
+  --nexa-text-tertiary: #6b7489;
+
+  --nexa-action-primary: var(--marca-azul);
+  --nexa-action-on-primary: #ffffff;
+
+  /* Los acentos verdes del diseño anterior pasan al celeste de la marca. */
+  --nexa-accent-lime: var(--marca-celeste);
+  --nexa-accent-lime-soft: var(--marca-celeste-suave);
+  --nexa-accent-promo: var(--marca-celeste-suave);
+
+  --nexa-radius-card: 20px;
+  --nexa-radius-input: 8px;
+}
