@@ -1,5 +1,5 @@
 import { LogoMarca } from '../../marca/LogoMarca';
-import { CONTENEDOR, FOCO } from '../../marca/estilos';
+import { CONTENEDOR, FOCO, FUNDIDO_A_PIE } from '../../marca/estilos';
 import { Aparecer } from '../../shared/animacion/Aparecer';
 
 export interface DatoContacto {
@@ -17,25 +17,29 @@ interface PiePublicoProps {
 }
 
 const TITULO = 'Contacto';
-const ENLACE = `rounded-input underline-offset-4 hover:text-marca-azul hover:underline ${FOCO}`;
+const ENLACE = `rounded-input underline-offset-4 hover:text-marca-celeste hover:underline ${FOCO}`;
 
-/** Pie de la web pública: logo, datos de contacto en columnas y copyright, sobre fondo niebla. */
+/**
+ * Pie de la web pública: logo blanco, datos de contacto en columnas y copyright, sobre gris oscuro
+ * en los dos modos. Arriba entra con un fundido desde el fondo de la página.
+ */
 export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
   return (
     <footer
       id={id}
       aria-labelledby="titulo-contacto"
-      className="scroll-mt-sp-80 bg-gradient-to-b from-white to-marca-niebla"
+      className="scroll-mt-sp-80 bg-pie-fondo text-pie-texto"
     >
+      <div aria-hidden="true" className={FUNDIDO_A_PIE} />
       <div className={`${CONTENEDOR} flex flex-col gap-sp-48 py-sp-64 md:py-sp-80`}>
         <Aparecer className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">
-          <h2 id="titulo-contacto" className="text-titulo-lg md:text-titulo-xl">
+          <h2 id="titulo-contacto" className="text-titulo-lg text-pie-texto md:text-titulo-xl">
             {TITULO}
           </h2>
-          <LogoMarca decorativo className="h-10 w-auto self-start md:h-12 md:self-auto" />
+          <LogoMarca decorativo blanco className="h-10 w-auto self-start md:h-12 md:self-auto" />
         </Aparecer>
         {contacto.length > 0 ? (
-          <dl className="grid grid-cols-1 gap-sp-24 border-t border-border-strong pt-sp-32 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="grid grid-cols-1 gap-sp-24 border-t border-pie-borde pt-sp-32 sm:grid-cols-2 lg:grid-cols-4">
             {contacto.map((dato, indice) => (
               // `Aparecer` es un `div`, el agrupador válido de `dt`/`dd` dentro de `dl`.
               <Aparecer
@@ -43,8 +47,8 @@ export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
                 retardoMs={indice * 100}
                 className="flex flex-col gap-sp-4"
               >
-                <dt className="text-label text-text-secondary">{dato.label}</dt>
-                <dd className="text-body-lg font-medium text-marca-marino">
+                <dt className="text-label text-pie-suave">{dato.label}</dt>
+                <dd className="text-body-lg font-medium text-pie-texto">
                   {dato.href ? (
                     <a href={dato.href} className={ENLACE}>
                       {dato.value}
@@ -57,7 +61,7 @@ export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
             ))}
           </dl>
         ) : null}
-        <p className="text-label text-text-secondary">{copyright}</p>
+        <p className="text-label text-pie-suave">{copyright}</p>
       </div>
     </footer>
   );
