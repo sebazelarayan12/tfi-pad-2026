@@ -134,16 +134,20 @@ export function HeroPublico() {
               key={paso.titulo}
               className="flex gap-sp-16 border-t border-border-hairline py-sp-24 md:border-l md:border-t-0 md:px-sp-32 md:py-0 md:first:border-l-0 md:first:pl-0"
             >
-              <span
-                aria-hidden="true"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-marino font-display text-body font-semibold text-white"
-              >
-                {indice + 1}
-              </span>
-              <span className="flex flex-col gap-sp-4">
-                <span className="font-display text-titulo-md text-marca-marino">{paso.titulo}</span>
-                <span className="text-body text-text-secondary">{paso.texto}</span>
-              </span>
+              <Aparecer retardoMs={indice * 150} className="flex gap-sp-16">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-marino font-display text-body font-semibold text-white"
+                >
+                  {indice + 1}
+                </span>
+                <span className="flex flex-col gap-sp-4">
+                  <span className="font-display text-titulo-md text-marca-marino">
+                    {paso.titulo}
+                  </span>
+                  <span className="text-body text-text-secondary">{paso.texto}</span>
+                </span>
+              </Aparecer>
             </li>
           ))}
         </ol>
