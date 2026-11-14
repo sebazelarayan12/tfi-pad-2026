@@ -40,4 +40,61 @@
 
   --nexa-radius-card: 20px;
   --nexa-radius-input: 8px;
+
+  /*
+   * Colores que cambian con el modo claro/oscuro, en canales RGB para poder usar opacidad
+   * (`bg-tema-banda/10`). En claro: fondo blanco y títulos marinos.
+   */
+  --tema-fondo: 255 255 255;
+  --tema-fondo-alt: 242 244 248;
+  --tema-elevado: 255 255 255;
+  --tema-titulo: 11 31 75;
+  --tema-acento: 0 102 230;
+  --tema-banda: 11 31 75;
+  --tema-boton-fuerte: 11 31 75;
+  --tema-boton-fuerte-hover: 20 44 99;
+  --tema-sobre-fuerte: 255 255 255;
+  --tema-destacado: 11 31 75;
+
+  /* El pie es gris en los dos modos, con texto claro y el logo blanco. */
+  --pie-fondo: 42 46 53;
+  --pie-texto: 255 255 255;
+  --pie-suave: 183 189 199;
+  --pie-borde: 71 77 88;
+
+  color-scheme: light;
+}
+
+/*
+ * Modo oscuro: los colores se invierten. El fondo pasa al marino del logo, los títulos a blanco,
+ * la banda marina se oscurece para seguir separándose del fondo y los botones marinos pasan a
+ * blancos. También se pisan los tokens de `@nexa/ui` para que inputs, tablas y tarjetas acompañen.
+ */
+:root[data-tema='oscuro'] {
+  --marca-celeste-suave: #163a7a;
+  --marca-niebla: #102a5e;
+
+  --tema-fondo: 11 31 75;
+  --tema-fondo-alt: 16 42 94;
+  --tema-elevado: 19 48 106;
+  --tema-titulo: 255 255 255;
+  --tema-acento: 0 180 255;
+  --tema-banda: 5 16 41;
+  --tema-boton-fuerte: 255 255 255;
+  --tema-boton-fuerte-hover: 229 246 255;
+  --tema-sobre-fuerte: 11 31 75;
+  --tema-destacado: 0 102 230;
+
+  --nexa-surface-panel: #13306a;
+  --nexa-surface-sidebar: #102a5e;
+  --nexa-surface-subtle: #102a5e;
+
+  --nexa-border-hairline: #24407a;
+  --nexa-border-strong: #36548f;
+
+  --nexa-text-primary: #ffffff;
+  --nexa-text-secondary: #b4c0d8;
+  --nexa-text-tertiary: #95a3c0;
+
+  color-scheme: dark;
 }
