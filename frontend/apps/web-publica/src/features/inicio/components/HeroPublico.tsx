@@ -4,6 +4,12 @@ import type { ReactNode } from 'react';
 
 import { Aparecer } from '../../../shared/animacion/Aparecer';
 import { renderLinkRouter } from '../../../shared/enlace/renderLinkRouter';
+import {
+  ANCHO_COMPLETO,
+  BOTON_AZUL,
+  BOTON_FANTASMA_CLARO,
+  CONTENEDOR,
+} from '../../../marca/estilos';
 import { ANCLA_PLANES, RUTA_CONSULTAR_POLIZA } from '../destinos';
 
 // Textos literales de W1 §5 (ficha W-01 §8).
@@ -13,6 +19,7 @@ const CTA_CONSULTAR = 'Consultar póliza';
 const CTA_PLANES = 'Ver planes';
 const ETIQUETA = 'Seguros para autos y motos, 100% online';
 const ALT_FOTO = 'Conductora sonriendo dentro de su auto durante una tarde de sol';
+const TITULO_PASOS = 'Cómo consultar tu póliza';
 
 const PASOS: ReadonlyArray<{ titulo: string; texto: string }> = [
   { titulo: 'Ingresá tus datos', texto: 'Tu DNI y el número de tu póliza.' },
@@ -22,128 +29,112 @@ const PASOS: ReadonlyArray<{ titulo: string; texto: string }> = [
 
 const TAMANO_ICONO = 22;
 
-// Botones para fondo oscuro: el `Button` del sistema es negro y no se vería sobre el panel.
-const BOTON =
-  'inline-flex h-10 items-center justify-center rounded-pill px-sp-16 text-body focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime motion-safe:transition motion-safe:duration-200 motion-safe:hover:-translate-y-0.5';
-const BOTON_PRINCIPAL = `${BOTON} bg-accent-lime text-text-primary`;
-const BOTON_SECUNDARIO = `${BOTON} border border-action-on-primary text-action-on-primary`;
-
 interface TarjetaFlotanteProps {
   icono: ReactNode;
   titulo: string;
   texto: string;
-  /** Posición sobre la foto y desfase de la flotación. */
-  clases: string;
+  /** Desfase de la flotación. */
+  clases?: string;
 }
 
-/** Tarjeta decorativa que flota sobre la foto; no es interactiva ni la lee el lector de pantalla. */
-function TarjetaFlotante({ icono, titulo, texto, clases }: TarjetaFlotanteProps) {
+/** Tarjeta decorativa sobre la foto; no es interactiva ni la lee el lector de pantalla. */
+function TarjetaFlotante({ icono, titulo, texto, clases = '' }: TarjetaFlotanteProps) {
   return (
     <div
       aria-hidden="true"
-      className={`absolute flex items-center gap-sp-12 rounded-input border border-border-hairline bg-surface-panel py-sp-12 pl-sp-12 pr-sp-16 shadow-shell flotar ${clases}`}
+      className={`flex items-center gap-sp-12 rounded-input border border-white/20 bg-white py-sp-12 pl-sp-12 pr-sp-20 flotar ${clases}`}
     >
-      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-lime text-text-primary">
+      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-celeste-suave text-marca-azul">
         {icono}
       </span>
       <span className="flex flex-col">
-        <span className="text-label text-text-primary">{titulo}</span>
-        <span className="text-caption text-text-secondary">{texto}</span>
+        <span className="text-body font-semibold text-marca-marino">{titulo}</span>
+        <span className="text-label font-normal text-text-secondary">{texto}</span>
       </span>
     </div>
   );
 }
 
 /**
- * Hero de la home sobre un panel verde suave: título, bajada, CTAs, foto con dos tarjetas
- * flotantes y los tres pasos para consultar y pagar.
+ * Hero de la home: foto a todo el ancho con el título grande abajo a la izquierda (DESIGN.md,
+ * Hero), el CTA azul como acción principal y, debajo, los tres pasos para consultar y pagar.
  */
 export function HeroPublico() {
   return (
-    <section className="relative my-sp-16 flex flex-col gap-sp-40 overflow-hidden rounded-card bg-action-primary p-sp-24 md:p-sp-48">
-      {/* Manchas de color difuminadas de fondo (decorativas). */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-sp-64 -top-sp-64 size-80 rounded-full bg-accent-lime opacity-30 blur-3xl"
-      />
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-sp-64 -left-sp-64 size-72 rounded-full bg-accent-lime opacity-20 blur-3xl"
-      />
-
-      <div className="relative flex flex-col gap-sp-32 md:flex-row md:items-center md:gap-sp-48">
-        <div className="flex flex-1 flex-col items-start gap-sp-24">
-          <Aparecer>
-            <span className="inline-flex h-7 items-center rounded-pill bg-accent-lime px-sp-12 text-label text-text-primary">
-              {ETIQUETA}
-            </span>
-          </Aparecer>
-          <Aparecer retardoMs={100}>
-            <h1 className="text-h1 font-bold text-action-on-primary md:text-display">{TITULO}</h1>
-          </Aparecer>
-          <Aparecer retardoMs={200}>
-            <p className="text-body text-surface-subtle">{BAJADA}</p>
-          </Aparecer>
-          <Aparecer retardoMs={300} className="flex flex-wrap gap-sp-12">
-            {renderLinkRouter({
-              href: RUTA_CONSULTAR_POLIZA,
-              className: BOTON_PRINCIPAL,
-              children: CTA_CONSULTAR,
-            })}
-            {/* Ancla de la misma página: `<a href>` nativo para que el navegador baje a la sección. */}
-            <a href={`#${ANCLA_PLANES}`} className={BOTON_SECUNDARIO}>
-              {CTA_PLANES}
-            </a>
-          </Aparecer>
-        </div>
-
-        <Aparecer retardoMs={150} className="w-full md:w-[520px] md:shrink-0">
-          <div className="relative">
-            <div className="h-[280px] overflow-hidden rounded-card bg-surface-subtle md:h-[400px]">
-              <img
-                src="/img/mujer-auto.jpg"
-                alt={ALT_FOTO}
-                width={1400}
-                height={933}
-                className="size-full object-cover transition duration-700 ease-out motion-safe:hover:scale-105"
-              />
+    <>
+      <section
+        aria-labelledby="titulo-hero"
+        className={`${ANCHO_COMPLETO} flex min-h-[600px] items-end overflow-hidden bg-marca-marino md:min-h-[min(84vh,760px)]`}
+      >
+        <img
+          src="/img/mujer-auto.jpg"
+          alt={ALT_FOTO}
+          width={1400}
+          height={933}
+          className="absolute inset-0 size-full object-cover object-[70%_center]"
+        />
+        {/* Velo marino para que el texto blanco se lea sobre cualquier parte de la foto. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-marca-marino via-marca-marino/60 to-marca-marino/0 md:bg-gradient-to-r md:via-marca-marino/45"
+        />
+        <div className={`${CONTENEDOR} relative pb-sp-48 pt-sp-112 md:pb-sp-80`}>
+          <Aparecer className="flex max-w-3xl flex-col items-start gap-sp-24">
+            <span className="text-body font-medium text-marca-celeste">{ETIQUETA}</span>
+            <h1 id="titulo-hero" className="text-balance text-hero-sm text-white md:text-hero">
+              {TITULO}
+            </h1>
+            <p className="max-w-xl text-body-lg text-white/85">{BAJADA}</p>
+            <div className="flex flex-wrap gap-sp-12 pt-sp-8">
+              {renderLinkRouter({
+                href: RUTA_CONSULTAR_POLIZA,
+                className: BOTON_AZUL,
+                children: CTA_CONSULTAR,
+              })}
+              {/* Ancla de la misma página: `<a href>` nativo para que el navegador baje a la sección. */}
+              <a href={`#${ANCLA_PLANES}`} className={BOTON_FANTASMA_CLARO}>
+                {CTA_PLANES}
+              </a>
             </div>
+          </Aparecer>
+          {/* Tarjetas de estado sobre la foto, a la derecha (solo desde tablet). */}
+          <div className="absolute bottom-sp-80 right-sp-40 hidden flex-col items-end gap-sp-12 lg:flex">
             <TarjetaFlotante
-              icono={<ShieldCheckIcon size={TAMANO_ICONO} weight="regular" />}
-              titulo="Cobertura activa"
-              texto="Consultala con tu DNI"
-              clases="-left-sp-16 bottom-sp-24 md:-left-sp-24"
-            />
-            <TarjetaFlotante
-              icono={<CheckCircleIcon size={TAMANO_ICONO} weight="regular" />}
+              icono={<CheckCircleIcon size={TAMANO_ICONO} />}
               titulo="Pago aprobado"
               texto="Factura emitida"
-              clases="-top-sp-16 right-sp-16 flotar-demora md:-right-sp-16 md:top-sp-24"
+            />
+            <TarjetaFlotante
+              icono={<ShieldCheckIcon size={TAMANO_ICONO} />}
+              titulo="Cobertura activa"
+              texto="Consultala con tu DNI"
+              clases="flotar-demora mr-sp-48"
             />
           </div>
-        </Aparecer>
-      </div>
+        </div>
+      </section>
 
-      <ol className="relative grid grid-cols-1 gap-sp-12 md:grid-cols-3">
-        {PASOS.map((paso, indice) => (
-          <li key={paso.titulo}>
-            <Aparecer retardoMs={indice * 120} className="h-full">
-              <div className="flex h-full items-center gap-sp-12 rounded-input bg-surface-panel px-sp-16 py-sp-12">
-                <span
-                  aria-hidden="true"
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-action-primary font-mono text-mono text-action-on-primary"
-                >
-                  {indice + 1}
-                </span>
-                <span className="flex flex-col">
-                  <span className="text-h3 text-text-primary">{paso.titulo}</span>
-                  <span className="text-body-sm text-text-secondary">{paso.texto}</span>
-                </span>
-              </div>
-            </Aparecer>
-          </li>
-        ))}
-      </ol>
-    </section>
+      <section aria-label={TITULO_PASOS} className="py-sp-48 md:py-sp-64">
+        <ol className="grid grid-cols-1 md:grid-cols-3">
+          {PASOS.map((paso, indice) => (
+            <li
+              key={paso.titulo}
+              className="flex gap-sp-16 border-t border-border-hairline py-sp-24 md:border-l md:border-t-0 md:px-sp-32 md:py-0 md:first:border-l-0 md:first:pl-0"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-marino font-display text-body font-semibold text-white"
+              >
+                {indice + 1}
+              </span>
+              <span className="flex flex-col gap-sp-4">
+                <span className="font-display text-titulo-md text-marca-marino">{paso.titulo}</span>
+                <span className="text-body text-text-secondary">{paso.texto}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
   );
 }
