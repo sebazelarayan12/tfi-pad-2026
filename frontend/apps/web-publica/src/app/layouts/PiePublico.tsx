@@ -1,5 +1,6 @@
 import { LogoMarca } from '../../marca/LogoMarca';
 import { CONTENEDOR, FOCO } from '../../marca/estilos';
+import { Aparecer } from '../../shared/animacion/Aparecer';
 
 export interface DatoContacto {
   label: string;
@@ -27,16 +28,21 @@ export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
       className="scroll-mt-sp-80 bg-gradient-to-b from-white to-marca-niebla"
     >
       <div className={`${CONTENEDOR} flex flex-col gap-sp-48 py-sp-64 md:py-sp-80`}>
-        <div className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">
+        <Aparecer className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">
           <h2 id="titulo-contacto" className="text-titulo-lg md:text-titulo-xl">
             {TITULO}
           </h2>
           <LogoMarca decorativo className="h-10 w-auto self-start md:h-12 md:self-auto" />
-        </div>
+        </Aparecer>
         {contacto.length > 0 ? (
           <dl className="grid grid-cols-1 gap-sp-24 border-t border-border-strong pt-sp-32 sm:grid-cols-2 lg:grid-cols-4">
-            {contacto.map((dato) => (
-              <div key={dato.label} className="flex flex-col gap-sp-4">
+            {contacto.map((dato, indice) => (
+              // `Aparecer` es un `div`, el agrupador válido de `dt`/`dd` dentro de `dl`.
+              <Aparecer
+                key={dato.label}
+                retardoMs={indice * 100}
+                className="flex flex-col gap-sp-4"
+              >
                 <dt className="text-label text-text-secondary">{dato.label}</dt>
                 <dd className="text-body-lg font-medium text-marca-marino">
                   {dato.href ? (
@@ -47,7 +53,7 @@ export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
                     dato.value
                   )}
                 </dd>
-              </div>
+              </Aparecer>
             ))}
           </dl>
         ) : null}
