@@ -26,7 +26,7 @@ const VEHICULOS: ReadonlyArray<Vehiculo> = [
     titulo: 'Autos y camionetas',
     texto: 'De la Responsabilidad Civil al Todo Riesgo: elegí cuánta protección querés llevar.',
     foto: '/img/auto.jpg',
-    posicion: 'object-[center_70%]',
+    posicion: 'object-[85%_70%]',
     alt: 'Auto plateado andando por una ruta recta con montañas al fondo',
   },
   {
@@ -61,7 +61,7 @@ export function CoberturaPorVehiculo() {
                     loading="lazy"
                     width={1600}
                     height={1067}
-                    className={`absolute inset-0 size-full object-cover ${vehiculo.posicion} [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_72%,transparent)]`}
+                    className={`absolute inset-0 size-full object-cover ${vehiculo.posicion} [mask-image:radial-gradient(ellipse_60%_58%_at_50%_45%,black_45%,transparent_100%)]`}
                   />
                   {/* Velo marino desde abajo para que el texto blanco se lea sobre cualquier foto. */}
                   <div
