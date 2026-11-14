@@ -24,9 +24,19 @@ export const BOTON_FANTASMA_CLARO = `${BOTON} border border-white text-white hov
 /** Botón de borde marino para fondos claros. */
 export const BOTON_FANTASMA = `${BOTON} border border-marca-marino text-marca-marino hover:bg-marca-niebla`;
 
-/** Sección a todo el ancho; se alternan blanco y niebla para marcar el ritmo (DESIGN.md). */
+/**
+ * Sección a todo el ancho. Las de niebla entran y salen en degradé desde el blanco, así el cambio
+ * de una sección a otra no se nota como un corte (como en la referencia del DESIGN.md).
+ */
 export const SECCION_BLANCA = `${ANCHO_COMPLETO} bg-white`;
-export const SECCION_NIEBLA = `${ANCHO_COMPLETO} bg-marca-niebla`;
+export const SECCION_NIEBLA = `${ANCHO_COMPLETO} bg-gradient-to-b from-white via-marca-niebla to-white`;
+
+/** Banda marina a todo el ancho; los fundidos de arriba y abajo los ponen `FUNDIDO_*`. */
+export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-marca-marino`;
+
+/** Fundidos decorativos para entrar y salir de una banda marina sin un corte. */
+export const FUNDIDO_A_MARINO = 'h-sp-112 bg-gradient-to-b from-white to-marca-marino md:h-48';
+export const FUNDIDO_DESDE_MARINO = 'h-sp-112 bg-gradient-to-b from-marca-marino to-white md:h-48';
 
 /** Contenido de una sección: contenedor de página y aire vertical generoso. */
 export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 md:py-sp-112`;
