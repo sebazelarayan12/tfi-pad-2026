@@ -20,12 +20,13 @@ interface NavPublicaProps {
 
 const ABRIR_MENU = 'Abrir menú';
 const CERRAR_MENU = 'Cerrar menú';
+const ETIQUETA_TEMA = 'Modo oscuro';
 
 const LINK = `inline-flex min-h-11 items-center rounded-input px-sp-4 text-body font-medium text-tema-titulo hover:text-tema-acento ${FOCO}`;
 
 /**
  * Barra superior de la web pública: fija, con borde fino abajo, logo a la izquierda, links, el CTA
- * en marino y el interruptor de modo claro/oscuro a la derecha (en oscuro la barra queda marina,
+ * en marino y el interruptor de modo claro/oscuro a la derecha (en celular, dentro del menú) (en oscuro la barra queda marina,
  * el CTA blanco y el logo en su versión blanca). El azul queda para la acción principal de cada página.
  */
 export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
@@ -63,7 +64,10 @@ export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
         <Link to={ctaHref} className={`hidden md:inline-flex ${BOTON_MARINO}`}>
           {ctaLabel}
         </Link>
-        <InterruptorTema />
+        {/* En celular el interruptor vive dentro del menú desplegable. */}
+        <div className="hidden md:block">
+          <InterruptorTema />
+        </div>
         <button
           ref={botonRef}
           type="button"
@@ -89,6 +93,13 @@ export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
               {link.label}
             </a>
           ))}
+          <div className="flex min-h-11 items-center justify-between gap-sp-16 px-sp-4">
+            {/* El nombre accesible ya lo da el interruptor; este texto es solo visual. */}
+            <span aria-hidden="true" className="text-body font-medium text-tema-titulo">
+              {ETIQUETA_TEMA}
+            </span>
+            <InterruptorTema />
+          </div>
           <Link to={ctaHref} className={`mt-sp-8 ${BOTON_MARINO}`} onClick={cerrar}>
             {ctaLabel}
           </Link>
