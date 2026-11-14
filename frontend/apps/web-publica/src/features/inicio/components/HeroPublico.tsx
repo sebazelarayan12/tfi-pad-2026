@@ -109,21 +109,21 @@ export function HeroPublico() {
                 {CTA_PLANES}
               </a>
             </div>
-            {/* Tarjetas de estado debajo de los botones (solo desde escritorio grande). */}
-            <div className="hidden flex-wrap gap-sp-12 pt-sp-16 lg:flex">
-              <TarjetaFlotante
-                icono={<CheckCircleIcon size={TAMANO_ICONO} />}
-                titulo="Pago aprobado"
-                texto="Factura emitida"
-              />
-              <TarjetaFlotante
-                icono={<ShieldCheckIcon size={TAMANO_ICONO} />}
-                titulo="Cobertura activa"
-                texto="Consultala con tu DNI"
-                clases="flotar-demora"
-              />
-            </div>
           </Aparecer>
+        </div>
+        {/* Tarjetas de estado a la derecha, por fuera de la burbuja del video (desde notebook). */}
+        <div className="absolute bottom-[8%] right-sp-40 hidden flex-col items-end gap-sp-12 lg:flex">
+          <TarjetaFlotante
+            icono={<CheckCircleIcon size={TAMANO_ICONO} />}
+            titulo="Pago aprobado"
+            texto="Factura emitida"
+          />
+          <TarjetaFlotante
+            icono={<ShieldCheckIcon size={TAMANO_ICONO} />}
+            titulo="Cobertura activa"
+            texto="Consultala con tu DNI"
+            clases="flotar-demora"
+          />
         </div>
       </section>
 
