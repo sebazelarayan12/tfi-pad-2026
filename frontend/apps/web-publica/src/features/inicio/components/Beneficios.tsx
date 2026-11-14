@@ -44,9 +44,11 @@ export function Beneficios() {
   return (
     <section aria-labelledby="titulo-beneficios" className={SECCION_BLANCA}>
       <div className={INTERIOR_SECCION}>
-        <h2 id="titulo-beneficios" className={TITULO_SECCION}>
-          {TITULO}
-        </h2>
+        <Aparecer>
+          <h2 id="titulo-beneficios" className={TITULO_SECCION}>
+            {TITULO}
+          </h2>
+        </Aparecer>
         <ul className="grid grid-cols-1 gap-x-sp-32 gap-y-sp-40 sm:grid-cols-2 lg:grid-cols-4">
           {BENEFICIOS.map((beneficio, indice) => (
             <li key={beneficio.titulo}>

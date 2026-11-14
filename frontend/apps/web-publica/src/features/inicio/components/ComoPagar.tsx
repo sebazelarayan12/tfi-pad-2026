@@ -34,9 +34,11 @@ export function ComoPagar() {
   return (
     <section aria-labelledby="titulo-como-pagar" className={SECCION_NIEBLA}>
       <div className={INTERIOR_SECCION}>
-        <h2 id="titulo-como-pagar" className={TITULO_SECCION}>
-          {TITULO}
-        </h2>
+        <Aparecer>
+          <h2 id="titulo-como-pagar" className={TITULO_SECCION}>
+            {TITULO}
+          </h2>
+        </Aparecer>
         <div className="grid grid-cols-1 gap-sp-24 md:grid-cols-2">
           <Aparecer>
             <div className={TARJETA}>
