@@ -5,6 +5,7 @@ import { useForm, type FieldErrors } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { ANCHO_COMPLETO, CONTENEDOR } from '../../../marca/estilos';
+import { Aparecer } from '../../../shared/animacion/Aparecer';
 import { useConsultarPoliza } from '../api/useConsultarPoliza';
 import {
   AlertaEstadoConsulta,
@@ -112,16 +113,18 @@ export function ConsultarPolizaPage() {
       <div
         className={`${CONTENEDOR} grid flex-1 items-stretch gap-sp-24 py-sp-32 md:py-sp-64 lg:grid-cols-2 lg:gap-sp-40`}
       >
-        <div className="relative hidden min-h-[560px] overflow-hidden rounded-card bg-marca-marino lg:block">
-          <img
-            src="/img/mujer-auto.jpg"
-            alt={ALT_FOTO}
-            width={1400}
-            height={933}
-            className="absolute inset-0 size-full object-cover object-[70%_center]"
-          />
-        </div>
-        <div className="flex flex-col justify-center gap-sp-24">
+        <Aparecer className="hidden lg:block">
+          <div className="relative h-full min-h-[560px] overflow-hidden rounded-card bg-marca-marino">
+            <img
+              src="/img/mujer-auto.jpg"
+              alt={ALT_FOTO}
+              width={1400}
+              height={933}
+              className="absolute inset-0 size-full object-cover object-[70%_center]"
+            />
+          </div>
+        </Aparecer>
+        <Aparecer retardoMs={150} className="flex flex-col justify-center gap-sp-24">
           <FormularioConsultaPoliza
             register={register}
             errors={errors}
@@ -133,7 +136,7 @@ export function ConsultarPolizaPage() {
               <AlertaEstadoConsulta tono={alerta.tono}>{alerta.texto}</AlertaEstadoConsulta>
             </div>
           ) : null}
-        </div>
+        </Aparecer>
       </div>
     </div>
   );
