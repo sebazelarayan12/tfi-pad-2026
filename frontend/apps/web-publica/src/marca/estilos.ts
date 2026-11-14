@@ -15,28 +15,32 @@ const BOTON = `inline-flex min-h-11 items-center justify-center gap-sp-8 rounded
 /** La acción principal de la pantalla: azul, una sola por pantalla. */
 export const BOTON_AZUL = `${BOTON} bg-marca-azul text-white hover:bg-marca-azul-hover`;
 
-/** Acción secundaria llena, en el marino del logo. */
-export const BOTON_MARINO = `${BOTON} bg-marca-marino text-white hover:bg-marca-marino-hover`;
+/** Acción secundaria llena, en el marino del logo (blanca en modo oscuro). */
+export const BOTON_MARINO = `${BOTON} bg-tema-boton-fuerte text-tema-sobre-fuerte hover:bg-tema-boton-fuerte-hover`;
 
 /** Botón de borde blanco para usar sobre fotos o fondos oscuros. */
 export const BOTON_FANTASMA_CLARO = `${BOTON} border border-white text-white hover:bg-white/10`;
 
-/** Botón de borde marino para fondos claros. */
-export const BOTON_FANTASMA = `${BOTON} border border-marca-marino text-marca-marino hover:bg-marca-niebla`;
+/** Botón de borde marino (blanco en modo oscuro). */
+export const BOTON_FANTASMA = `${BOTON} border border-tema-titulo text-tema-titulo hover:bg-tema-fondo-alt`;
 
 /**
  * Sección a todo el ancho. Las de niebla entran y salen en degradé desde el blanco, así el cambio
  * de una sección a otra no se nota como un corte (como en la referencia del DESIGN.md).
  */
-export const SECCION_BLANCA = `${ANCHO_COMPLETO} bg-white`;
-export const SECCION_NIEBLA = `${ANCHO_COMPLETO} bg-gradient-to-b from-white via-marca-niebla to-white`;
+export const SECCION_BLANCA = `${ANCHO_COMPLETO} bg-tema-fondo`;
+export const SECCION_NIEBLA = `${ANCHO_COMPLETO} bg-gradient-to-b from-tema-fondo via-tema-fondo-alt to-tema-fondo`;
 
 /** Banda marina a todo el ancho; los fundidos de arriba y abajo los ponen `FUNDIDO_*`. */
-export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-marca-marino`;
+export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-tema-banda`;
 
 /** Fundidos decorativos para entrar y salir de una banda marina sin un corte. */
-export const FUNDIDO_A_MARINO = 'fundido-a-marino h-64 md:h-[360px]';
-export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino h-64 md:h-[360px]';
+// Son altos para que el paso de color sea lento, y se meten un poco debajo del contenido de la banda
+// (margen negativo) para no sumar tanto espacio vacío.
+export const FUNDIDO_A_MARINO = 'fundido-a-marino -mb-sp-48 h-80 md:-mb-40 md:h-[560px]';
+export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino -mt-sp-48 h-80 md:-mt-40 md:h-[560px]';
+/** Fundido del fondo de la página al gris del pie. */
+export const FUNDIDO_A_PIE = 'fundido-a-pie h-48 md:h-80';
 
 /** Contenido de una sección: contenedor de página y aire vertical generoso. */
 export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 md:py-sp-112`;
@@ -45,4 +49,4 @@ export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 
 export const TITULO_SECCION = 'text-titulo-lg md:text-titulo-xl';
 
 /** Botón blanco lleno para usar sobre fotos. */
-export const BOTON_BLANCO = `${BOTON} bg-white text-marca-marino hover:bg-marca-niebla`;
+export const BOTON_BLANCO = `${BOTON} bg-white text-marca-marino hover:bg-white/90`;

@@ -4,14 +4,14 @@
 
 @layer base {
   body {
-    @apply bg-surface-panel font-sans text-text-primary antialiased;
+    @apply bg-tema-fondo font-sans text-text-primary antialiased;
   }
 
   /* Títulos en Montserrat, la letra del logo, con tracking negativo (DESIGN.md). */
   h1,
   h2,
   h3 {
-    @apply font-display text-marca-marino;
+    @apply font-display text-tema-titulo;
     letter-spacing: -0.02em;
   }
 }
@@ -45,70 +45,125 @@
 }
 
 /*
- * Fundidos entre secciones. Usan una curva suave (smoothstep) en la opacidad en lugar de un
- * degradé lineal, así el cambio de color arranca y termina sin cortes.
+ * Fundidos entre secciones. La opacidad sigue una curva suave (smoothstep, un paso cada 5%) en
+ * lugar de un degradé lineal y los bloques son altos, así el cambio de color arranca y termina sin
+ * que se note dónde. Leen los colores del tema, por eso funcionan en modo claro y oscuro.
  */
 @layer components {
   .fundido-a-marino {
-    background-color: #ffffff;
+    background-color: rgb(var(--tema-fondo));
     background-image: linear-gradient(
       to bottom,
-      rgb(11 31 75 / 0) 0%,
-      rgb(11 31 75 / 0.028) 10%,
-      rgb(11 31 75 / 0.104) 20%,
-      rgb(11 31 75 / 0.216) 30%,
-      rgb(11 31 75 / 0.352) 40%,
-      rgb(11 31 75 / 0.5) 50%,
-      rgb(11 31 75 / 0.648) 60%,
-      rgb(11 31 75 / 0.784) 70%,
-      rgb(11 31 75 / 0.896) 80%,
-      rgb(11 31 75 / 0.972) 90%,
-      rgb(11 31 75 / 1) 100%
+      rgb(var(--tema-banda) / 0) 0%,
+      rgb(var(--tema-banda) / 0.007) 5%,
+      rgb(var(--tema-banda) / 0.028) 10%,
+      rgb(var(--tema-banda) / 0.061) 15%,
+      rgb(var(--tema-banda) / 0.104) 20%,
+      rgb(var(--tema-banda) / 0.156) 25%,
+      rgb(var(--tema-banda) / 0.216) 30%,
+      rgb(var(--tema-banda) / 0.282) 35%,
+      rgb(var(--tema-banda) / 0.352) 40%,
+      rgb(var(--tema-banda) / 0.425) 45%,
+      rgb(var(--tema-banda) / 0.5) 50%,
+      rgb(var(--tema-banda) / 0.575) 55%,
+      rgb(var(--tema-banda) / 0.648) 60%,
+      rgb(var(--tema-banda) / 0.718) 65%,
+      rgb(var(--tema-banda) / 0.784) 70%,
+      rgb(var(--tema-banda) / 0.844) 75%,
+      rgb(var(--tema-banda) / 0.896) 80%,
+      rgb(var(--tema-banda) / 0.939) 85%,
+      rgb(var(--tema-banda) / 0.972) 90%,
+      rgb(var(--tema-banda) / 0.993) 95%,
+      rgb(var(--tema-banda) / 1) 100%
     );
   }
 
   .fundido-desde-marino {
-    background-color: #ffffff;
+    background-color: rgb(var(--tema-fondo));
     background-image: linear-gradient(
       to top,
-      rgb(11 31 75 / 0) 0%,
-      rgb(11 31 75 / 0.028) 10%,
-      rgb(11 31 75 / 0.104) 20%,
-      rgb(11 31 75 / 0.216) 30%,
-      rgb(11 31 75 / 0.352) 40%,
-      rgb(11 31 75 / 0.5) 50%,
-      rgb(11 31 75 / 0.648) 60%,
-      rgb(11 31 75 / 0.784) 70%,
-      rgb(11 31 75 / 0.896) 80%,
-      rgb(11 31 75 / 0.972) 90%,
-      rgb(11 31 75 / 1) 100%
+      rgb(var(--tema-banda) / 0) 0%,
+      rgb(var(--tema-banda) / 0.007) 5%,
+      rgb(var(--tema-banda) / 0.028) 10%,
+      rgb(var(--tema-banda) / 0.061) 15%,
+      rgb(var(--tema-banda) / 0.104) 20%,
+      rgb(var(--tema-banda) / 0.156) 25%,
+      rgb(var(--tema-banda) / 0.216) 30%,
+      rgb(var(--tema-banda) / 0.282) 35%,
+      rgb(var(--tema-banda) / 0.352) 40%,
+      rgb(var(--tema-banda) / 0.425) 45%,
+      rgb(var(--tema-banda) / 0.5) 50%,
+      rgb(var(--tema-banda) / 0.575) 55%,
+      rgb(var(--tema-banda) / 0.648) 60%,
+      rgb(var(--tema-banda) / 0.718) 65%,
+      rgb(var(--tema-banda) / 0.784) 70%,
+      rgb(var(--tema-banda) / 0.844) 75%,
+      rgb(var(--tema-banda) / 0.896) 80%,
+      rgb(var(--tema-banda) / 0.939) 85%,
+      rgb(var(--tema-banda) / 0.972) 90%,
+      rgb(var(--tema-banda) / 0.993) 95%,
+      rgb(var(--tema-banda) / 1) 100%
     );
   }
 
-  /* Velo blanco desde la izquierda del hero, para que el título marino se lea sobre el video. */
+  /* Entrada al pie gris desde el fondo de la página. */
+  .fundido-a-pie {
+    background-color: rgb(var(--tema-fondo));
+    background-image: linear-gradient(
+      to bottom,
+      rgb(var(--pie-fondo) / 0) 0%,
+      rgb(var(--pie-fondo) / 0.007) 5%,
+      rgb(var(--pie-fondo) / 0.028) 10%,
+      rgb(var(--pie-fondo) / 0.061) 15%,
+      rgb(var(--pie-fondo) / 0.104) 20%,
+      rgb(var(--pie-fondo) / 0.156) 25%,
+      rgb(var(--pie-fondo) / 0.216) 30%,
+      rgb(var(--pie-fondo) / 0.282) 35%,
+      rgb(var(--pie-fondo) / 0.352) 40%,
+      rgb(var(--pie-fondo) / 0.425) 45%,
+      rgb(var(--pie-fondo) / 0.5) 50%,
+      rgb(var(--pie-fondo) / 0.575) 55%,
+      rgb(var(--pie-fondo) / 0.648) 60%,
+      rgb(var(--pie-fondo) / 0.718) 65%,
+      rgb(var(--pie-fondo) / 0.784) 70%,
+      rgb(var(--pie-fondo) / 0.844) 75%,
+      rgb(var(--pie-fondo) / 0.896) 80%,
+      rgb(var(--pie-fondo) / 0.939) 85%,
+      rgb(var(--pie-fondo) / 0.972) 90%,
+      rgb(var(--pie-fondo) / 0.993) 95%,
+      rgb(var(--pie-fondo) / 1) 100%
+    );
+  }
+
+  /* Velo del color de fondo desde la izquierda del hero, para que el título se lea sobre el video. */
   .fundido-blanco-izquierda {
     background-image: linear-gradient(
       to right,
-      rgb(255 255 255 / 1) 0%,
-      rgb(255 255 255 / 0.96) 24%,
-      rgb(255 255 255 / 0.85) 32%,
-      rgb(255 255 255 / 0.62) 40%,
-      rgb(255 255 255 / 0.34) 48%,
-      rgb(255 255 255 / 0.1) 55%,
-      rgb(255 255 255 / 0) 60%
+      rgb(var(--tema-fondo) / 1) 0%,
+      rgb(var(--tema-fondo) / 0.96) 24%,
+      rgb(var(--tema-fondo) / 0.85) 32%,
+      rgb(var(--tema-fondo) / 0.62) 40%,
+      rgb(var(--tema-fondo) / 0.34) 48%,
+      rgb(var(--tema-fondo) / 0.1) 55%,
+      rgb(var(--tema-fondo) / 0) 60%
     );
   }
 
-  /* El pie del video se desvanece en blanco y se une con la sección siguiente. */
+  /* El pie del video se desvanece en el fondo y se une con la sección siguiente. */
   .fundido-blanco-abajo {
     background-image: linear-gradient(
       to bottom,
-      rgb(255 255 255 / 0) 0%,
-      rgb(255 255 255 / 0.104) 20%,
-      rgb(255 255 255 / 0.352) 40%,
-      rgb(255 255 255 / 0.648) 60%,
-      rgb(255 255 255 / 0.896) 80%,
-      rgb(255 255 255 / 1) 100%
+      rgb(var(--tema-fondo) / 0) 0%,
+      rgb(var(--tema-fondo) / 0.028) 10%,
+      rgb(var(--tema-fondo) / 0.104) 20%,
+      rgb(var(--tema-fondo) / 0.216) 30%,
+      rgb(var(--tema-fondo) / 0.352) 40%,
+      rgb(var(--tema-fondo) / 0.5) 50%,
+      rgb(var(--tema-fondo) / 0.648) 60%,
+      rgb(var(--tema-fondo) / 0.784) 70%,
+      rgb(var(--tema-fondo) / 0.896) 80%,
+      rgb(var(--tema-fondo) / 0.972) 90%,
+      rgb(var(--tema-fondo) / 1) 100%
     );
   }
 }
