@@ -22,7 +22,12 @@ const ALERTA_DEMASIADOS_INTENTOS = 'Hiciste muchos intentos. Esperá un minuto y
 const ALERTA_GENERICA = 'No pudimos consultar tu póliza. Intentá de nuevo en unos minutos.';
 
 const CAMPOS = ['dni', 'numeroPoliza'] as const;
-const ALT_FOTO = 'Conductora sonriendo dentro de su auto durante una tarde de sol';
+const ALT_IMAGEN = 'Auto negro delante del escudo de Nexa Seguros';
+// Misma imagen en dos versiones: wordmark azul para el modo claro y blanco para el oscuro.
+const IMAGEN_CLARA = '/img/auto-escudo-claro.webp';
+const IMAGEN_OSCURA = '/img/auto-escudo-oscuro.webp';
+const ANCHO_IMAGEN = 1200;
+const ALTO_IMAGEN = 759;
 
 interface AlertaVisible {
   tono: TonoAlertaEstadoConsulta;
@@ -106,7 +111,7 @@ export function ConsultarPolizaPage() {
   };
 
   return (
-    // Fondo niebla que se funde en blanco hacia el pie; en desktop, foto a la izquierda y formulario a la derecha.
+    // Fondo niebla que se funde hacia el pie; en desktop, el auto con el escudo a la izquierda y el formulario a la derecha.
     <div
       className={`${ANCHO_COMPLETO} flex flex-1 bg-tema-fondo md:bg-gradient-to-b md:from-tema-fondo-alt md:to-tema-fondo`}
     >
@@ -114,13 +119,23 @@ export function ConsultarPolizaPage() {
         className={`${CONTENEDOR} grid flex-1 items-stretch gap-sp-24 py-sp-32 md:py-sp-64 lg:grid-cols-2 lg:gap-sp-40`}
       >
         <Aparecer className="hidden lg:block">
-          <div className="relative h-full min-h-[560px] overflow-hidden rounded-card bg-marca-marino">
+          {/* `lazy` hace que el navegador solo descargue la versión visible del modo activo. */}
+          <div className="flex h-full min-h-[560px] items-center">
             <img
-              src="/img/mujer-auto.jpg"
-              alt={ALT_FOTO}
-              width={1400}
-              height={933}
-              className="absolute inset-0 size-full object-cover object-[70%_center]"
+              src={IMAGEN_CLARA}
+              alt={ALT_IMAGEN}
+              loading="lazy"
+              width={ANCHO_IMAGEN}
+              height={ALTO_IMAGEN}
+              className="h-auto w-full dark:hidden"
+            />
+            <img
+              src={IMAGEN_OSCURA}
+              alt={ALT_IMAGEN}
+              loading="lazy"
+              width={ANCHO_IMAGEN}
+              height={ALTO_IMAGEN}
+              className="hidden h-auto w-full dark:block"
             />
           </div>
         </Aparecer>
