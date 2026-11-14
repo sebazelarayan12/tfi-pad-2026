@@ -1,10 +1,10 @@
-import { Backdrop, PublicFooter, PublicNav, Shell } from '@nexa/ui';
 import { Outlet } from 'react-router-dom';
 
-import { renderLinkRouter } from '../../shared/enlace/renderLinkRouter';
+import { CONTENEDOR } from '../../marca/estilos';
 import { CONTACTO_PUBLICO, COPYRIGHT_PUBLICO } from './contenidoPublico';
+import { NavPublica } from './NavPublica';
+import { PiePublico } from './PiePublico';
 
-// Destinos propuestos en W1 §8 (NO DEFINIDOS en el Figma, T-18 §13.1).
 const LINKS_PUBLICOS = [
   { label: 'Planes', href: '/#planes' },
   { label: 'Contacto', href: '/#contacto' },
@@ -13,29 +13,19 @@ const CTA_LABEL = 'Consultar póliza';
 const CTA_HREF = '/consultar-poliza';
 
 /**
- * Marco de la web pública: Backdrop, Shell, nav, contenido de la ruta y pie.
- * Como en el Figma (W1 18:201, W2 18:90), el Shell ocupa al menos el alto de la ventana, el
- * contenido crece entre la nav y el pie, y no hay separación extra entre ellos (V-06).
+ * Marco de la web pública con la identidad Nexa Seguros: página a todo el ancho (sin el
+ * panel flotante anterior), nav fija arriba, contenido de la ruta y pie de contacto.
+ * El contenido va en el contenedor de 1440 px; `overflow-x-clip` deja que las fotos de la home
+ * salgan a todo el ancho (`ANCHO_COMPLETO`) sin scroll lateral.
  */
 export function PublicLayout() {
   return (
-    <Backdrop>
-      <div className="flex min-h-dvh flex-col p-sp-16 md:p-sp-24">
-        <Shell className="flex flex-1 flex-col">
-          <div className="flex flex-1 flex-col p-sp-16 md:p-sp-24">
-            <PublicNav
-              links={LINKS_PUBLICOS}
-              ctaLabel={CTA_LABEL}
-              ctaHref={CTA_HREF}
-              renderLink={renderLinkRouter}
-            />
-            <main id="contenido" className="flex flex-1 flex-col">
-              <Outlet />
-            </main>
-            <PublicFooter id="contacto" contacto={CONTACTO_PUBLICO} copyright={COPYRIGHT_PUBLICO} />
-          </div>
-        </Shell>
-      </div>
-    </Backdrop>
+    <div className="flex min-h-dvh flex-col overflow-x-clip bg-tema-fondo">
+      <NavPublica links={LINKS_PUBLICOS} ctaLabel={CTA_LABEL} ctaHref={CTA_HREF} />
+      <main id="contenido" className={`${CONTENEDOR} flex flex-1 flex-col`}>
+        <Outlet />
+      </main>
+      <PiePublico id="contacto" contacto={CONTACTO_PUBLICO} copyright={COPYRIGHT_PUBLICO} />
+    </div>
   );
 }

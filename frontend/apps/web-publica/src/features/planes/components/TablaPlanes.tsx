@@ -17,10 +17,23 @@ const CODIGO_DESTACADO = 'TC';
 const FILAS_SKELETON = 3;
 
 const TABLA = 'w-full table-fixed border-separate border-spacing-0';
-const MARCO = 'overflow-hidden rounded-card border border-border-hairline bg-surface-subtle';
+const MARCO = 'overflow-hidden rounded-card border border-border-hairline bg-tema-elevado';
+
+// El plan destacado va en el marino de la marca, con texto blanco; el resto, blanco con borde fino.
+function esDestacado(plan: PlanResponse) {
+  return plan.codigo === CODIGO_DESTACADO;
+}
 
 function fondo(plan: PlanResponse) {
-  return plan.codigo === CODIGO_DESTACADO ? 'bg-accent-lime-soft' : '';
+  return esDestacado(plan) ? 'bg-tema-destacado' : '';
+}
+
+function textoFuerte(plan: PlanResponse) {
+  return esDestacado(plan) ? 'text-white' : 'text-tema-titulo';
+}
+
+function textoSuave(plan: PlanResponse) {
+  return esDestacado(plan) ? 'text-white/75' : 'text-text-secondary';
 }
 
 /**
@@ -44,7 +57,7 @@ export function TablaPlanes() {
                   {Array.from({ length: FILAS_SKELETON }, (_, indice) => (
                     <span
                       key={indice}
-                      className="h-[112px] flex-1 animate-pulse rounded-input bg-surface-panel"
+                      className="h-[160px] flex-1 animate-pulse rounded-input bg-tema-fondo-alt"
                     />
                   ))}
                 </span>
@@ -80,10 +93,14 @@ export function TablaPlanes() {
                 key={plan.id}
                 scope="col"
                 data-destacado={plan.codigo === CODIGO_DESTACADO ? 'true' : undefined}
-                className={`px-sp-24 pt-sp-24 pb-sp-4 text-left align-top ${fondo(plan)}`.trimEnd()}
+                className={`border-l border-border-hairline px-sp-32 pb-sp-8 pt-sp-32 text-left align-top first:border-l-0 ${fondo(plan)}`.trimEnd()}
               >
-                <span className="block text-h3 text-text-primary">{plan.codigo}</span>
-                <span className="block text-body-sm text-text-secondary">{plan.nombre}</span>
+                <span className={`block font-display text-titulo-md ${textoFuerte(plan)}`}>
+                  {plan.codigo}
+                </span>
+                <span className={`block text-body font-normal ${textoSuave(plan)}`}>
+                  {plan.nombre}
+                </span>
               </th>
             ))}
           </tr>
@@ -95,13 +112,13 @@ export function TablaPlanes() {
                 key={plan.id}
                 data-label={`${plan.codigo} · ${plan.nombre}`}
                 data-destacado={plan.codigo === CODIGO_DESTACADO ? 'true' : undefined}
-                className={`px-sp-24 pb-sp-24 align-top max-md:border-b max-md:border-border-hairline max-md:last:border-b-0 max-md:pt-sp-16 max-md:before:block max-md:before:text-h3 max-md:before:text-text-primary max-md:before:content-[attr(data-label)] ${fondo(plan)}`.trimEnd()}
+                className={`px-sp-32 pb-sp-32 pt-sp-16 align-top md:border-l md:border-border-hairline md:first:border-l-0 max-md:border-b max-md:border-border-hairline max-md:last:border-b-0 max-md:px-sp-24 max-md:pt-sp-24 max-md:before:mb-sp-8 max-md:before:block max-md:before:font-display max-md:before:text-titulo-md max-md:before:content-[attr(data-label)] ${esDestacado(plan) ? 'max-md:before:text-white' : 'max-md:before:text-tema-titulo'} ${fondo(plan)}`.trimEnd()}
               >
-                <span className="block text-caption text-text-tertiary">{TEXTO_DESDE}</span>
-                <span className="block font-mono text-mono-lg text-text-primary">
+                <span className={`block text-label ${textoSuave(plan)}`}>{TEXTO_DESDE}</span>
+                <span className={`block font-display text-titulo-lg ${textoFuerte(plan)}`}>
                   {formatearImporte(plan.primaBase)}
                 </span>
-                <span className="block text-caption text-text-tertiary">{TEXTO_POR_MES}</span>
+                <span className={`block text-label ${textoSuave(plan)}`}>{TEXTO_POR_MES}</span>
               </td>
             ))}
           </tr>

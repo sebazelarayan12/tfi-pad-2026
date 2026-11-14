@@ -102,9 +102,7 @@ describe('InicioPage', () => {
         .map((titulo) => titulo.textContent),
     ).toEqual(['Pago online', 'Efectivo con Pago Fácil']);
     expect(
-      within(comoPagar).getByText(
-        'Elegí PADI o Pasarela B y pagá con tarjeta o dinero en cuenta.',
-      ),
+      within(comoPagar).getByText('Elegí PADI o Pasarela B y pagá con tarjeta o dinero en cuenta.'),
     ).toBeInTheDocument();
     expect(
       within(comoPagar).getByText(
@@ -126,12 +124,15 @@ describe('InicioPage', () => {
     expect(screen.queryByText('Ver ejemplo de cupón')).toBeNull();
   });
 
-  it('las fotos tienen texto alternativo y las tarjetas flotantes del hero están ocultas', async () => {
-    await renderizarCargada();
+  it('las fotos tienen texto alternativo y el video de portada es decorativo', async () => {
+    const { container } = await renderizarCargada();
     const fotos = screen.getAllByRole('img');
-    expect(fotos).toHaveLength(3);
+    expect(fotos).toHaveLength(2);
     for (const foto of fotos) expect(foto).toHaveAccessibleName();
-    expect(screen.getByText('Cobertura activa').closest('[aria-hidden="true"]')).not.toBeNull();
+    const video = container.querySelector('video');
+    expect(video).toHaveAttribute('aria-hidden', 'true');
+    expect(video).not.toHaveAttribute('loop');
+    expect(video).toHaveAttribute('poster', '/video/portada-final.jpg');
   });
 
   it('muestra beneficios y un plan para cada vehículo', async () => {

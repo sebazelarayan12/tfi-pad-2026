@@ -1,7 +1,9 @@
 import { Chip } from '@nexa/ui';
 
+import { INTERIOR_SECCION, SECCION_BLANCA, TITULO_SECCION } from '../../../marca/estilos';
 import { TablaPlanes } from '../../planes';
 import { ANCLA_PLANES } from '../destinos';
+import { Aparecer } from '../../../shared/animacion/Aparecer';
 
 // Textos literales de W1 §5 (ficha W-01 §8). La nota al pie la pone la home (ficha W-02 §8).
 const TITULO = 'Planes';
@@ -15,19 +17,25 @@ export function SeccionPlanes() {
     <section
       id={ANCLA_PLANES}
       aria-labelledby="titulo-planes"
-      className="flex scroll-mt-sp-24 flex-col gap-sp-24 py-sp-48"
+      className={`${SECCION_BLANCA} scroll-mt-sp-64`}
     >
-      <div className="flex flex-col items-start gap-sp-12 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-sp-8">
-          <h2 id="titulo-planes" className="text-h2 text-text-primary">
-            {TITULO}
-          </h2>
-          <p className="text-body-sm text-text-secondary">{SUBTITULO}</p>
-        </div>
-        <Chip tipo="neutro" label={CHIP} />
+      <div className={INTERIOR_SECCION}>
+        <Aparecer className="flex flex-col items-start gap-sp-16 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-sp-12">
+            <h2 id="titulo-planes" className={TITULO_SECCION}>
+              {TITULO}
+            </h2>
+            <p className="text-body-lg text-text-secondary">{SUBTITULO}</p>
+          </div>
+          <Chip tipo="neutro" label={CHIP} />
+        </Aparecer>
+        <Aparecer retardoMs={150}>
+          <TablaPlanes />
+        </Aparecer>
+        <Aparecer retardoMs={250}>
+          <p className="text-body text-text-secondary">{NOTA}</p>
+        </Aparecer>
       </div>
-      <TablaPlanes />
-      <p className="text-body-sm text-text-tertiary">{NOTA}</p>
     </section>
   );
 }

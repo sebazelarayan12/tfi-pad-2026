@@ -17,7 +17,7 @@ const renderEn = (ruta: string) =>
   );
 
 describe('PublicLayout', () => {
-  it('compone nav, main y footer dentro del shell', () => {
+  it('compone nav, main y footer a todo el ancho', () => {
     const { container } = renderEn('/prueba');
     const header = container.querySelector('header');
     const main = container.querySelector('main#contenido');
@@ -25,11 +25,11 @@ describe('PublicLayout', () => {
     expect(header).not.toBeNull();
     expect(main).not.toBeNull();
     expect(footer).not.toBeNull();
-    expect(container.querySelector('.shadow-shell')).toContainElement(main as HTMLElement);
     // Orden en el documento: nav, main y footer.
     expect(header?.compareDocumentPosition(main as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(main?.compareDocumentPosition(footer as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByText(COPYRIGHT_PUBLICO)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Nexa Seguros' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Consultar póliza' })).toHaveAttribute(
       'href',
       '/consultar-poliza',
