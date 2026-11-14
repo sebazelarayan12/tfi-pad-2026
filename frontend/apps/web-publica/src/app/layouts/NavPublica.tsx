@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 
 import { LogoMarca } from '../../marca/LogoMarca';
 import { BOTON_MARINO, CONTENEDOR, FOCO } from '../../marca/estilos';
+import { InterruptorTema } from '../../marca/tema/InterruptorTema';
 
 export interface LinkNav {
   label: string;
@@ -20,11 +21,12 @@ interface NavPublicaProps {
 const ABRIR_MENU = 'Abrir menú';
 const CERRAR_MENU = 'Cerrar menú';
 
-const LINK = `inline-flex min-h-11 items-center rounded-input px-sp-4 text-body font-medium text-marca-marino hover:text-marca-azul ${FOCO}`;
+const LINK = `inline-flex min-h-11 items-center rounded-input px-sp-4 text-body font-medium text-tema-titulo hover:text-tema-acento ${FOCO}`;
 
 /**
- * Barra superior de la web pública: blanca, fija, con borde fino abajo, logo a la izquierda,
- * links y el CTA en marino a la derecha (el azul queda para la acción principal de cada página).
+ * Barra superior de la web pública: fija, con borde fino abajo, logo a la izquierda, links, el CTA
+ * en marino y el interruptor de modo claro/oscuro a la derecha (en oscuro la barra queda marina,
+ * el CTA blanco y el logo en su versión blanca). El azul queda para la acción principal de cada página.
  */
 export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
   const [abierto, setAbierto] = useState(false);
@@ -45,7 +47,7 @@ export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
   }, [abierto]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border-hairline bg-white">
+    <header className="sticky top-0 z-30 border-b border-border-hairline bg-tema-fondo">
       <div className={`${CONTENEDOR} flex h-16 items-center gap-sp-32 md:h-[72px]`}>
         <Link to="/" className={`rounded-input ${FOCO}`} onClick={cerrar}>
           <LogoMarca className="h-8 w-auto md:h-10" />
@@ -61,6 +63,7 @@ export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
         <Link to={ctaHref} className={`hidden md:inline-flex ${BOTON_MARINO}`}>
           {ctaLabel}
         </Link>
+        <InterruptorTema />
         <button
           ref={botonRef}
           type="button"
@@ -68,7 +71,7 @@ export function NavPublica({ links, ctaLabel, ctaHref }: NavPublicaProps) {
           aria-expanded={abierto}
           aria-controls={idMenu}
           onClick={() => setAbierto((valor) => !valor)}
-          className={`inline-flex size-11 items-center justify-center rounded-pill text-marca-marino md:hidden ${FOCO}`}
+          className={`inline-flex size-11 items-center justify-center rounded-pill text-tema-titulo md:hidden ${FOCO}`}
         >
           <span aria-hidden="true" className="inline-flex">
             {abierto ? <XIcon size={22} /> : <ListIcon size={22} />}
