@@ -39,8 +39,6 @@ export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-tema-banda`;
 // (margen negativo) para no sumar tanto espacio vacío.
 export const FUNDIDO_A_MARINO = 'fundido-a-marino -mb-sp-48 h-80 md:-mb-40 md:h-[560px]';
 export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino -mt-sp-48 h-80 md:-mt-40 md:h-[560px]';
-/** Fundido del fondo de la página al gris del pie. */
-export const FUNDIDO_A_PIE = 'fundido-a-pie h-48 md:h-80';
 
 /** Contenido de una sección: contenedor de página y aire vertical generoso. */
 export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 md:py-sp-112`;

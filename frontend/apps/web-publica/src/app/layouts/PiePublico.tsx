@@ -1,5 +1,5 @@
 import { LogoMarca } from '../../marca/LogoMarca';
-import { CONTENEDOR, FOCO, FUNDIDO_A_PIE } from '../../marca/estilos';
+import { CONTENEDOR, FOCO } from '../../marca/estilos';
 import { Aparecer } from '../../shared/animacion/Aparecer';
 
 export interface DatoContacto {
@@ -21,16 +21,15 @@ const ENLACE = `rounded-input underline-offset-4 hover:text-marca-celeste hover:
 
 /**
  * Pie de la web pública: logo blanco, datos de contacto en columnas y copyright, sobre gris oscuro
- * en los dos modos. Arriba entra con un fundido desde el fondo de la página.
+ * en los dos modos. Arranca con un corte recto marcado por una línea azul fina, sin fundido.
  */
 export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
   return (
     <footer
       id={id}
       aria-labelledby="titulo-contacto"
-      className="scroll-mt-sp-80 bg-pie-fondo text-pie-texto"
+      className="scroll-mt-sp-80 border-t-2 border-marca-azul bg-pie-fondo text-pie-texto"
     >
-      <div aria-hidden="true" className={FUNDIDO_A_PIE} />
       <div className={`${CONTENEDOR} flex flex-col gap-sp-48 py-sp-64 md:py-sp-80`}>
         <Aparecer className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">
           <h2 id="titulo-contacto" className="text-titulo-lg text-pie-texto md:text-titulo-xl">
