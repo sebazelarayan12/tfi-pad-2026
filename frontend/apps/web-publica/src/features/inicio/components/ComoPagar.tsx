@@ -2,6 +2,7 @@ import { BarcodeIcon } from '@phosphor-icons/react/dist/csr/Barcode';
 import { CreditCardIcon } from '@phosphor-icons/react/dist/csr/CreditCard';
 import { CardWidget } from '@nexa/ui';
 
+import { INTERIOR_SECCION, SECCION_NIEBLA, TITULO_SECCION } from '../../../marca/estilos';
 import { Aparecer } from '../../../shared/animacion/Aparecer';
 import { renderLinkRouter } from '../../../shared/enlace/renderLinkRouter';
 import { RUTA_CONSULTAR_POLIZA } from '../destinos';
@@ -16,8 +17,8 @@ const EFECTIVO_TEXTO =
   'Pagá en efectivo con el cupón de Pago Fácil, que tiene un código de barras de 42 dígitos.';
 const TAMANO_ICONO = 20;
 
-const TARJETA =
-  'rounded-card motion-safe:transition motion-safe:duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-shell';
+// Superficie plana con borde fino, sin sombra ni elevación al pasar el mouse (DESIGN.md).
+const TARJETA = 'h-full rounded-card [&>section]:h-full [&>section]:p-sp-32';
 
 /**
  * Sección "Cómo pagar": dos tarjetas que llevan a consultar la póliza, que es donde se pide el
@@ -31,33 +32,35 @@ export function ComoPagar() {
   };
 
   return (
-    <section aria-labelledby="titulo-como-pagar" className="flex flex-col gap-sp-24 py-sp-48">
-      <h2 id="titulo-como-pagar" className="text-h2 text-text-primary">
-        {TITULO}
-      </h2>
-      <div className="grid grid-cols-1 gap-sp-24 md:grid-cols-2">
-        <Aparecer>
-          <div className={TARJETA}>
-            <CardWidget
-              title={ONLINE_TITULO}
-              icon={<CreditCardIcon size={TAMANO_ICONO} weight="regular" />}
-              action={accion}
-            >
-              {ONLINE_TEXTO}
-            </CardWidget>
-          </div>
-        </Aparecer>
-        <Aparecer retardoMs={150}>
-          <div className={TARJETA}>
-            <CardWidget
-              title={EFECTIVO_TITULO}
-              icon={<BarcodeIcon size={TAMANO_ICONO} weight="regular" />}
-              action={accion}
-            >
-              {EFECTIVO_TEXTO}
-            </CardWidget>
-          </div>
-        </Aparecer>
+    <section aria-labelledby="titulo-como-pagar" className={SECCION_NIEBLA}>
+      <div className={INTERIOR_SECCION}>
+        <h2 id="titulo-como-pagar" className={TITULO_SECCION}>
+          {TITULO}
+        </h2>
+        <div className="grid grid-cols-1 gap-sp-24 md:grid-cols-2">
+          <Aparecer>
+            <div className={TARJETA}>
+              <CardWidget
+                title={ONLINE_TITULO}
+                icon={<CreditCardIcon size={TAMANO_ICONO} weight="regular" />}
+                action={accion}
+              >
+                {ONLINE_TEXTO}
+              </CardWidget>
+            </div>
+          </Aparecer>
+          <Aparecer retardoMs={150}>
+            <div className={TARJETA}>
+              <CardWidget
+                title={EFECTIVO_TITULO}
+                icon={<BarcodeIcon size={TAMANO_ICONO} weight="regular" />}
+                action={accion}
+              >
+                {EFECTIVO_TEXTO}
+              </CardWidget>
+            </div>
+          </Aparecer>
+        </div>
       </div>
     </section>
   );
