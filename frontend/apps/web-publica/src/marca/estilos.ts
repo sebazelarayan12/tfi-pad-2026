@@ -35,8 +35,8 @@ export const SECCION_NIEBLA = `${ANCHO_COMPLETO} bg-gradient-to-b from-white via
 export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-marca-marino`;
 
 /** Fundidos decorativos para entrar y salir de una banda marina sin un corte. */
-export const FUNDIDO_A_MARINO = 'h-sp-112 bg-gradient-to-b from-white to-marca-marino md:h-48';
-export const FUNDIDO_DESDE_MARINO = 'h-sp-112 bg-gradient-to-b from-marca-marino to-white md:h-48';
+export const FUNDIDO_A_MARINO = 'fundido-a-marino h-64 md:h-[360px]';
+export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino h-64 md:h-[360px]';
 
 /** Contenido de una sección: contenedor de página y aire vertical generoso. */
 export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 md:py-sp-112`;

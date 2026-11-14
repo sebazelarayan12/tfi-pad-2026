@@ -43,3 +43,72 @@
     animation-delay: -2.5s;
   }
 }
+
+/*
+ * Fundidos entre secciones. Usan una curva suave (smoothstep) en la opacidad en lugar de un
+ * degradé lineal, así el cambio de color arranca y termina sin cortes.
+ */
+@layer components {
+  .fundido-a-marino {
+    background-color: #ffffff;
+    background-image: linear-gradient(
+      to bottom,
+      rgb(11 31 75 / 0) 0%,
+      rgb(11 31 75 / 0.028) 10%,
+      rgb(11 31 75 / 0.104) 20%,
+      rgb(11 31 75 / 0.216) 30%,
+      rgb(11 31 75 / 0.352) 40%,
+      rgb(11 31 75 / 0.5) 50%,
+      rgb(11 31 75 / 0.648) 60%,
+      rgb(11 31 75 / 0.784) 70%,
+      rgb(11 31 75 / 0.896) 80%,
+      rgb(11 31 75 / 0.972) 90%,
+      rgb(11 31 75 / 1) 100%
+    );
+  }
+
+  .fundido-desde-marino {
+    background-color: #ffffff;
+    background-image: linear-gradient(
+      to top,
+      rgb(11 31 75 / 0) 0%,
+      rgb(11 31 75 / 0.028) 10%,
+      rgb(11 31 75 / 0.104) 20%,
+      rgb(11 31 75 / 0.216) 30%,
+      rgb(11 31 75 / 0.352) 40%,
+      rgb(11 31 75 / 0.5) 50%,
+      rgb(11 31 75 / 0.648) 60%,
+      rgb(11 31 75 / 0.784) 70%,
+      rgb(11 31 75 / 0.896) 80%,
+      rgb(11 31 75 / 0.972) 90%,
+      rgb(11 31 75 / 1) 100%
+    );
+  }
+
+  /* Velo blanco desde la izquierda del hero, para que el título marino se lea sobre el video. */
+  .fundido-blanco-izquierda {
+    background-image: linear-gradient(
+      to right,
+      rgb(255 255 255 / 1) 0%,
+      rgb(255 255 255 / 0.96) 24%,
+      rgb(255 255 255 / 0.85) 32%,
+      rgb(255 255 255 / 0.62) 40%,
+      rgb(255 255 255 / 0.34) 48%,
+      rgb(255 255 255 / 0.1) 55%,
+      rgb(255 255 255 / 0) 60%
+    );
+  }
+
+  /* El pie del video se desvanece en blanco y se une con la sección siguiente. */
+  .fundido-blanco-abajo {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0) 0%,
+      rgb(255 255 255 / 0.104) 20%,
+      rgb(255 255 255 / 0.352) 40%,
+      rgb(255 255 255 / 0.648) 60%,
+      rgb(255 255 255 / 0.896) 80%,
+      rgb(255 255 255 / 1) 100%
+    );
+  }
+}
