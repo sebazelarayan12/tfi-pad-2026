@@ -1,5 +1,6 @@
 import { Chip } from '@nexa/ui';
 
+import { INTERIOR_SECCION, SECCION_BLANCA, TITULO_SECCION } from '../../../marca/estilos';
 import { TablaPlanes } from '../../planes';
 import { ANCLA_PLANES } from '../destinos';
 
@@ -15,19 +16,21 @@ export function SeccionPlanes() {
     <section
       id={ANCLA_PLANES}
       aria-labelledby="titulo-planes"
-      className="flex scroll-mt-sp-24 flex-col gap-sp-24 py-sp-48"
+      className={`${SECCION_BLANCA} scroll-mt-sp-64`}
     >
-      <div className="flex flex-col items-start gap-sp-12 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-sp-8">
-          <h2 id="titulo-planes" className="text-h2 text-text-primary">
-            {TITULO}
-          </h2>
-          <p className="text-body-sm text-text-secondary">{SUBTITULO}</p>
+      <div className={INTERIOR_SECCION}>
+        <div className="flex flex-col items-start gap-sp-16 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-sp-12">
+            <h2 id="titulo-planes" className={TITULO_SECCION}>
+              {TITULO}
+            </h2>
+            <p className="text-body-lg text-text-secondary">{SUBTITULO}</p>
+          </div>
+          <Chip tipo="neutro" label={CHIP} />
         </div>
-        <Chip tipo="neutro" label={CHIP} />
+        <TablaPlanes />
+        <p className="text-body text-text-secondary">{NOTA}</p>
       </div>
-      <TablaPlanes />
-      <p className="text-body-sm text-text-tertiary">{NOTA}</p>
     </section>
   );
 }
