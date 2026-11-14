@@ -4,6 +4,7 @@ import { ReceiptIcon } from '@phosphor-icons/react/dist/csr/Receipt';
 import { WalletIcon } from '@phosphor-icons/react/dist/csr/Wallet';
 import type { ReactNode } from 'react';
 
+import { INTERIOR_SECCION, SECCION_BLANCA, TITULO_SECCION } from '../../../marca/estilos';
 import { Aparecer } from '../../../shared/animacion/Aparecer';
 
 const TITULO = 'Por qué elegir Nexa';
@@ -41,28 +42,30 @@ const BENEFICIOS: ReadonlyArray<Beneficio> = [
 /** Cuatro beneficios del servicio; solo cuenta lo que el sitio realmente hace. */
 export function Beneficios() {
   return (
-    <section aria-labelledby="titulo-beneficios" className="flex flex-col gap-sp-24 py-sp-48">
-      <h2 id="titulo-beneficios" className="text-h2 text-text-primary">
-        {TITULO}
-      </h2>
-      <ul className="grid grid-cols-1 gap-sp-16 sm:grid-cols-2 lg:grid-cols-4">
-        {BENEFICIOS.map((beneficio, indice) => (
-          <li key={beneficio.titulo}>
-            <Aparecer retardoMs={indice * 100} className="h-full">
-              <div className="flex h-full flex-col gap-sp-12 rounded-card border border-border-hairline bg-surface-panel p-sp-20 motion-safe:transition motion-safe:duration-300 motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-shell">
-                <span
-                  aria-hidden="true"
-                  className="inline-flex size-12 items-center justify-center rounded-input bg-accent-lime-soft text-text-primary"
-                >
-                  {beneficio.icono}
-                </span>
-                <h3 className="text-h3 text-text-primary">{beneficio.titulo}</h3>
-                <p className="text-body-sm text-text-secondary">{beneficio.texto}</p>
-              </div>
-            </Aparecer>
-          </li>
-        ))}
-      </ul>
+    <section aria-labelledby="titulo-beneficios" className={SECCION_BLANCA}>
+      <div className={INTERIOR_SECCION}>
+        <h2 id="titulo-beneficios" className={TITULO_SECCION}>
+          {TITULO}
+        </h2>
+        <ul className="grid grid-cols-1 gap-x-sp-32 gap-y-sp-40 sm:grid-cols-2 lg:grid-cols-4">
+          {BENEFICIOS.map((beneficio, indice) => (
+            <li key={beneficio.titulo}>
+              <Aparecer retardoMs={indice * 100} className="h-full">
+                <div className="flex h-full flex-col gap-sp-16 border-t border-border-hairline pt-sp-24">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex size-12 items-center justify-center rounded-input bg-marca-celeste-suave text-marca-azul"
+                  >
+                    {beneficio.icono}
+                  </span>
+                  <h3 className="text-titulo-md">{beneficio.titulo}</h3>
+                  <p className="text-body text-text-secondary">{beneficio.texto}</p>
+                </div>
+              </Aparecer>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
