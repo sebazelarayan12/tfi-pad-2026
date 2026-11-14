@@ -56,15 +56,15 @@ function TarjetaFlotante({ icono, titulo, texto, clases = '' }: TarjetaFlotanteP
 }
 
 /**
- * Hero de la home: foto a todo el ancho con el título grande abajo a la izquierda (DESIGN.md,
- * Hero), el CTA azul como acción principal y, debajo, los tres pasos para consultar y pagar.
+ * Hero de la home: foto a todo el ancho que se desvanece en blanco al pie, con el título grande
+ * a la izquierda (DESIGN.md, Hero), el CTA azul como acción principal y los tres pasos debajo.
  */
 export function HeroPublico() {
   return (
     <>
       <section
         aria-labelledby="titulo-hero"
-        className={`${ANCHO_COMPLETO} flex min-h-[600px] items-end overflow-hidden bg-marca-marino md:min-h-[min(84vh,760px)]`}
+        className={`${ANCHO_COMPLETO} flex min-h-[680px] items-end overflow-hidden bg-marca-marino md:min-h-[min(92vh,860px)]`}
       >
         <img
           src="/img/mujer-auto.jpg"
@@ -76,9 +76,14 @@ export function HeroPublico() {
         {/* Velo marino para que el texto blanco se lea sobre cualquier parte de la foto. */}
         <span
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-marca-marino via-marca-marino/60 to-marca-marino/0 md:bg-gradient-to-r md:via-marca-marino/45"
+          className="absolute inset-0 bg-marca-marino/55 md:bg-transparent md:bg-gradient-to-r md:from-marca-marino md:via-marca-marino/45 md:to-marca-marino/0"
         />
-        <div className={`${CONTENEDOR} relative pb-sp-48 pt-sp-112 md:pb-sp-80`}>
+        {/* La foto se desvanece en blanco abajo y se funde con la sección siguiente. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-white/0 to-white md:h-56"
+        />
+        <div className={`${CONTENEDOR} relative pb-sp-112 pt-sp-112 md:pb-[240px]`}>
           <Aparecer className="flex max-w-3xl flex-col items-start gap-sp-24">
             <span className="text-body font-medium text-marca-celeste">{ETIQUETA}</span>
             <h1 id="titulo-hero" className="text-balance text-hero-sm text-white md:text-hero">
@@ -98,7 +103,7 @@ export function HeroPublico() {
             </div>
           </Aparecer>
           {/* Tarjetas de estado sobre la foto, a la derecha (solo desde tablet). */}
-          <div className="absolute bottom-sp-80 right-sp-40 hidden flex-col items-end gap-sp-12 lg:flex">
+          <div className="absolute bottom-[260px] right-sp-40 hidden flex-col items-end gap-sp-12 lg:flex">
             <TarjetaFlotante
               icono={<CheckCircleIcon size={TAMANO_ICONO} />}
               titulo="Pago aprobado"
