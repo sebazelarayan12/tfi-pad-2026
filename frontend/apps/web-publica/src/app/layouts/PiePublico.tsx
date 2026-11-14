@@ -24,7 +24,7 @@ export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
     <footer
       id={id}
       aria-labelledby="titulo-contacto"
-      className="scroll-mt-sp-80 border-t border-border-hairline bg-marca-niebla"
+      className="scroll-mt-sp-80 bg-gradient-to-b from-white to-marca-niebla"
     >
       <div className={`${CONTENEDOR} flex flex-col gap-sp-48 py-sp-64 md:py-sp-80`}>
         <div className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">

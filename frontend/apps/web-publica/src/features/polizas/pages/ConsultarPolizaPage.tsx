@@ -105,8 +105,10 @@ export function ConsultarPolizaPage() {
   };
 
   return (
-    // Fondo niebla a todo el ancho; en desktop, foto a la izquierda y formulario a la derecha.
-    <div className={`${ANCHO_COMPLETO} flex flex-1 bg-white md:bg-marca-niebla`}>
+    // Fondo niebla que se funde en blanco hacia el pie; en desktop, foto a la izquierda y formulario a la derecha.
+    <div
+      className={`${ANCHO_COMPLETO} flex flex-1 bg-white md:bg-gradient-to-b md:from-marca-niebla md:to-white`}
+    >
       <div
         className={`${CONTENEDOR} grid flex-1 items-stretch gap-sp-24 py-sp-32 md:py-sp-64 lg:grid-cols-2 lg:gap-sp-40`}
       >
