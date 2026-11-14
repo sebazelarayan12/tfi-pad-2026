@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-surface-panel font-sans text-text-primary antialiased;
+  }
+
+  /* Títulos en Montserrat, la letra del logo, con tracking negativo (DESIGN.md). */
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-marca-marino;
+    letter-spacing: -0.02em;
+  }
+}
+
 /* Las anclas del nav ("Planes", "Contacto") bajan con scroll suave, salvo con movimiento reducido. */
 @media (prefers-reduced-motion: no-preference) {
   html {
@@ -9,14 +23,14 @@
   }
 }
 
-/* Flotación suave de las tarjetas decorativas del hero; sin animación con movimiento reducido. */
+/* Flotación suave de las tarjetas de estado del hero; sin animación con movimiento reducido. */
 @keyframes flotar {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 }
 
