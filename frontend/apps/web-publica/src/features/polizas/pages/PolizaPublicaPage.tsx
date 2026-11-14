@@ -28,13 +28,13 @@ function MiPoliza({ estado }: { estado: EstadoMiPoliza }) {
   const irA = useNavegarAPago(estado, seleccion);
 
   return (
-    // Escritorio: el contenido del Figma (nodo 18:60) tiene 40 px de padding y 32 de gap; el marco ya pone 24 a los lados.
+    // Los lados los pone el contenedor del layout; arriba y abajo, el aire del estilo Nexa.
     <div
-      className={`flex flex-col gap-sp-24 pt-sp-24 md:gap-sp-32 md:px-sp-16 md:pt-sp-40 ${esEscritorio || consulta.cuotas.length === 0 ? 'pb-sp-24 md:pb-sp-40' : 'pb-28'}`}
+      className={`flex flex-col gap-sp-24 pt-sp-32 md:gap-sp-40 md:pt-sp-64 ${esEscritorio || consulta.cuotas.length === 0 ? 'pb-sp-32 md:pb-sp-80' : 'pb-28'}`}
     >
       {/* Título en su línea y debajo número y estado (nodos 18:61 y 18:63). */}
       <header className="flex flex-col gap-sp-8">
-        <h1 className="text-h1 text-text-primary">Mi póliza</h1>
+        <h1 className="text-titulo-lg md:text-titulo-xl">Mi póliza</h1>
         <div className="flex flex-wrap items-center gap-sp-12">
           <span className="font-mono text-mono text-text-secondary">{consulta.numeroPoliza}</span>
           <BadgeEstadoPoliza estado={consulta.estado} />
