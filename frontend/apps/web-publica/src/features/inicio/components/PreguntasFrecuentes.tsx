@@ -33,26 +33,30 @@ export function PreguntasFrecuentes() {
   return (
     <section aria-labelledby="titulo-faq" className={SECCION_BLANCA}>
       <div className={`${INTERIOR_SECCION} lg:flex-row lg:gap-sp-80`}>
-        <h2 id="titulo-faq" className={`${TITULO_SECCION} lg:w-1/3 lg:shrink-0`}>
-          {TITULO}
-        </h2>
-        <Aparecer className="flex flex-1 flex-col border-t border-border-hairline">
-          {PREGUNTAS.map(({ pregunta, respuesta }) => (
-            <details key={pregunta} className="group border-b border-border-hairline py-sp-24">
-              <summary
-                className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-sp-16 rounded-input font-display text-titulo-md text-marca-marino ${FOCO} [&::-webkit-details-marker]:hidden`}
-              >
-                {pregunta}
-                <CaretDownIcon
-                  aria-hidden="true"
-                  size={20}
-                  className="shrink-0 text-marca-azul transition duration-300 group-open:rotate-180 motion-reduce:transition-none"
-                />
-              </summary>
-              <p className="max-w-2xl pt-sp-12 text-body-lg text-text-secondary">{respuesta}</p>
-            </details>
-          ))}
+        <Aparecer className="lg:w-1/3 lg:shrink-0">
+          <h2 id="titulo-faq" className={`${TITULO_SECCION}`}>
+            {TITULO}
+          </h2>
         </Aparecer>
+        <div className="flex flex-1 flex-col border-t border-border-hairline">
+          {PREGUNTAS.map(({ pregunta, respuesta }, indice) => (
+            <Aparecer key={pregunta} retardoMs={indice * 120}>
+              <details className="group border-b border-border-hairline py-sp-24">
+                <summary
+                  className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-sp-16 rounded-input font-display text-titulo-md text-marca-marino ${FOCO} [&::-webkit-details-marker]:hidden`}
+                >
+                  {pregunta}
+                  <CaretDownIcon
+                    aria-hidden="true"
+                    size={20}
+                    className="shrink-0 text-marca-azul transition duration-300 group-open:rotate-180 motion-reduce:transition-none"
+                  />
+                </summary>
+                <p className="max-w-2xl pt-sp-12 text-body-lg text-text-secondary">{respuesta}</p>
+              </details>
+            </Aparecer>
+          ))}
+        </div>
       </div>
     </section>
   );
