@@ -21,7 +21,7 @@ const ENLACE = `rounded-input underline-offset-4 hover:text-marca-azul hover:und
 /** Pie de la web pública: logo, datos de contacto en columnas y copyright, sobre fondo niebla. */
 export function PiePublico({ contacto, copyright, id }: PiePublicoProps) {
   return (
-    <footer id={id} aria-labelledby="titulo-contacto" className="scroll-mt-sp-80 bg-marca-niebla">
+    <footer id={id} aria-labelledby="titulo-contacto" className="scroll-mt-sp-80 border-t border-border-hairline bg-marca-niebla">
       <div className={`${CONTENEDOR} flex flex-col gap-sp-48 py-sp-64 md:py-sp-80`}>
         <div className="flex flex-col gap-sp-32 md:flex-row md:items-end md:justify-between">
           <h2 id="titulo-contacto" className="text-titulo-lg md:text-titulo-xl">
