@@ -124,11 +124,15 @@ describe('InicioPage', () => {
     expect(screen.queryByText('Ver ejemplo de cupón')).toBeNull();
   });
 
-  it('las fotos tienen texto alternativo', async () => {
-    await renderizarCargada();
+  it('las fotos tienen texto alternativo y el video de portada es decorativo', async () => {
+    const { container } = await renderizarCargada();
     const fotos = screen.getAllByRole('img');
-    expect(fotos).toHaveLength(3);
+    expect(fotos).toHaveLength(2);
     for (const foto of fotos) expect(foto).toHaveAccessibleName();
+    const video = container.querySelector('video');
+    expect(video).toHaveAttribute('aria-hidden', 'true');
+    expect(video).not.toHaveAttribute('loop');
+    expect(video).toHaveAttribute('poster', '/video/portada-final.jpg');
   });
 
   it('muestra beneficios y un plan para cada vehículo', async () => {

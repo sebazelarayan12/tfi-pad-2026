@@ -4,12 +4,8 @@ import type { ReactNode } from 'react';
 
 import { Aparecer } from '../../../shared/animacion/Aparecer';
 import { renderLinkRouter } from '../../../shared/enlace/renderLinkRouter';
-import {
-  ANCHO_COMPLETO,
-  BOTON_AZUL,
-  BOTON_FANTASMA_CLARO,
-  CONTENEDOR,
-} from '../../../marca/estilos';
+import { ANCHO_COMPLETO, BOTON_AZUL, BOTON_FANTASMA, CONTENEDOR } from '../../../marca/estilos';
+import { useReproducirAlEntrar } from '../../../shared/video/useReproducirAlEntrar';
 import { ANCLA_PLANES, RUTA_CONSULTAR_POLIZA } from '../destinos';
 
 // Textos literales de W1 §5 (ficha W-01 §8).
@@ -18,7 +14,7 @@ const BAJADA = 'Consultá el estado de tu póliza, revisá tus cuotas y pagalas 
 const CTA_CONSULTAR = 'Consultar póliza';
 const CTA_PLANES = 'Ver planes';
 const ETIQUETA = 'Seguros para autos y motos, 100% online';
-const ALT_FOTO = 'Conductora sonriendo dentro de su auto durante una tarde de sol';
+const POSTER_VIDEO = '/video/portada-final.jpg';
 const TITULO_PASOS = 'Cómo consultar tu póliza';
 
 const PASOS: ReadonlyArray<{ titulo: string; texto: string }> = [
@@ -37,12 +33,12 @@ interface TarjetaFlotanteProps {
   clases?: string;
 }
 
-/** Tarjeta decorativa sobre la foto; no es interactiva ni la lee el lector de pantalla. */
+/** Tarjeta decorativa de estado; no es interactiva ni la lee el lector de pantalla. */
 function TarjetaFlotante({ icono, titulo, texto, clases = '' }: TarjetaFlotanteProps) {
   return (
     <div
       aria-hidden="true"
-      className={`flex items-center gap-sp-12 rounded-input border border-white/20 bg-white py-sp-12 pl-sp-12 pr-sp-20 flotar ${clases}`}
+      className={`flex items-center gap-sp-12 rounded-input border border-border-hairline bg-white py-sp-12 pl-sp-12 pr-sp-20 flotar ${clases}`}
     >
       <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-marca-celeste-suave text-marca-azul">
         {icono}
@@ -56,40 +52,52 @@ function TarjetaFlotante({ icono, titulo, texto, clases = '' }: TarjetaFlotanteP
 }
 
 /**
- * Hero de la home: foto a todo el ancho que se desvanece en blanco al pie, con el título grande
- * a la izquierda (DESIGN.md, Hero), el CTA azul como acción principal y los tres pasos debajo.
+ * Hero de la home: video de portada a la derecha (el auto en la mano y el escudo de Nexa), que se
+ * reproduce una vez al entrar y queda en el último cuadro; a la izquierda, un velo blanco con el
+ * título marino, el CTA azul como acción principal y, debajo, los tres pasos.
  */
 export function HeroPublico() {
+  const { bloqueRef, videoRef } = useReproducirAlEntrar<HTMLElement>();
+
   return (
     <>
       <section
+        ref={bloqueRef}
         aria-labelledby="titulo-hero"
-        className={`${ANCHO_COMPLETO} flex min-h-[680px] items-end overflow-hidden bg-marca-marino md:min-h-[min(92vh,860px)]`}
+        className={`${ANCHO_COMPLETO} flex flex-col overflow-hidden bg-white md:min-h-[min(88vh,820px)] md:justify-center`}
       >
-        <img
-          src="/img/mujer-auto.jpg"
-          alt={ALT_FOTO}
-          width={1400}
-          height={933}
-          className="absolute inset-0 size-full object-cover object-[70%_center]"
-        />
-        {/* Velo marino para que el texto blanco se lea sobre cualquier parte de la foto. */}
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 bg-marca-marino/55 md:bg-transparent md:bg-gradient-to-r md:from-marca-marino md:via-marca-marino/45 md:to-marca-marino/0"
-        />
-        {/* La foto se desvanece en blanco abajo y se funde con la sección siguiente. */}
-        <span
-          aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-white/0 to-white md:h-56"
-        />
-        <div className={`${CONTENEDOR} relative pb-sp-112 pt-sp-112 md:pb-[240px]`}>
-          <Aparecer className="flex max-w-3xl flex-col items-start gap-sp-24">
-            <span className="text-body font-medium text-marca-celeste">{ETIQUETA}</span>
-            <h1 id="titulo-hero" className="text-balance text-hero-sm text-white md:text-hero">
+        <div className="relative h-[300px] sm:h-[420px] md:absolute md:inset-0 md:h-auto">
+          {/* Decorativo: el poster es el último cuadro, así sin reproducir ya se ve el logo. */}
+          <video
+            ref={videoRef}
+            aria-hidden="true"
+            muted
+            playsInline
+            preload="auto"
+            poster={POSTER_VIDEO}
+            width={1920}
+            height={1080}
+            className="absolute inset-0 size-full object-cover object-[82%_center] md:object-[70%_center] lg:object-center"
+          >
+            <source src="/video/portada.webm" type="video/webm" />
+            <source src="/video/portada.mp4" type="video/mp4" />
+          </video>
+          <span
+            aria-hidden="true"
+            className="fundido-blanco-izquierda absolute inset-0 hidden md:block"
+          />
+          <span
+            aria-hidden="true"
+            className="fundido-blanco-abajo absolute inset-x-0 bottom-0 h-1/3 md:h-1/4"
+          />
+        </div>
+        <div className={`${CONTENEDOR} relative pb-sp-24 md:py-sp-112`}>
+          <Aparecer className="flex max-w-xl flex-col items-start gap-sp-24 lg:max-w-[600px]">
+            <span className="text-body font-medium text-marca-azul">{ETIQUETA}</span>
+            <h1 id="titulo-hero" className="text-balance text-hero-sm md:text-hero">
               {TITULO}
             </h1>
-            <p className="max-w-xl text-body-lg text-white/85">{BAJADA}</p>
+            <p className="max-w-lg text-body-lg text-text-secondary">{BAJADA}</p>
             <div className="flex flex-wrap gap-sp-12 pt-sp-8">
               {renderLinkRouter({
                 href: RUTA_CONSULTAR_POLIZA,
@@ -97,25 +105,25 @@ export function HeroPublico() {
                 children: CTA_CONSULTAR,
               })}
               {/* Ancla de la misma página: `<a href>` nativo para que el navegador baje a la sección. */}
-              <a href={`#${ANCLA_PLANES}`} className={BOTON_FANTASMA_CLARO}>
+              <a href={`#${ANCLA_PLANES}`} className={BOTON_FANTASMA}>
                 {CTA_PLANES}
               </a>
             </div>
+            {/* Tarjetas de estado debajo de los botones (solo desde escritorio grande). */}
+            <div className="hidden flex-wrap gap-sp-12 pt-sp-16 lg:flex">
+              <TarjetaFlotante
+                icono={<CheckCircleIcon size={TAMANO_ICONO} />}
+                titulo="Pago aprobado"
+                texto="Factura emitida"
+              />
+              <TarjetaFlotante
+                icono={<ShieldCheckIcon size={TAMANO_ICONO} />}
+                titulo="Cobertura activa"
+                texto="Consultala con tu DNI"
+                clases="flotar-demora"
+              />
+            </div>
           </Aparecer>
-          {/* Tarjetas de estado sobre la foto, a la derecha (solo desde tablet). */}
-          <div className="absolute bottom-[260px] right-sp-40 hidden flex-col items-end gap-sp-12 lg:flex">
-            <TarjetaFlotante
-              icono={<CheckCircleIcon size={TAMANO_ICONO} />}
-              titulo="Pago aprobado"
-              texto="Factura emitida"
-            />
-            <TarjetaFlotante
-              icono={<ShieldCheckIcon size={TAMANO_ICONO} />}
-              titulo="Cobertura activa"
-              texto="Consultala con tu DNI"
-              clases="flotar-demora mr-sp-48"
-            />
-          </div>
         </div>
       </section>
 
