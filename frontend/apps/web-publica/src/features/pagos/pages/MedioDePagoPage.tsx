@@ -3,7 +3,6 @@ import { AlertaError, Button } from '@nexa/ui';
 import { BarcodeIcon } from '@phosphor-icons/react/dist/csr/Barcode';
 import { CreditCardIcon } from '@phosphor-icons/react/dist/csr/CreditCard';
 import { LockKeyIcon } from '@phosphor-icons/react/dist/csr/LockKey';
-import { WalletIcon } from '@phosphor-icons/react/dist/csr/Wallet';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
@@ -27,11 +26,10 @@ interface OpcionMedio {
   icono: ReactNode;
 }
 
-const DESCRIPCION_ONLINE = 'Pago online con tarjeta o dinero en cuenta.';
-
 /**
  * Nombres y orden fijos hasta PB-22 (D-09); la descripción de Pago Fácil sigue DN-W6-5.
  * "Pasarela A" es PADI (decisión de Martin): sigue siendo `pasarela1` y se paga en otra pestaña.
+ * Pasarela B queda fuera de la vista: PADI es la única pasarela online. El mapeo a `pasarela2` se conserva.
  */
 const OPCIONES: ReadonlyArray<OpcionMedio> = [
   {
@@ -39,12 +37,6 @@ const OPCIONES: ReadonlyArray<OpcionMedio> = [
     titulo: 'PADI',
     descripcion: 'Billetera virtual PADI. Pagás en una pestaña nueva.',
     icono: <CreditCardIcon size={24} weight="regular" />,
-  },
-  {
-    valor: 'pasarela-b',
-    titulo: 'Pasarela B',
-    descripcion: DESCRIPCION_ONLINE,
-    icono: <WalletIcon size={24} weight="regular" />,
   },
   {
     valor: 'pago-facil',

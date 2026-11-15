@@ -8,10 +8,13 @@ interface AparecerProps {
 }
 
 const UMBRAL_VISIBLE = 0.15;
+// Recorta un poco el borde de abajo de la ventana: el bloque entra cuando ya asomó, no en el borde.
+const MARGEN_VENTANA = '0px 0px -8% 0px';
 
 /**
- * Entrada suave (opacidad y desplazamiento) cuando el bloque entra en pantalla. Respeta
- * `prefers-reduced-motion` y, sin `IntersectionObserver`, muestra el contenido de entrada.
+ * Entrada y salida suaves (opacidad, desplazamiento y desenfoque) al hacer scroll: el bloque
+ * aparece cuando entra en pantalla y se vuelve a desvanecer cuando sale, hacia arriba o hacia
+ * abajo. Respeta `prefers-reduced-motion` y, sin `IntersectionObserver`, muestra el contenido.
  */
 export function Aparecer({ children, retardoMs = 0, className = '' }: AparecerProps) {
   const nodo = useRef<HTMLDivElement>(null);
@@ -19,28 +22,27 @@ export function Aparecer({ children, retardoMs = 0, className = '' }: AparecerPr
 
   useEffect(() => {
     const elemento = nodo.current;
-    if (visible || !elemento) return;
+    if (!elemento || typeof IntersectionObserver === 'undefined') return;
     const observador = new IntersectionObserver(
       ([entrada]) => {
-        if (!entrada?.isIntersecting) return;
-        setVisible(true);
-        observador.disconnect();
+        if (entrada) setVisible(entrada.isIntersecting);
       },
-      { threshold: UMBRAL_VISIBLE },
+      { threshold: UMBRAL_VISIBLE, rootMargin: MARGEN_VENTANA },
     );
     observador.observe(elemento);
     return () => observador.disconnect();
-  }, [visible]);
+  }, []);
 
   const estado = visible
-    ? 'opacity-100 translate-y-0'
-    : 'translate-y-6 opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100';
+    ? 'translate-y-0 opacity-100 blur-0'
+    : 'translate-y-12 opacity-0 blur-sm motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:blur-0';
 
   return (
     <div
       ref={nodo}
-      style={{ transitionDelay: `${retardoMs}ms` }}
-      className={`transition duration-700 ease-out motion-reduce:transition-none ${estado} ${className}`}
+      // El retraso solo escalona la entrada; al salir, todo se desvanece a la vez.
+      style={{ transitionDelay: visible ? `${retardoMs}ms` : '0ms' }}
+      className={`transition-[opacity,transform,filter] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${estado} ${className}`}
     >
       {children}
     </div>
