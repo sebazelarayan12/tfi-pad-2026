@@ -38,10 +38,10 @@ export function FormularioConsultaPoliza({
       autoComplete="off"
       aria-busy={enviando}
       onSubmit={onSubmit}
-      className="flex w-full flex-col gap-sp-16 md:w-[560px] md:gap-sp-20 md:rounded-card md:border md:border-border-hairline md:bg-surface-panel md:p-sp-40"
+      className="flex w-full flex-col gap-sp-16 md:max-w-[560px] md:gap-sp-20 md:rounded-card md:border md:border-border-hairline md:bg-tema-elevado md:p-sp-48 lg:max-w-none"
     >
-      <h1 className="text-h1 text-text-primary">Consultá tu póliza</h1>
-      <p className="text-body text-text-secondary">
+      <h1 className="text-titulo-lg md:text-titulo-xl">Consultá tu póliza</h1>
+      <p className="text-body-lg text-text-secondary">
         Ingresá tu DNI y el número de póliza para ver su estado y pagar sus cuotas.
       </p>
 
@@ -71,7 +71,7 @@ export function FormularioConsultaPoliza({
         type="submit"
         label={enviando ? TEXTO_CONSULTANDO : TEXTO_CONSULTAR}
         disabled={enviando}
-        className="w-full"
+        className="mt-sp-8 h-12 w-full rounded-boton text-body-lg font-medium"
       />
 
       <p className="flex items-start gap-sp-8 text-body-sm text-text-secondary">
