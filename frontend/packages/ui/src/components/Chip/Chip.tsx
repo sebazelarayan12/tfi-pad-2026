@@ -7,7 +7,7 @@ export interface ChipProps {
   onClick?: () => void;
 }
 
-const BASE = 'inline-flex h-7 items-center rounded-pill px-sp-12 py-sp-4 text-label';
+const BASE = 'nx-chip inline-flex h-7 items-center rounded-pill px-sp-12 py-sp-4 text-label';
 
 const ESTATICOS = {
   destacado: 'bg-accent-lime text-text-primary',

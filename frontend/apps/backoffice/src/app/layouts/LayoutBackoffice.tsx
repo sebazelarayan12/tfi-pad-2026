@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useMatches, useNavigate } from 'react-router
 import { Backdrop, Shell, Sidebar } from '@nexa/ui';
 import { cerrarSesion, useSesion } from '../../features/auth';
 import { LogoMarca } from '../../marca/LogoMarca';
-import { gruposParaRol, type HandleRuta } from './navegacionBackoffice';
+import { gruposParaRol, SEGMENTO_VEHICULOS, type HandleRuta } from './navegacionBackoffice';
 import { Topbar } from './Topbar';
 
 function DotsThreeIcon() {
@@ -55,7 +55,7 @@ function MenuUsuario() {
         aria-expanded={abierto}
         aria-controls={abierto ? idMenu : undefined}
         onClick={() => setAbierto((valor) => !valor)}
-        className="flex h-8 w-8 items-center justify-center rounded-pill text-text-primary"
+        className="nx-icono-boton flex h-8 w-8 items-center justify-center rounded-pill text-text-primary"
       >
         <DotsThreeIcon />
       </button>
@@ -63,7 +63,7 @@ function MenuUsuario() {
         <div
           id={idMenu}
           role="menu"
-          className="absolute bottom-full right-0 mb-sp-8 min-w-[160px] rounded-card border border-border-strong bg-surface-panel p-sp-4"
+          className="nx-menu absolute bottom-full right-0 mb-sp-8 min-w-[160px] rounded-card border border-border-strong p-sp-4"
         >
           <button
             ref={opcion}
@@ -108,7 +108,7 @@ export function LayoutBackoffice() {
               children: ReactNode;
             }) => <Link to={href} {...props} onClick={() => setMenuAbierto(false)} />,
           }
-        : item;
+        : { ...item, active: item.sub === true && pathname.includes(SEGMENTO_VEHICULOS) };
     }),
   }));
 
@@ -139,18 +139,21 @@ export function LayoutBackoffice() {
                 Menú de navegación
               </button>
             </div>
-            <div id={idMenu} className={`shrink-0 bg-surface-sidebar xl:block ${menuAbierto ? 'block' : 'hidden'}`}>
+            <div id={idMenu} className={`nx-lateral shrink-0 xl:block ${menuAbierto ? 'block' : 'hidden'}`}>
               <Sidebar
                 grupos={grupos}
                 user={usuario}
                 menuUsuario={<MenuUsuario />}
-                logo={<LogoMarca className="hidden h-11 w-auto self-start xl:block" />}
+                logo={<LogoMarca blanco className="hidden h-11 w-auto self-start xl:block" />}
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-16 xl:p-sp-32">
               <Topbar {...encabezado} />
               <main id="contenido" className="min-w-0 overflow-x-auto xl:overflow-visible">
-                <Outlet />
+                {/* La clave reinicia la animación de entrada en cada cambio de pantalla. */}
+                <div key={pathname} className="nx-entra">
+                  <Outlet />
+                </div>
               </main>
             </div>
           </div>

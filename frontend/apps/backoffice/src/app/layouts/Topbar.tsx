@@ -88,7 +88,7 @@ export function Topbar({
         type="button"
         aria-label="Notificaciones"
         onClick={onNotificaciones}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-surface-panel text-text-primary"
+        className="nx-icono-boton flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-surface-panel text-text-primary"
       >
         <BellIcon />
       </button>

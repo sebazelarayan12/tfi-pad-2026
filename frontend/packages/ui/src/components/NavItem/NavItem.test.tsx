@@ -24,6 +24,7 @@ describe('NavItem', () => {
 
   it('sin href: no es un enlace y tiene aria-disabled="true"', () => {
     render(<NavItem label="Vehículos" icon="car" />);
+    expect(screen.getByText('Vehículos').parentElement).not.toHaveClass('nx-nav-sub');
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByText('Vehículos').parentElement).toHaveAttribute('aria-disabled', 'true');
   });
@@ -61,5 +62,11 @@ describe('NavItem', () => {
     render(<NavItem label="Planes" icon="list" href="/planes" />);
     const svg = screen.getByRole('link', { name: 'Planes' }).querySelector('svg');
     expect(svg?.closest('span')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('sub-ítem: lleva el gancho de anidado y la sangría', () => {
+    render(<NavItem label="Vehículos" icon="car" sub />);
+
+    expect(screen.getByText('Vehículos').parentElement).toHaveClass('nx-nav-sub', 'pl-sp-20');
   });
 });

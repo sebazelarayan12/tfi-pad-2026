@@ -12,6 +12,8 @@ export interface NavItemProps {
   label: string;
   icon: NavIcon;
   active?: boolean;
+  /** Sub-ítem: se dibuja anidado bajo el ítem anterior. */
+  sub?: boolean;
   /** Sin `href` el ítem no es interactivo (DP-1). */
   href?: string;
   /** Enlace del router de la app; por defecto `<a href>` (DP-2). */
@@ -20,12 +22,21 @@ export interface NavItemProps {
 
 const FOCO =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary';
-const BASE = 'flex h-8 w-full items-center gap-sp-8 rounded-input pr-sp-8 text-body-sm';
+const SUB = 'nx-nav-sub pl-sp-20';
+const BASE = 'nx-nav flex h-8 w-full items-center gap-sp-8 rounded-input pr-sp-8 text-body-sm';
 
 /** Ítem de navegación con estados Activo e Inactivo (`design-system §5.6`). */
-export function NavItem({ label, icon, active = false, href, renderLink }: NavItemProps) {
+export function NavItem({
+  label,
+  icon,
+  active = false,
+  sub = false,
+  href,
+  renderLink,
+}: NavItemProps) {
   const Icono = NAV_ICONOS[icon];
   const color = active ? 'text-text-primary' : 'text-text-secondary';
+  const base = sub ? `${BASE} ${SUB}` : BASE;
   const contenido = (
     <>
       <span
@@ -42,13 +53,13 @@ export function NavItem({ label, icon, active = false, href, renderLink }: NavIt
 
   if (!href) {
     return (
-      <span aria-disabled="true" className={`${BASE} ${color}`}>
+      <span aria-disabled="true" className={`${base} ${color}`}>
         {contenido}
       </span>
     );
   }
 
-  const className = `${BASE} ${color} ${FOCO}`;
+  const className = `${base} ${color} ${FOCO}`;
   const ariaCurrent = active ? ('page' as const) : undefined;
 
   if (renderLink) {

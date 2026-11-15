@@ -10,14 +10,15 @@ export interface HandleRuta {
   tituloPrincipal?: boolean;
 }
 
-// Vehículos no tiene pantalla todavía (DP-1): sin `href` queda no interactivo.
+// Vehículos no tiene pantalla propia (DP-1): se llega desde la ficha de un cliente, así que va
+// anidado bajo Clientes y sin `href` (no interactivo). Se marca al cargar un vehículo.
 export const NAV_PRINCIPAL: GrupoNav = {
   id: 'principal',
   titulo: 'Principal',
   items: [
     { label: 'Inicio', icon: 'house', href: '/inicio' },
     { label: 'Clientes', icon: 'users', href: '/clientes' },
-    { label: 'Vehículos', icon: 'car' },
+    { label: 'Vehículos', icon: 'car', sub: true },
     { label: 'Cotizaciones', icon: 'calculator', href: '/cotizaciones' },
     { label: 'Pólizas', icon: 'file-text', href: '/polizas' },
     { label: 'Pagos y facturas', icon: 'receipt', href: '/pagos' },
@@ -40,6 +41,9 @@ export const NAV_INTEGRACIONES: GrupoNav = {
   titulo: 'Integraciones',
   items: [{ label: 'Integraciones', icon: 'list', href: '/integraciones' }],
 };
+
+/** Sección de la ruta que marca el sub-ítem Vehículos (`/clientes/:id/vehiculos/...`). */
+export const SEGMENTO_VEHICULOS = '/vehiculos/';
 
 /** El grupo de administración solo lo ve el Administrador (FB7.10); sin rol no hay navegación. */
 export function gruposParaRol(rol: RolSesion | null): GrupoNav[] {
