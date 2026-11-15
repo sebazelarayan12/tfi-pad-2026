@@ -157,11 +157,11 @@ describe('LoginPage: formulario', () => {
     const { container } = renderizarLogin();
 
     expect(screen.queryByText('Foto: sede de atención')).not.toBeInTheDocument();
-    // Una sola imagen, sin texto alternativo: la lee como decoración, no como contenido.
-    const imagenes = container.querySelectorAll('img');
-    expect(imagenes).toHaveLength(1);
-    expect(imagenes[0]).toHaveAttribute('alt', '');
-    expect(screen.getByText('Nexa Seguros')).toBeInTheDocument();
+    expect(container.querySelector('img[src="/img/login-auto.jpg"]')).toHaveAttribute('alt', '');
+    expect(screen.getByRole('img', { name: 'Nexa Seguros' })).toHaveAttribute(
+      'src',
+      '/img/logo-nexa-seguros.png',
+    );
     expect(screen.getByText('Panel interno de Nexa Seguros')).toBeInTheDocument();
     expect(
       screen.getByText('Clientes, pólizas, cuotas y cobros en un solo lugar.'),

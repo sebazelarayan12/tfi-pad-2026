@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError, type LoginResponse } from '@nexa/api';
-import { Button, LogoNexa, toast } from '@nexa/ui';
+import { Button, toast } from '@nexa/ui';
 import { useEffect, useRef } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { LogoMarca } from '../../../marca/LogoMarca';
 
 import { useCambiarPassword } from '../api/useCambiarPassword';
 import { CampoContrasena } from '../components/CampoContrasena';
@@ -128,7 +129,7 @@ export function CambiarPasswordPage() {
     <LayoutAcceso>
       <form noValidate onSubmit={(evento) => void handleSubmit(enviar)(evento)}>
         <div className="flex flex-col gap-sp-24">
-          <LogoNexa />
+          <LogoMarca />
           <div className="flex flex-col gap-sp-8">
             <h1 className="text-h1 text-text-primary">Cambiá tu contraseña</h1>
             <p className="text-body-sm text-text-secondary">

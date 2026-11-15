@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nexa/api';
-import { AlertaError, Button, Input, LogoNexa } from '@nexa/ui';
+import { AlertaError, Button, Input } from '@nexa/ui';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate } from 'react-router-dom';
+import { LogoMarca } from '../../../marca/LogoMarca';
 
 import { CampoContrasena, LayoutAcceso, useSesion } from '../../auth';
 import { useIngresoGrupo } from '../api/useIngresoGrupo';
@@ -58,7 +59,7 @@ export function IngresoGrupoPage() {
     <LayoutAcceso>
       <form noValidate onSubmit={(evento) => void handleSubmit(enviar)(evento)}>
         <div className="flex flex-col gap-sp-24">
-          <LogoNexa />
+          <LogoMarca />
           <div className="flex flex-col gap-sp-8">
             <h1 className="text-h1 text-text-primary">Ingresar a Integraciones</h1>
             <p className="text-body-sm text-text-secondary">

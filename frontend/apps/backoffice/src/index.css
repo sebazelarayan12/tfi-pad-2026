@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface-sidebar text-text-primary;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: Montserrat, Inter, sans-serif;
+  }
+}

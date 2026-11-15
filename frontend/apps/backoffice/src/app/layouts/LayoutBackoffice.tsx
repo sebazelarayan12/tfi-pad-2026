@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { Backdrop, Shell, Sidebar } from '@nexa/ui';
 import { cerrarSesion, useSesion } from '../../features/auth';
+import { LogoMarca } from '../../marca/LogoMarca';
 import { gruposParaRol, type HandleRuta } from './navegacionBackoffice';
 import { Topbar } from './Topbar';
 
@@ -126,13 +127,25 @@ export function LayoutBackoffice() {
         <Shell>
           {/* T-16: el Shell es presentacional; la app dispone sidebar y contenido en una fila. */}
           <div className="flex min-h-dvh flex-col rounded-shell xl:min-h-[calc(100dvh-48px)] xl:flex-row xl:overflow-hidden">
-            <button type="button" aria-expanded={menuAbierto} aria-controls={idMenu}
-              onClick={() => setMenuAbierto((abierto) => !abierto)}
-              className="m-sp-16 self-start rounded-input border border-border-strong px-sp-16 py-sp-8 text-text-primary focus-visible:outline focus-visible:outline-2 xl:hidden">
-              Menú de navegación
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-sp-8 p-sp-16 xl:hidden">
+              <LogoMarca />
+              <button
+                type="button"
+                aria-expanded={menuAbierto}
+                aria-controls={idMenu}
+                onClick={() => setMenuAbierto((abierto) => !abierto)}
+                className="rounded-input border border-border-strong px-sp-12 py-sp-8 text-body-sm text-text-primary focus-visible:outline focus-visible:outline-2"
+              >
+                Menú de navegación
+              </button>
+            </div>
             <div id={idMenu} className={`shrink-0 bg-surface-sidebar xl:block ${menuAbierto ? 'block' : 'hidden'}`}>
-              <Sidebar grupos={grupos} user={usuario} menuUsuario={<MenuUsuario />} />
+              <Sidebar
+                grupos={grupos}
+                user={usuario}
+                menuUsuario={<MenuUsuario />}
+                logo={<LogoMarca className="hidden h-11 w-auto self-start xl:block" />}
+              />
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-16 xl:p-sp-32">
               <Topbar {...encabezado} />

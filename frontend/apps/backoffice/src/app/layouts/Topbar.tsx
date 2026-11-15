@@ -1,5 +1,6 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { useEffect, useRef, type ReactNode } from 'react';
+import { InterruptorTema } from '../../marca/tema/InterruptorTema';
 
 export interface TopbarProps {
   titulo?: string;
@@ -91,6 +92,7 @@ export function Topbar({
       >
         <BellIcon />
       </button>
+      <InterruptorTema />
       {accion}
     </header>
   );
