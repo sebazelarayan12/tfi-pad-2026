@@ -6,5 +6,5 @@ export interface BackdropProps {
 
 /** Fondo degradado de pantalla completa (`design-system §5.14`), sin alto fijo. */
 export function Backdrop({ children }: BackdropProps) {
-  return <div className="min-h-dvh bg-backdrop">{children}</div>;
+  return <div className="nx-fondo min-h-dvh bg-backdrop">{children}</div>;
 }

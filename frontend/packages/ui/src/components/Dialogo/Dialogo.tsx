@@ -62,7 +62,7 @@ export function Dialogo({
       }}
       className={
         modal
-          ? 'm-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col gap-sp-16 overflow-y-auto rounded-card bg-surface-panel p-sp-24 open:flex backdrop:bg-black/40'
+          ? 'nx-dialogo m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col gap-sp-16 overflow-y-auto rounded-card bg-surface-panel p-sp-24 open:flex backdrop:bg-black/40'
           : 'flex flex-col gap-sp-16 rounded-card bg-surface-panel p-sp-24'
       }
     >

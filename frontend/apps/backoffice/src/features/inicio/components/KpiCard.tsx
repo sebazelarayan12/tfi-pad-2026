@@ -1,4 +1,6 @@
 import { Button, Chip } from '@nexa/ui';
+import type { ReactNode } from 'react';
+import { useConteoAnimado } from '../../../marca/movimiento/useConteoAnimado';
 import { formatConteo } from '../schemas/distribucionPolizas';
 import type { Indicador } from '../types/indicadores';
 
@@ -17,20 +19,42 @@ interface KpiCardProps {
   nota?: string;
   chip?: string;
   degradar?: boolean;
+  /** Ícono decorativo y color de estado que lo acompaña. */
+  icono?: ReactNode;
+  tono?: TonoKpi;
+}
+
+export type TonoKpi = 'vigente' | 'pendiente' | 'suspendida' | 'cancelada';
+
+const TONOS: Record<TonoKpi, string> = {
+  vigente: 'bg-status-vigente-bg text-status-vigente-text',
+  pendiente: 'bg-status-pendiente-bg text-status-pendiente-text',
+  suspendida: 'bg-status-suspendida-bg text-status-suspendida-text',
+  cancelada: 'bg-status-cancelada-bg text-status-cancelada-text',
+};
+
+function CifraAnimada({ valor }: { valor: number }) {
+  const mostrado = useConteoAnimado(valor);
+  return <p className="text-h1 tabular-nums text-text-primary">{formatConteo(mostrado)}</p>;
 }
 
 function CifraKpi({ valor }: { valor?: number }) {
   if (valor === undefined) return <p className="text-body-sm text-text-secondary">No disponible</p>;
-  return <p className="text-h1 tabular-nums text-text-primary">{formatConteo(valor)}</p>;
+  return <CifraAnimada valor={valor} />;
 }
 
-function ContenidoKpi({ indicador, nota, chip, degradar }: Omit<KpiCardProps, 'titulo'>) {
+function ContenidoKpi({
+  indicador,
+  nota,
+  chip,
+  degradar,
+}: Omit<KpiCardProps, 'titulo' | 'icono' | 'tono'>) {
   if (indicador.isPending) {
     return (
       <div
         role="status"
         aria-label="Cargando indicador"
-        className="h-8 w-16 rounded-input bg-surface-subtle"
+        className="nx-brillo h-8 w-16 rounded-input bg-surface-subtle"
       />
     );
   }
@@ -50,10 +74,20 @@ function ContenidoKpi({ indicador, nota, chip, degradar }: Omit<KpiCardProps, 't
   );
 }
 
-export function KpiCard({ titulo, ...contenido }: KpiCardProps) {
+export function KpiCard({ titulo, icono, tono = 'pendiente', ...contenido }: KpiCardProps) {
   return (
-    <section className="flex min-h-[158px] min-w-0 flex-col gap-sp-8 rounded-card border border-border-hairline bg-surface-panel p-sp-20">
-      <h2 className="text-label text-text-secondary">{titulo}</h2>
+    <section className="nx-tarjeta-viva flex min-h-[158px] min-w-0 flex-col gap-sp-8 rounded-card border border-border-hairline bg-surface-panel p-sp-20">
+      <div className="flex items-start justify-between gap-sp-8">
+        <h2 className="text-label text-text-secondary">{titulo}</h2>
+        {icono ? (
+          <span
+            aria-hidden="true"
+            className={`nx-icono-kpi inline-flex size-9 shrink-0 items-center justify-center rounded-input ${TONOS[tono]}`}
+          >
+            {icono}
+          </span>
+        ) : null}
+      </div>
       <ContenidoKpi {...contenido} />
     </section>
   );

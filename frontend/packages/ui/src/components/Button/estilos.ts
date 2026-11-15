@@ -15,7 +15,10 @@ const TAMANOS: Record<ButtonSize, string> = {
   s: 'h-8 px-sp-12 text-label',
 };
 
-/** Clases del botón (`design-system §5.1`); las comparten `Button` y `ButtonLink`. */
+/**
+ * Clases del botón (`design-system §5.1`); las comparten `Button` y `ButtonLink`.
+ * `nx-boton*` son ganchos sin estilo propio: cada app decide si les da movimiento.
+ */
 export function clasesButton(variant: ButtonVariant, size: ButtonSize): string {
-  return `${BASE} ${VARIANTES[variant]} ${TAMANOS[size]}`;
+  return `nx-boton nx-boton-${variant} ${BASE} ${VARIANTES[variant]} ${TAMANOS[size]}`;
 }

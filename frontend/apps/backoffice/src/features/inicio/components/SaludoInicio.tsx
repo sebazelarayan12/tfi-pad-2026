@@ -12,7 +12,7 @@ export function SaludoInicio({ vencidas, pendientes }: { vencidas?: number; pend
     vencidas !== undefined &&
     pendientes !== undefined;
   return (
-    <div className="flex flex-col gap-sp-4">
+    <div className="nx-heroe flex flex-col gap-sp-4 rounded-card px-sp-24 py-sp-24">
       <h1 className="break-words text-h1 text-text-primary">
         {nombre ? `Hola, ${nombre}` : 'Hola'}
       </h1>

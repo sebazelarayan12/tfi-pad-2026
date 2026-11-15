@@ -38,7 +38,7 @@ export function Table<T>({ caption, columns, rows, getRowKey, onRowMenu }: Table
   const conMenu = onRowMenu !== undefined;
 
   return (
-    <table className="w-full table-fixed border-separate border-spacing-0">
+    <table className="nx-tabla w-full table-fixed border-separate border-spacing-0">
       <caption className="sr-only">{caption}</caption>
       <thead>
         <tr className="bg-surface-subtle">

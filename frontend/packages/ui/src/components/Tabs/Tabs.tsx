@@ -31,7 +31,7 @@ interface TabsContextValue {
 const TabsContext = createContext<TabsContextValue | null>(null);
 
 const TAB_BASE =
-  'border-b-2 text-body-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary';
+  'nx-tab border-b-2 text-body-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-primary';
 const TAB_ACTIVA = 'border-action-primary text-text-primary';
 const TAB_INACTIVA = 'border-transparent text-text-secondary';
 

@@ -34,7 +34,7 @@ export function DonutPolizasPorEstado({
         <div
           role="status"
           aria-label="Cargando distribución"
-          className="mx-auto h-40 w-40 rounded-full border-[12px] border-surface-subtle"
+          className="nx-late mx-auto h-40 w-40 rounded-full border-[12px] border-surface-subtle"
         />
       </CardWidget>
     );
@@ -70,6 +70,7 @@ export function DonutPolizasPorEstado({
                 strokeWidth="14"
                 strokeDasharray={`${segmento.longitud} 100`}
                 strokeDashoffset={-segmento.offset}
+                className="nx-dona-segmento"
                 transform="rotate(-90 80 80)"
               />
             );

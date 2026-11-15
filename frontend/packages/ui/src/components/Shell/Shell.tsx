@@ -11,6 +11,6 @@ export interface ShellProps {
  * sistema; el inset y el ancho los decide cada app.
  */
 export function Shell({ children, className }: ShellProps) {
-  const base = 'rounded-shell bg-surface-panel shadow-shell';
+  const base = 'nx-shell rounded-shell bg-surface-panel shadow-shell';
   return <div className={className ? `${base} ${className}` : base}>{children}</div>;
 }
