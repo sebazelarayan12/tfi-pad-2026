@@ -1,4 +1,5 @@
 import '@nexa/ui/tokens.css';
+import './marca/tema.css';
 import './index.css';
 
 import { StrictMode } from 'react';
