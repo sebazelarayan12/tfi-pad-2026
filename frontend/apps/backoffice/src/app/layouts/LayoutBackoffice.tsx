@@ -105,11 +105,14 @@ export function LayoutBackoffice() {
               className: string;
               'aria-current'?: 'page';
               children: ReactNode;
-            }) => <Link to={href} {...props} />,
+            }) => <Link to={href} {...props} onClick={() => setMenuAbierto(false)} />,
           }
         : item;
     }),
   }));
+
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const idMenu = useId();
 
   const usuario = {
     initials: email ? email.charAt(0).toUpperCase() : '',
@@ -119,16 +122,21 @@ export function LayoutBackoffice() {
 
   return (
     <Backdrop>
-      <div className="min-w-[1280px] p-sp-24">
+      <div className="p-sp-8 xl:p-sp-24">
         <Shell>
           {/* T-16: el Shell es presentacional; la app dispone sidebar y contenido en una fila. */}
-          <div className="flex min-h-[calc(100dvh-48px)] overflow-hidden rounded-shell">
-            <div className="shrink-0 bg-surface-sidebar">
+          <div className="flex min-h-dvh flex-col rounded-shell xl:min-h-[calc(100dvh-48px)] xl:flex-row xl:overflow-hidden">
+            <button type="button" aria-expanded={menuAbierto} aria-controls={idMenu}
+              onClick={() => setMenuAbierto((abierto) => !abierto)}
+              className="m-sp-16 self-start rounded-input border border-border-strong px-sp-16 py-sp-8 text-text-primary focus-visible:outline focus-visible:outline-2 xl:hidden">
+              Menú de navegación
+            </button>
+            <div id={idMenu} className={`shrink-0 bg-surface-sidebar xl:block ${menuAbierto ? 'block' : 'hidden'}`}>
               <Sidebar grupos={grupos} user={usuario} menuUsuario={<MenuUsuario />} />
             </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-32">
+            <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-16 xl:p-sp-32">
               <Topbar {...encabezado} />
-              <main id="contenido">
+              <main id="contenido" className="min-w-0 overflow-x-auto xl:overflow-visible">
                 <Outlet />
               </main>
             </div>

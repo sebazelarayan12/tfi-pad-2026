@@ -124,7 +124,7 @@ export function LoginPage() {
         <div className="flex flex-col gap-sp-24">
           <div className="flex flex-col gap-sp-12 text-center">
             {/* Tamaño propio del login (no está en la escala tipográfica); en mayúsculas por CSS. */}
-            <h1 className="text-[56px] font-extrabold uppercase leading-[60px] text-action-on-primary">
+            <h1 className="text-h1 font-extrabold uppercase xl:text-[56px] xl:leading-[60px] text-action-on-primary">
               Ingresar al panel
             </h1>
             <p className="text-body text-surface-subtle">

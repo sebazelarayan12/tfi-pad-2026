@@ -43,7 +43,7 @@ export function Topbar({
     if (tituloPrincipal) referenciaTitulo.current?.focus();
   }, [titulo, tituloPrincipal]);
   return (
-    <header className="flex h-16 items-center gap-sp-16">
+    <header className="flex flex-wrap items-center gap-sp-8 xl:h-16 xl:flex-nowrap xl:gap-sp-16">
       {titulo ? (
         <Titulo
           ref={referenciaTitulo}
@@ -58,7 +58,7 @@ export function Topbar({
         <form
           role="search"
           aria-label="Buscar en el panel"
-          className="relative w-[280px]"
+          className="relative order-last w-full xl:order-none xl:w-[280px]"
           onSubmit={(evento) => {
             evento.preventDefault();
             const datos = new FormData(evento.currentTarget);
@@ -87,7 +87,7 @@ export function Topbar({
         type="button"
         aria-label="Notificaciones"
         onClick={onNotificaciones}
-        className="flex h-9 w-9 items-center justify-center rounded-pill border border-border-strong bg-surface-panel text-text-primary"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-surface-panel text-text-primary"
       >
         <BellIcon />
       </button>
