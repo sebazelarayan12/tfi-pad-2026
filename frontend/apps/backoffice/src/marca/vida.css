@@ -1,0 +1,529 @@
+/*
+ * Movimiento, profundidad y color del backoffice. Los componentes de `@nexa/ui` llevan clases
+ * gancho `nx-*` sin estilos propios: acá se les da vida, solo en esta app (la web pública no
+ * define estas clases, así que allá no cambian nada).
+ */
+
+:root {
+  /* Lienzo: fondo del área de trabajo, un paso detrás de las tarjetas para que se despeguen. */
+  --bo-lienzo: #eef3fb;
+  --bo-sombra-tarjeta: 0 1px 2px rgb(11 31 75 / 0.04), 0 8px 24px -12px rgb(11 31 75 / 0.12);
+  --bo-sombra-tarjeta-hover:
+    0 2px 4px rgb(11 31 75 / 0.05), 0 18px 40px -16px rgb(0 102 230 / 0.28);
+  --bo-sombra-shell: 0 40px 90px -30px rgb(11 31 75 / 0.35);
+  --bo-aurora-a: rgb(0 180 255 / 0.3);
+  --bo-aurora-b: rgb(0 102 230 / 0.22);
+  --bo-fila-hover: rgb(0 102 230 / 0.06);
+  --bo-lateral-inicio: #0b1f4b;
+  --bo-lateral-fin: #06153a;
+  --bo-suave: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-tema='oscuro'] {
+  --bo-lienzo: #0d2454;
+  --bo-sombra-tarjeta: 0 1px 2px rgb(0 0 0 / 0.2), 0 10px 28px -14px rgb(0 0 0 / 0.5);
+  --bo-sombra-tarjeta-hover: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 44px -16px rgb(0 180 255 / 0.35);
+  --bo-sombra-shell: 0 40px 90px -30px rgb(0 0 0 / 0.7);
+  --bo-aurora-a: rgb(0 180 255 / 0.22);
+  --bo-aurora-b: rgb(0 102 230 / 0.35);
+  --bo-fila-hover: rgb(0 180 255 / 0.09);
+  --bo-lateral-inicio: #081a42;
+  --bo-lateral-fin: #040e28;
+}
+
+/* ---------- Animaciones base ---------- */
+
+@keyframes nx-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nx-aparece {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nx-emerge {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nx-deriva {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6%, 8%, 0) scale(1.15);
+  }
+}
+
+@keyframes nx-brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes nx-dona {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+@keyframes nx-late {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- Fondo con aurora que deriva lento ---------- */
+
+.nx-fondo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.nx-fondo::before,
+.nx-fondo::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  animation: nx-deriva 26s ease-in-out infinite alternate;
+}
+
+.nx-fondo::before {
+  top: -18%;
+  left: -8%;
+  width: 55vw;
+  height: 55vw;
+  background: var(--bo-aurora-a);
+}
+
+.nx-fondo::after {
+  right: -12%;
+  bottom: -25%;
+  width: 60vw;
+  height: 60vw;
+  background: var(--bo-aurora-b);
+  animation-duration: 34s;
+  animation-direction: alternate-reverse;
+}
+
+/* ---------- Shell y barra lateral ---------- */
+
+.nx-shell {
+  background: var(--bo-lienzo);
+  box-shadow: var(--bo-sombra-shell);
+}
+
+/* La barra lateral es marina en los dos modos: pisa los tokens solo dentro de ella. */
+.nx-lateral {
+  --nexa-surface-sidebar: transparent;
+  --nexa-surface-panel: rgb(255 255 255 / 0.08);
+  --nexa-border-hairline: rgb(255 255 255 / 0.12);
+  --nexa-border-strong: rgb(255 255 255 / 0.22);
+  --nexa-text-primary: #ffffff;
+  --nexa-text-secondary: #b9c6e2;
+  --nexa-text-tertiary: #93a4c8;
+  --nexa-accent-lime-soft: rgb(0 180 255 / 0.25);
+  --nexa-action-primary: #00b4ff;
+  color-scheme: dark;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgb(0 102 230 / 0.35), transparent 60%),
+    linear-gradient(180deg, var(--bo-lateral-inicio), var(--bo-lateral-fin));
+}
+
+.nx-lateral input::placeholder {
+  color: var(--nexa-text-tertiary);
+}
+
+.nx-menu {
+  background: #13306a;
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.5);
+  animation: nx-emerge 0.2s var(--bo-suave);
+  transform-origin: bottom right;
+}
+
+.nx-menu button:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.nx-nav {
+  position: relative;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.25s ease;
+}
+
+.nx-nav > span:nth-child(2) {
+  transition: transform 0.25s var(--bo-suave);
+}
+
+a.nx-nav:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #ffffff;
+}
+
+a.nx-nav:hover > span:nth-child(2) {
+  transform: translateX(2px) scale(1.08);
+}
+
+a.nx-nav[aria-current='page'] {
+  background: linear-gradient(90deg, #0066e6, #1a8cff);
+  color: #ffffff;
+  box-shadow: 0 8px 22px -8px rgb(0 132 255 / 0.75);
+}
+
+/* Sub-ítem: una línea en L lo cuelga del ítem de arriba. */
+.nx-nav-sub::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 17px;
+  width: 9px;
+  height: 22px;
+  border-bottom: 1.5px solid var(--nexa-border-strong);
+  border-left: 1.5px solid var(--nexa-border-strong);
+  border-bottom-left-radius: 6px;
+}
+
+a.nx-nav[aria-current='page'] > [data-indicador] {
+  background: #ffffff;
+}
+
+/* El título recibe el foco al navegar (para lectores de pantalla): sin recuadro visible. */
+.nx-shell :is(h1, h2)[tabindex='-1']:focus {
+  outline: none;
+}
+
+/* ---------- Entrada de página y de sus bloques ---------- */
+
+.nx-entra {
+  animation: nx-entra 0.5s var(--bo-suave) both;
+}
+
+.nx-escalonado > * {
+  animation: nx-entra 0.55s var(--bo-suave) both;
+}
+
+.nx-escalonado > :nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.nx-escalonado > :nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.nx-escalonado > :nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.nx-escalonado > :nth-child(5) {
+  animation-delay: 280ms;
+}
+
+.nx-escalonado > :nth-child(n + 6) {
+  animation-delay: 350ms;
+}
+
+/* ---------- Tarjetas ---------- */
+
+.nx-shell main .rounded-card {
+  box-shadow: var(--bo-sombra-tarjeta);
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s var(--bo-suave);
+}
+
+.nx-shell main .rounded-card.border:hover {
+  border-color: rgb(var(--tema-acento) / 0.45);
+}
+
+.nx-tarjeta-viva:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--bo-sombra-tarjeta-hover) !important;
+}
+
+.nx-tarjeta-viva .nx-icono-kpi {
+  transition: transform 0.35s var(--bo-suave);
+}
+
+.nx-tarjeta-viva:hover .nx-icono-kpi {
+  transform: scale(1.12) rotate(-6deg);
+}
+
+/* Banda del saludo: marino a azul con formas del escudo, texto claro en los dos modos. */
+.nx-heroe {
+  --nexa-text-primary: #ffffff;
+  --nexa-text-secondary: #d3e1fb;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(115deg, #0b1f4b 0%, #0a3f9e 55%, #0066e6 100%);
+  box-shadow: 0 22px 44px -22px rgb(0 102 230 / 0.6) !important;
+}
+
+.nx-heroe::before,
+.nx-heroe::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: 28%;
+  pointer-events: none;
+  animation: nx-deriva 18s ease-in-out infinite alternate;
+}
+
+.nx-heroe::before {
+  top: -70%;
+  right: 6%;
+  width: 300px;
+  height: 300px;
+  background: rgb(0 180 255 / 0.28);
+  rotate: 24deg;
+}
+
+.nx-heroe::after {
+  right: -6%;
+  bottom: -85%;
+  width: 340px;
+  height: 340px;
+  background: rgb(255 255 255 / 0.09);
+  rotate: -18deg;
+  animation-direction: alternate-reverse;
+}
+
+/* ---------- Botones ---------- */
+
+.nx-boton,
+.nx-shell :is(a, button).rounded-pill {
+  transition:
+    transform 0.18s var(--bo-suave),
+    box-shadow 0.25s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease;
+}
+
+.nx-boton:not(:disabled):active,
+.nx-shell :is(a, button).rounded-pill:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.nx-boton-primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 24px -8px rgb(0 102 230 / 0.65);
+}
+
+.nx-boton-secondary:not(:disabled):hover,
+.nx-shell main :is(a, button).rounded-pill.border:not(:disabled):hover {
+  border-color: rgb(var(--tema-acento) / 0.7);
+  background-color: rgb(var(--tema-acento) / 0.07);
+}
+
+.nx-boton-ghost:not(:disabled):hover {
+  background-color: rgb(var(--tema-acento) / 0.09);
+}
+
+.nx-icono-boton {
+  transition:
+    transform 0.2s var(--bo-suave),
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.nx-icono-boton:hover {
+  border-color: rgb(var(--tema-acento) / 0.7);
+  color: rgb(var(--tema-acento));
+}
+
+.nx-icono-boton:hover svg {
+  animation: nx-campana 0.6s ease;
+  transform-origin: 50% 10%;
+}
+
+@keyframes nx-campana {
+  20% {
+    transform: rotate(14deg);
+  }
+  45% {
+    transform: rotate(-11deg);
+  }
+  70% {
+    transform: rotate(6deg);
+  }
+}
+
+/* ---------- Campos ---------- */
+
+.nx-campo,
+.nx-shell input[type='search'] {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    background-color 0.2s ease;
+}
+
+.nx-campo:focus,
+.nx-shell input[type='search']:focus {
+  box-shadow: 0 0 0 4px rgb(var(--tema-acento) / 0.16);
+}
+
+.nx-shell input[type='search']:focus {
+  border-color: rgb(var(--tema-acento));
+  outline: none;
+}
+
+/* ---------- Tablas ---------- */
+
+.nx-tabla tbody tr {
+  animation: nx-aparece 0.45s ease both;
+}
+
+.nx-tabla tbody tr:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.nx-tabla tbody tr:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.nx-tabla tbody tr:nth-child(4) {
+  animation-delay: 90ms;
+}
+
+.nx-tabla tbody tr:nth-child(5) {
+  animation-delay: 120ms;
+}
+
+.nx-tabla tbody tr:nth-child(n + 6) {
+  animation-delay: 150ms;
+}
+
+.nx-tabla tbody td {
+  transition: background-color 0.18s ease;
+}
+
+.nx-tabla tbody tr:hover td {
+  background-color: var(--bo-fila-hover);
+}
+
+/* ---------- Badges, chips, pestañas, diálogos ---------- */
+
+/* El punto no ensancha el badge: se compensa con menos relleno lateral. */
+.nx-badge {
+  padding-right: 9px;
+  padding-left: 8px;
+}
+
+.nx-badge::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.nx-chip {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s var(--bo-suave);
+}
+
+button.nx-chip:active {
+  transform: scale(0.95);
+}
+
+.nx-tab {
+  transition:
+    color 0.2s ease,
+    border-color 0.25s ease;
+}
+
+.nx-tab:hover {
+  color: var(--nexa-text-primary);
+}
+
+.nx-dialogo[open] {
+  box-shadow: 0 40px 90px -24px rgb(0 0 0 / 0.5);
+  animation: nx-emerge 0.3s var(--bo-suave);
+}
+
+.nx-dialogo::backdrop {
+  backdrop-filter: blur(4px);
+  animation: nx-aparece 0.25s ease;
+}
+
+/* ---------- Carga, gráficos ---------- */
+
+.nx-brillo {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgb(var(--tema-acento) / 0.14) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: nx-brillo 1.4s linear infinite;
+}
+
+.nx-dona-segmento {
+  animation: nx-dona 1s var(--bo-suave) both;
+}
+
+.nx-late {
+  animation: nx-late 1.8s ease-in-out infinite;
+}
+
+/* ---------- Cambio de tema: el modo nuevo se abre en círculo desde el interruptor ---------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ---------- Sin movimiento para quien lo pide ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}

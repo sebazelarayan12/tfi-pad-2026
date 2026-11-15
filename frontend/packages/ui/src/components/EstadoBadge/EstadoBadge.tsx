@@ -15,7 +15,7 @@ export function EstadoBadge({ estado, texto }: EstadoBadgeProps) {
 
   return (
     <span
-      className={`inline-flex h-6 items-center rounded-pill px-sp-12 py-sp-4 text-label ${fondo} ${claseTexto}`}
+      className={`nx-badge inline-flex h-6 items-center rounded-pill px-sp-12 py-sp-4 text-label ${fondo} ${claseTexto}`}
     >
       {texto ?? estado}
     </span>

@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nexa/api';
-import { AlertaError, Button, Input, LogoNexa } from '@nexa/ui';
+import { AlertaError, Button, Input } from '@nexa/ui';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
+import { LogoMarca } from '../../../marca/LogoMarca';
 
 import { CampoContrasena, LayoutAcceso } from '../../auth';
 import { useRegistrarGrupo } from '../api/useRegistrarGrupo';
@@ -29,7 +30,7 @@ function SolicitudEnviada() {
   return (
     <LayoutAcceso>
       <div className="flex flex-col gap-sp-24">
-        <LogoNexa />
+        <LogoMarca />
         <div className="flex flex-col gap-sp-8">
           <h1 className="text-h1 text-text-primary">Solicitud enviada</h1>
           <p className="text-body-sm text-text-secondary">
@@ -80,7 +81,7 @@ export function SolicitarAccesoPage() {
     <LayoutAcceso>
       <form noValidate onSubmit={(evento) => void handleSubmit(enviar)(evento)}>
         <div className="flex flex-col gap-sp-24">
-          <LogoNexa />
+          <LogoMarca />
           <div className="flex flex-col gap-sp-8">
             <h1 className="text-h1 text-text-primary">Solicitar acceso a la API</h1>
             <p className="text-body-sm text-text-secondary">

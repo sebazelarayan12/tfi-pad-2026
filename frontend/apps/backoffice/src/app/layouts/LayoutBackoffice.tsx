@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { Backdrop, Shell, Sidebar } from '@nexa/ui';
 import { cerrarSesion, useSesion } from '../../features/auth';
-import { gruposParaRol, type HandleRuta } from './navegacionBackoffice';
+import { LogoMarca } from '../../marca/LogoMarca';
+import { gruposParaRol, SEGMENTO_VEHICULOS, type HandleRuta } from './navegacionBackoffice';
 import { Topbar } from './Topbar';
 
 function DotsThreeIcon() {
@@ -54,7 +55,7 @@ function MenuUsuario() {
         aria-expanded={abierto}
         aria-controls={abierto ? idMenu : undefined}
         onClick={() => setAbierto((valor) => !valor)}
-        className="flex h-8 w-8 items-center justify-center rounded-pill text-text-primary"
+        className="nx-icono-boton flex h-8 w-8 items-center justify-center rounded-pill text-text-primary"
       >
         <DotsThreeIcon />
       </button>
@@ -62,7 +63,7 @@ function MenuUsuario() {
         <div
           id={idMenu}
           role="menu"
-          className="absolute bottom-full right-0 mb-sp-8 min-w-[160px] rounded-card border border-border-strong bg-surface-panel p-sp-4"
+          className="nx-menu absolute bottom-full right-0 mb-sp-8 min-w-[160px] rounded-card border border-border-strong p-sp-4"
         >
           <button
             ref={opcion}
@@ -105,11 +106,14 @@ export function LayoutBackoffice() {
               className: string;
               'aria-current'?: 'page';
               children: ReactNode;
-            }) => <Link to={href} {...props} />,
+            }) => <Link to={href} {...props} onClick={() => setMenuAbierto(false)} />,
           }
-        : item;
+        : { ...item, active: item.sub === true && pathname.includes(SEGMENTO_VEHICULOS) };
     }),
   }));
+
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const idMenu = useId();
 
   const usuario = {
     initials: email ? email.charAt(0).toUpperCase() : '',
@@ -119,17 +123,37 @@ export function LayoutBackoffice() {
 
   return (
     <Backdrop>
-      <div className="min-w-[1280px] p-sp-24">
+      <div className="p-sp-8 xl:p-sp-24">
         <Shell>
           {/* T-16: el Shell es presentacional; la app dispone sidebar y contenido en una fila. */}
-          <div className="flex min-h-[calc(100dvh-48px)] overflow-hidden rounded-shell">
-            <div className="shrink-0 bg-surface-sidebar">
-              <Sidebar grupos={grupos} user={usuario} menuUsuario={<MenuUsuario />} />
+          <div className="flex min-h-dvh flex-col rounded-shell xl:min-h-[calc(100dvh-48px)] xl:flex-row xl:overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-sp-8 p-sp-16 xl:hidden">
+              <LogoMarca />
+              <button
+                type="button"
+                aria-expanded={menuAbierto}
+                aria-controls={idMenu}
+                onClick={() => setMenuAbierto((abierto) => !abierto)}
+                className="rounded-input border border-border-strong px-sp-12 py-sp-8 text-body-sm text-text-primary focus-visible:outline focus-visible:outline-2"
+              >
+                Menú de navegación
+              </button>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-32">
+            <div id={idMenu} className={`nx-lateral shrink-0 xl:block ${menuAbierto ? 'block' : 'hidden'}`}>
+              <Sidebar
+                grupos={grupos}
+                user={usuario}
+                menuUsuario={<MenuUsuario />}
+                logo={<LogoMarca blanco className="hidden h-11 w-auto self-start xl:block" />}
+              />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-sp-24 p-sp-16 xl:p-sp-32">
               <Topbar {...encabezado} />
-              <main id="contenido">
-                <Outlet />
+              <main id="contenido" className="min-w-0 overflow-x-auto xl:overflow-visible">
+                {/* La clave reinicia la animación de entrada en cada cambio de pantalla. */}
+                <div key={pathname} className="nx-entra">
+                  <Outlet />
+                </div>
               </main>
             </div>
           </div>

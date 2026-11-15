@@ -23,12 +23,13 @@ export interface SidebarProps {
   /** Sin acción definida en el diseño (DP-5): sin callback, enviar no hace nada. */
   onSearch?: (query: string) => void;
   menuUsuario?: ReactNode;
+  logo?: ReactNode;
 }
 
 const ETIQUETA_BUSCAR = 'Buscar';
 
 /** Barra lateral del backoffice (`design-system §5.8`). Presentacional. */
-export function Sidebar({ grupos, user, onSearch, menuUsuario }: SidebarProps) {
+export function Sidebar({ grupos, user, onSearch, menuUsuario, logo }: SidebarProps) {
   const idBuscar = useId();
   const visibles = grupos.filter((grupo) => grupo.items.length > 0);
 
@@ -44,7 +45,7 @@ export function Sidebar({ grupos, user, onSearch, menuUsuario }: SidebarProps) {
       aria-label="Navegación principal"
       className="flex h-full w-[232px] flex-col gap-sp-16 bg-surface-sidebar p-sp-16"
     >
-      <LogoNexa />
+      {logo ?? <LogoNexa />}
 
       <form role="search" onSubmit={alBuscar} className="relative">
         <label htmlFor={idBuscar} className="sr-only">

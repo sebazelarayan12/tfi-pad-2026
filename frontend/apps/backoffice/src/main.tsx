@@ -1,5 +1,7 @@
 import '@nexa/ui/tokens.css';
+import './marca/tema.css';
 import './index.css';
+import './marca/vida.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
