@@ -37,8 +37,10 @@ export const SECCION_MARINA = `${ANCHO_COMPLETO} bg-tema-banda`;
 /** Fundidos decorativos para entrar y salir de una banda marina sin un corte. */
 // Son altos para que el paso de color sea lento, y se meten un poco debajo del contenido de la banda
 // (margen negativo) para no sumar tanto espacio vacío.
-export const FUNDIDO_A_MARINO = 'fundido-a-marino -mb-sp-48 h-80 md:-mb-40 md:h-[560px]';
-export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino -mt-sp-48 h-80 md:-mt-40 md:h-[560px]';
+export const FUNDIDO_A_MARINO = 'fundido-a-marino -mb-sp-24 h-40 md:-mb-12 md:h-[240px]';
+// Sin margen negativo: las tarjetas de la banda son `relative` y se pintarían encima del degradé, con lo
+// que su pie azul sólido dejaría un corte recto sobre el fundido. Arranca justo donde termina la banda.
+export const FUNDIDO_DESDE_MARINO = 'fundido-desde-marino h-24 md:h-[180px]';
 
 /** Contenido de una sección: contenedor de página y aire vertical generoso. */
 export const INTERIOR_SECCION = `${CONTENEDOR} flex flex-col gap-sp-40 py-sp-64 md:py-sp-112`;
